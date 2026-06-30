@@ -867,7 +867,31 @@ function enterApp() {
   initApp();
 }
 
-if (token) enterApp();
+// 啟動時若 localStorage 有殘留 token，不直接信任它，而是先驗證是否仍然有效。
+// 原本的寫法（if (token) enterApp()）只要 token 存在就跳過登入畫面，
+// 會導致先前 Demo 模式測試留下的假 token，或過期/失效的真 token，
+// 都能繞過登入直接進入系統。
+(async function bootAuth() {
+  if (!token) return;  // 沒有 token，停留在登入畫面，正常情況
+
+  if (API_BASE.includes('your-space')) {
+    // 仍在 Demo 模式下開發，沿用舊行為
+    enterApp();
+    return;
+  }
+
+  // 真實後端：呼叫一個需要驗證的端點，確認 token 真的有效
+  showLoading(true);
+  const valid = await api('GET', '/staff');
+  showLoading(false);
+
+  if (valid) {
+    enterApp();
+  } else {
+    // token 無效、過期，或屬於先前 Demo 模式留下的假資料 → 清除並停留在登入畫面
+    doLogout();
+  }
+})();
 
 async function initApp() {
   const today = todayStr();
