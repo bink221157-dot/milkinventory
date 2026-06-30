@@ -974,7 +974,7 @@ async function saveInventory() {
     batches: batches.map(b => ({ expiry_date: b.exp, quantity: b.qty })),
   };
 
-  if (!API_BASE.includes('https://adrianli33-milkfloat.hf.space')) {
+  if (!API_BASE.includes('your-space')) {
     showLoading(true);
     const res = await api('POST', '/inventory/save', payload);
     showLoading(false);
