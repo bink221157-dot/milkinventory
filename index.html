@@ -6,9 +6,6 @@
 <title>MilkFlow — 鮮奶庫存控管</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-/* ══════════════════════════════════════
-   TOKENS
-══════════════════════════════════════ */
 :root {
   --navy:      #0A0F1E;
   --navy-2:    #131929;
@@ -47,16 +44,8 @@ body {
   line-height: 1.6;
   min-height: 100vh;
 }
-
-/* ══════════════════════════════════════
-   SCREENS — login vs app
-══════════════════════════════════════ */
 #screen-login { display: flex; min-height: 100vh; }
 #screen-app   { display: none; min-height: 100vh; }
-
-/* ══════════════════════════════════════
-   LOGIN SCREEN
-══════════════════════════════════════ */
 .login-left {
   width: 420px; flex-shrink: 0;
   background: var(--navy);
@@ -111,7 +100,6 @@ body {
   display: flex; align-items: center; justify-content: center;
   font-size: .85rem; flex-shrink: 0; margin-top: 1px;
 }
-
 .login-right {
   flex: 1;
   display: flex; align-items: center; justify-content: center;
@@ -135,13 +123,7 @@ body {
   border-radius: 7px; padding: 9px 13px;
   font-size: .79rem; font-weight: 500; margin-bottom: 16px;
 }
-
-/* ══════════════════════════════════════
-   APP SHELL
-══════════════════════════════════════ */
 .app-shell { display: flex; min-height: 100vh; }
-
-/* sidebar */
 .sidebar {
   width: var(--sidebar-w); flex-shrink: 0;
   background: var(--navy);
@@ -212,8 +194,6 @@ body {
   transition: background .13s, color .13s;
 }
 .sb-logout-btn:hover { background: rgba(255,255,255,.07); color: var(--red); }
-
-/* main content */
 .main-content {
   margin-left: var(--sidebar-w);
   flex: 1; display: flex; flex-direction: column; min-height: 100vh;
@@ -241,8 +221,6 @@ body {
   display: none; background: none; border: none;
   font-size: 1.2rem; cursor: pointer; color: var(--ink);
 }
-
-/* pages */
 .page { display: none; padding: 28px; }
 .page.active { display: block; }
 .page-eyebrow {
@@ -254,10 +232,6 @@ h1.pg-title {
   font-size: 1.65rem; margin-bottom: 4px;
 }
 .pg-sub { font-size: .8rem; color: var(--ink-3); margin-bottom: 26px; }
-
-/* ══════════════════════════════════════
-   DASHBOARD
-══════════════════════════════════════ */
 .dash-hero {
   background: var(--navy);
   border-radius: 14px;
@@ -307,8 +281,6 @@ h1.pg-title {
   font-size: .77rem; color: rgba(255,255,255,.45);
 }
 .hero-stats strong { color: rgba(255,255,255,.8); }
-
-/* stock bar */
 .stock-bar-wrap { margin-bottom: 20px; }
 .stock-bar-label {
   display: flex; justify-content: space-between;
@@ -326,8 +298,6 @@ h1.pg-title {
 }
 .stock-bar-fill.warn { background: var(--amber); }
 .stock-bar-fill.bad  { background: var(--red); }
-
-/* kpi row */
 .kpi-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 20px; }
 .kpi-card {
   background: var(--surface);
@@ -339,10 +309,6 @@ h1.pg-title {
 .kpi-label { font-size: .67rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--ink-4); margin-bottom: 8px; }
 .kpi-value { font-family: 'DM Mono', monospace; font-size: 1.5rem; font-weight: 500; color: var(--ink); }
 .kpi-sub   { font-size: .71rem; color: var(--ink-3); margin-top: 3px; }
-
-/* ══════════════════════════════════════
-   SHARED CARD / TABLE
-══════════════════════════════════════ */
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -375,10 +341,6 @@ table.dt { width: 100%; border-collapse: collapse; font-size: .82rem; }
 .dt td { padding: 10px 12px; vertical-align: middle; }
 .dt td.mono { font-family: 'DM Mono', monospace; font-size: .79rem; }
 .empty-cell { text-align: center; color: var(--ink-4); padding: 32px 12px !important; font-size: .81rem; }
-
-/* ══════════════════════════════════════
-   BADGES
-══════════════════════════════════════ */
 .badge {
   display: inline-flex; align-items: center; gap: 4px;
   padding: 2px 9px; border-radius: 99px;
@@ -388,10 +350,6 @@ table.dt { width: 100%; border-collapse: collapse; font-size: .82rem; }
 .b-warn { background: var(--amber-lt);  color: var(--amber); }
 .b-bad  { background: var(--red-lt);    color: var(--red);   }
 .b-sky  { background: var(--sky-lt);    color: var(--sky-dk);}
-
-/* ══════════════════════════════════════
-   FORMS
-══════════════════════════════════════ */
 .form-row   { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
 .fg { display: flex; flex-direction: column; gap: 5px; }
@@ -408,8 +366,6 @@ table.dt { width: 100%; border-collapse: collapse; font-size: .82rem; }
 .fc.mono  { font-family: 'DM Mono', monospace; }
 input[type="date"].fc,
 input[type="time"].fc { font-family: 'DM Mono', monospace; }
-
-/* batch editor inline inputs */
 .bi {
   height: 35px; padding: 0 9px; width: 100%;
   border: 1.5px solid var(--border); border-radius: 7px;
@@ -418,10 +374,6 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
   transition: border-color .15s;
 }
 .bi:focus { border-color: var(--sky-dk); }
-
-/* ══════════════════════════════════════
-   BUTTONS
-══════════════════════════════════════ */
 .btn {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 0 16px; height: 38px; border-radius: 8px; border: none;
@@ -450,12 +402,7 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
 }
 .ib-del { background: var(--red-lt); color: var(--red); }
 .ib-del:hover { background: #FCA5A5; }
-
 .divider { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
-
-/* ══════════════════════════════════════
-   STAFF / RECEIVER LIST
-══════════════════════════════════════ */
 .person-list { list-style: none; margin-bottom: 14px; }
 .person-li {
   display: flex; align-items: center; justify-content: space-between;
@@ -469,10 +416,6 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
   display: inline-flex; align-items: center; justify-content: center;
   font-size: .72rem; font-weight: 700; flex-shrink: 0; margin-right: 8px;
 }
-
-/* ══════════════════════════════════════
-   SCHEDULE
-══════════════════════════════════════ */
 .sched-preview {
   display: flex; align-items: center; gap: 7px;
   margin-top: 10px;
@@ -480,7 +423,6 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
 }
 .pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--green); flex-shrink: 0; animation: blink 2s infinite; }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
-
 .cron-box {
   background: var(--bg); border: 1px solid var(--border);
   border-radius: 8px; padding: 13px 16px;
@@ -489,10 +431,6 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
 }
 .cron-box .cm { color: var(--ink-4); font-style: italic; }
 .cron-box .cv { color: var(--sky-dk); font-weight: 500; }
-
-/* ══════════════════════════════════════
-   LOADING OVERLAY
-══════════════════════════════════════ */
 .loading-overlay {
   position: fixed; inset: 0; z-index: 9000;
   background: rgba(10,15,30,.72);
@@ -506,10 +444,6 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
   animation: spin .7s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-
-/* ══════════════════════════════════════
-   TOAST
-══════════════════════════════════════ */
 #toast {
   position: fixed; bottom: 22px; right: 22px;
   background: var(--navy); color: #fff;
@@ -523,10 +457,6 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
 #toast.warn { background: #92400E; }
 #toast.err  { background: #7F1D1D; }
 @keyframes tup { from{transform:translateY(8px);opacity:0} to{transform:translateY(0);opacity:1} }
-
-/* ══════════════════════════════════════
-   RESPONSIVE
-══════════════════════════════════════ */
 @media (max-width: 860px) {
   .kpi-row { grid-template-columns: 1fr 1fr; }
   .form-row-3 { grid-template-columns: 1fr 1fr; }
@@ -547,16 +477,10 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
 </head>
 <body>
 
-<!-- ════════════════════════════════════
-     LOADING OVERLAY
-════════════════════════════════════ -->
 <div class="loading-overlay" id="loading">
   <div class="spinner"></div>
 </div>
 
-<!-- ════════════════════════════════════
-     LOGIN SCREEN
-════════════════════════════════════ -->
 <div id="screen-login">
   <div class="login-left">
     <div class="login-brand">
@@ -609,13 +533,9 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
   </div>
 </div>
 
-<!-- ════════════════════════════════════
-     APP SCREEN
-════════════════════════════════════ -->
 <div id="screen-app">
   <div class="app-shell">
 
-    <!-- SIDEBAR -->
     <nav class="sidebar" id="sidebar">
       <div class="sb-top">
         <div class="sb-logo">🥛</div>
@@ -644,9 +564,7 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
       </div>
     </nav>
 
-    <!-- MAIN -->
     <div class="main-content">
-      <!-- Topbar -->
       <header class="topbar">
         <div style="display:flex;align-items:center;gap:10px">
           <button id="hamburger" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
@@ -661,13 +579,11 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
         </div>
       </header>
 
-      <!-- ════ PAGE: Dashboard ════ -->
       <div class="page active" id="pg-dashboard">
         <div class="page-eyebrow">總覽</div>
         <h1 class="pg-title">庫存儀表板</h1>
         <p class="pg-sub">顯示最新一次盤點的即時庫存狀態與安全水位評估。</p>
 
-        <!-- Hero -->
         <div class="dash-hero">
           <div class="hero-left">
             <div class="hero-eyebrow">目前總庫存量</div>
@@ -685,7 +601,6 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
           </div>
         </div>
 
-        <!-- Stock bar -->
         <div class="stock-bar-wrap card" style="padding:18px 22px">
           <div class="stock-bar-label">
             <span>庫存水位</span>
@@ -696,7 +611,6 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
           </div>
         </div>
 
-        <!-- KPI -->
         <div class="kpi-row">
           <div class="kpi-card">
             <div class="kpi-label">今日盤點批次</div>
@@ -715,7 +629,6 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
           </div>
         </div>
 
-        <!-- Batch detail table -->
         <div class="card">
           <div class="card-head">
             <span class="card-title">📋 各效期批次明細</span>
@@ -734,13 +647,11 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
         </div>
       </div>
 
-      <!-- ════ PAGE: Inventory ════ -->
       <div class="page" id="pg-inventory">
         <div class="page-eyebrow">庫存管理</div>
         <h1 class="pg-title">效期庫存登錄</h1>
         <p class="pg-sub">依不同有效期限分批填報現有數量，系統將同步至雲端資料庫。</p>
 
-        <!-- Batch editor -->
         <div class="card">
           <div class="card-head">
             <span class="card-title">📦 效期批次列表</span>
@@ -759,7 +670,6 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
           </div>
         </div>
 
-        <!-- Parameters -->
         <div class="card">
           <div class="card-title" style="margin-bottom:16px">⚙️ 盤點參數</div>
           <div class="form-row" style="margin-bottom:16px">
@@ -786,7 +696,6 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
         </div>
       </div>
 
-      <!-- ════ PAGE: Staff ════ -->
       <div class="page" id="pg-staff">
         <div class="page-eyebrow">人員管理</div>
         <h1 class="pg-title">訂貨人員名單</h1>
@@ -806,13 +715,11 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
         </div>
       </div>
 
-      <!-- ════ PAGE: Schedule ════ -->
       <div class="page" id="pg-schedule">
         <div class="page-eyebrow">郵件排程</div>
         <h1 class="pg-title">自動郵件設定</h1>
         <p class="pg-sub">設定每日庫存日報的發信時間與收件對象。排程由後端 Cron Job 負責執行，儲存後下次執行時自動生效。</p>
 
-        <!-- Time & receiver -->
         <div class="card">
           <div class="card-title" style="margin-bottom:16px">⏰ 發信時間與收件人</div>
           <div class="form-row" style="margin-bottom:16px">
@@ -834,7 +741,6 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
           <button class="btn btn-dark" onclick="saveSchedule()">💾 儲存排程設定</button>
         </div>
 
-        <!-- Cron reference -->
         <div class="card">
           <div class="card-title" style="margin-bottom:12px">🔧 後端 Cron 參考設定</div>
           <div class="cron-box" id="cron-preview">
@@ -844,7 +750,6 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
           </div>
         </div>
 
-        <!-- Receiver list -->
         <div class="card">
           <div class="card-title" style="margin-bottom:14px">📬 收件人清單管理</div>
           <ul class="person-list" id="receiver-ul"></ul>
@@ -859,37 +764,25 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
         </div>
       </div>
 
-    </div><!-- /main-content -->
-  </div><!-- /app-shell -->
-</div><!-- /screen-app -->
+    </div>
+  </div>
+</div>
 
 <div id="toast"></div>
 
-<!-- ════════════════════════════════════
-     SCRIPTS
-════════════════════════════════════ -->
 <script>
-/* ──────────────────────────────────────
-   CONFIG  — 換成你的 HuggingFace Space URL
-────────────────────────────────────── */
 const API_BASE = 'https://adrianli33-milkdate.hf.space';
 
-/* ──────────────────────────────────────
-   STATE
-────────────────────────────────────── */
 let token   = localStorage.getItem('mf_token') || '';
 let currentUser = localStorage.getItem('mf_user') || '';
 const S = {
   staff:     [],
   receivers: [],
-  records:   [],    // local cache of inventory records
+  records:   [],
   schedTime: '21:00',
   activeRec: '',
 };
 
-/* ──────────────────────────────────────
-   API HELPERS
-────────────────────────────────────── */
 async function api(method, path, body) {
   const opts = {
     method,
@@ -917,16 +810,12 @@ function setPill(state, text) {
   txt.textContent = text;
 }
 
-/* ──────────────────────────────────────
-   AUTH
-────────────────────────────────────── */
 async function doLogin() {
   const user = document.getElementById('login-user').value.trim();
   const pass = document.getElementById('login-pass').value;
   const errEl = document.getElementById('login-err');
   errEl.style.display = 'none';
 
-  // Demo mode: bypass API if API_BASE is placeholder
   if (API_BASE.includes('your-space')) {
     if (user === 'admin' && pass === 'password') {
       token = 'demo-jwt-token';
@@ -978,12 +867,8 @@ function enterApp() {
   initApp();
 }
 
-// Auto-login if token exists
 if (token) enterApp();
 
-/* ──────────────────────────────────────
-   INIT APP
-────────────────────────────────────── */
 async function initApp() {
   const today = todayStr();
   document.getElementById('inv-order').value    = today;
@@ -991,7 +876,6 @@ async function initApp() {
 
   if (document.getElementById('batch-body').rows.length === 0) addBatchRow();
 
-  // Load from API (or use demo data)
   await Promise.all([
     loadStaff(),
     loadReceivers(),
@@ -1002,9 +886,6 @@ async function initApp() {
   updateSchedPreview();
 }
 
-/* ──────────────────────────────────────
-   NAVIGATION
-────────────────────────────────────── */
 const PAGE_TITLES = {
   'pg-dashboard': '儀表板',
   'pg-inventory': '效期庫存登錄',
@@ -1024,12 +905,8 @@ document.querySelectorAll('.sb-item').forEach(el => {
   });
 });
 
-/* ──────────────────────────────────────
-   INVENTORY — LOAD & SAVE
-────────────────────────────────────── */
 async function loadInventory() {
   if (API_BASE.includes('your-space')) {
-    // Demo data
     S.records = [
       { exp: futureDate(4), qty: 8,  thresh: 15, staff: '林世杰', order: futureDate(1), recorded: todayStr() },
       { exp: futureDate(7), qty: 12, thresh: 15, staff: '林世杰', order: futureDate(1), recorded: todayStr() },
@@ -1037,15 +914,24 @@ async function loadInventory() {
     renderDashboard();
     return;
   }
+  // 後端 GET /inventory/latest 回傳 { record: {...主記錄}, batches: [...效期批次] }
+  // 主記錄（min_threshold / staff_name / order_date / recorded_date）和批次（expiry_date / quantity）是分開的，
+  // 批次陣列本身「沒有」這些欄位，必須從 record 補上，否則全部會是 undefined。
   const data = await api('GET', '/inventory/latest');
-  if (data?.batches) {
+  if (data?.record && data?.batches) {
+    const rec = data.record;
     S.records = data.batches.map(b => ({
-      exp: b.expiry_date, qty: b.quantity,
-      thresh: b.min_threshold, staff: b.staff_name,
-      order: b.order_date, recorded: b.recorded_date,
+      exp:      b.expiry_date,
+      qty:      b.quantity,
+      thresh:   rec.min_threshold,
+      staff:    rec.staff_name,
+      order:    rec.order_date,
+      recorded: rec.recorded_date,
     }));
-    renderDashboard();
+  } else {
+    S.records = [];
   }
+  renderDashboard();
 }
 
 async function saveInventory() {
@@ -1071,16 +957,12 @@ async function saveInventory() {
     if (!res) return;
   }
 
-  // Update local cache
   S.records = S.records.filter(r => r.recorded !== recorded);
   batches.forEach(b => S.records.push({ exp: b.exp, qty: b.qty, thresh, staff: staffVal, order, recorded }));
   renderDashboard();
   toast('盤點資料已同步儲存 ☁️', 'ok');
 }
 
-/* ──────────────────────────────────────
-   BATCH ROWS
-────────────────────────────────────── */
 function addBatchRow(exp = '', qty = 0) {
   const id  = 'r' + Date.now() + Math.random().toString(36).slice(2, 5);
   const def = todayStr();
@@ -1116,9 +998,6 @@ function getBatches() {
   })).filter(b => b.exp);
 }
 
-/* ──────────────────────────────────────
-   DASHBOARD
-────────────────────────────────────── */
 function renderDashboard() {
   if (!S.records.length) {
     setHero(null); return;
@@ -1192,9 +1071,6 @@ function setHero(d) {
   }
 }
 
-/* ──────────────────────────────────────
-   STAFF
-────────────────────────────────────── */
 async function loadStaff() {
   if (API_BASE.includes('your-space')) {
     S.staff = ['林世杰', '張店長', '陳組長'];
@@ -1248,9 +1124,6 @@ async function removeStaff(name) {
   toast('已移除：' + name);
 }
 
-/* ──────────────────────────────────────
-   RECEIVERS
-────────────────────────────────────── */
 async function loadReceivers() {
   if (API_BASE.includes('your-space')) {
     S.receivers  = ['applin804@gmail.com'];
@@ -1295,21 +1168,20 @@ async function removeReceiver(e) {
   toast('已移除：' + e);
 }
 
-/* ──────────────────────────────────────
-   SCHEDULE
-────────────────────────────────────── */
 async function loadSchedule() {
   if (!API_BASE.includes('your-space')) {
     const data = await api('GET', '/schedule');
     if (data?.schedule_time) {
-      S.schedTime = data.schedule_time;
+      // PostgreSQL 的 TIME 欄位用 ::text 轉換後可能是 "21:00:00"（含秒），
+      // 但 <input type="time"> 只接受 "HH:MM"，這裡統一裁切前 5 碼。
+      S.schedTime = data.schedule_time.slice(0, 5);
       document.getElementById('sch-time').value = S.schedTime;
     }
   }
   updateSchedPreview();
 }
 async function saveSchedule() {
-  const t   = document.getElementById('sch-time').value;
+  const t   = document.getElementById('sch-time').value.slice(0, 5);
   const rec = document.getElementById('sch-receiver').value;
   S.schedTime = t; S.activeRec = rec;
 
@@ -1337,7 +1209,6 @@ function updateSchedPreview() {
   const el  = document.getElementById('sched-text');
   if (el) el.textContent = txt;
   document.getElementById('kpi-next-send').textContent = `${label} ${t}`;
-  // Update cron preview
   const [hh] = t.split(':').map(Number);
   const mm   = parseInt(t.split(':')[1]);
   document.getElementById('cron-preview').innerHTML =
@@ -1346,24 +1217,41 @@ function updateSchedPreview() {
     `<span class="cm"># 需在 HuggingFace Space 或 VPS 上設定</span>`;
 }
 
-/* ──────────────────────────────────────
-   EXPORT
-────────────────────────────────────── */
 async function exportReport() {
   if (!S.records.length) { toast('尚無資料可匯出', 'warn'); return; }
+
   if (!API_BASE.includes('your-space')) {
+    // 後端 GET /export/report 回傳的是 StreamingResponse（Content-Type: text/csv），
+    // 不是 JSON，因此不能走共用的 api() helper（內部用 res.json() 解析會直接失敗）。
+    // 這裡改用原生 fetch，直接把回應當作檔案處理。
     showLoading(true);
-    const data = await api('GET', '/export/report');
-    showLoading(false);
-    if (data?.csv) {
-      const blob = new Blob([data.csv], { type: 'text/csv;charset=utf-8;' });
-      const url  = URL.createObjectURL(blob);
-      const a    = Object.assign(document.createElement('a'), { href: url, download: `milk_report_${todayStr()}.csv` });
-      a.click(); URL.revokeObjectURL(url);
-      return;
+    try {
+      const res = await fetch(API_BASE + '/export/report', {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      showLoading(false);
+      if (res.status === 401) { doLogout(); return; }
+      if (!res.ok) { toast('匯出失敗，請稍後再試', 'warn'); return; }
+
+      const blob = await res.blob();
+      // 從後端的 Content-Disposition header 取檔名，沒有的話 fallback 用今天日期命名
+      const disposition = res.headers.get('Content-Disposition') || '';
+      const match = disposition.match(/filename=([^;]+)/);
+      const filename = match ? match[1].trim() : `milk_report_${todayStr()}.csv`;
+
+      const url = URL.createObjectURL(blob);
+      const a = Object.assign(document.createElement('a'), { href: url, download: filename });
+      a.click();
+      URL.revokeObjectURL(url);
+      toast('報表已匯出', 'ok');
+    } catch (e) {
+      showLoading(false);
+      toast('匯出失敗，API 無法連線', 'warn');
     }
+    return;
   }
-  // Demo: generate CSV locally
+
+  // Demo 模式：本地組裝 CSV
   const latest = [...new Set(S.records.map(r => r.recorded))].sort().at(-1);
   const rows   = S.records.filter(r => r.recorded === latest);
   let csv      = '有效期限,數量（瓶）,最低需求,盤點人員,訂貨日,盤點日\n';
@@ -1375,9 +1263,6 @@ async function exportReport() {
   toast('報表已匯出', 'ok');
 }
 
-/* ──────────────────────────────────────
-   UTILITIES
-────────────────────────────────────── */
 function todayStr()  { return new Date().toISOString().split('T')[0]; }
 function futureDate(n) {
   const d = new Date(); d.setDate(d.getDate() + n);
