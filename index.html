@@ -490,81 +490,59 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
   .login-left { display: none; }
 }
 </style>
-</head>
+<!-- BODY_START -->
 <body>
 
-<div class="loading-overlay" id="loading">
-  <div class="spinner"></div>
-</div>
+<div class="loading-overlay" id="loading"><div class="spinner"></div></div>
 
+<!-- ════ LOGIN ════ -->
 <div id="screen-login">
   <div class="login-left">
     <div class="login-brand">
-      <div class="login-icon">🥛</div>
-      <div class="login-name">MilkFlow</div>
-      <div class="login-tagline">鮮奶庫存智慧控管平台</div>
+      <div class="login-icon">📦</div>
+      <div class="login-name">StockFlow</div>
+      <div class="login-tagline">多品項庫存智慧控管平台</div>
     </div>
     <div class="login-features">
-      <div class="login-feat">
-        <div class="feat-icon">📦</div>
-        <div>多效期批次庫存追蹤，即期品自動警示</div>
-      </div>
-      <div class="login-feat">
-        <div class="feat-icon">📊</div>
-        <div>即時庫存儀表板，安全水位視覺化呈現</div>
-      </div>
-      <div class="login-feat">
-        <div class="feat-icon">📧</div>
-        <div>自訂排程，每日自動發送庫存日報 Email</div>
-      </div>
-      <div class="login-feat">
-        <div class="feat-icon">☁️</div>
-        <div>資料同步雲端 PostgreSQL，多裝置存取</div>
-      </div>
+      <div class="login-feat"><div class="feat-icon">📦</div><div>多品項效期批次追蹤，即期品自動警示</div></div>
+      <div class="login-feat"><div class="feat-icon">💰</div><div>單價管理，一鍵匯出成本統計報表</div></div>
+      <div class="login-feat"><div class="feat-icon">📧</div><div>自訂排程，每日自動發送庫存日報 Email</div></div>
+      <div class="login-feat"><div class="feat-icon">☁️</div><div>資料同步雲端 PostgreSQL，多裝置存取</div></div>
     </div>
   </div>
-
   <div class="login-right">
     <div class="login-box">
       <div class="login-box-title">歡迎回來</div>
       <div class="login-box-sub">請登入您的帳號繼續使用</div>
       <div class="login-err" id="login-err"></div>
       <div style="display:flex;flex-direction:column;gap:13px">
-        <div class="fg">
-          <label>帳號</label>
-          <input type="text" class="fc" id="login-user" placeholder="輸入帳號" value="admin" autocomplete="username">
-        </div>
-        <div class="fg">
-          <label>密碼</label>
-          <input type="password" class="fc" id="login-pass" placeholder="輸入密碼" value="password" autocomplete="current-password">
-        </div>
-        <button class="btn btn-dark btn-full" style="margin-top:4px;height:42px" onclick="doLogin()">
-          登入
-        </button>
-        <div style="text-align:center;font-size:.72rem;color:var(--ink-4)">
-          預設帳密：admin / password（示範用）
-        </div>
+        <div class="fg"><label>帳號</label><input type="text" class="fc" id="login-user" placeholder="輸入帳號" autocomplete="username"></div>
+        <div class="fg"><label>密碼</label><input type="password" class="fc" id="login-pass" placeholder="輸入密碼" autocomplete="current-password"></div>
+        <button class="btn btn-dark btn-full" style="margin-top:4px;height:42px" onclick="doLogin()">登入</button>
       </div>
     </div>
   </div>
 </div>
 
+<!-- ════ APP ════ -->
 <div id="screen-app">
   <div class="app-shell">
 
+    <!-- SIDEBAR -->
     <nav class="sidebar" id="sidebar">
       <div class="sb-top">
-        <div class="sb-logo">🥛</div>
+        <div class="sb-logo">📦</div>
         <div class="sb-brand-text">
-          <div class="sb-brand-name">MilkFlow</div>
-          <div class="sb-brand-ver">v1.0 · GitHub Pages</div>
+          <div class="sb-brand-name">StockFlow</div>
+          <div class="sb-brand-ver">v2.1 · GitHub Pages</div>
         </div>
       </div>
       <div class="sb-nav">
         <div class="sb-section-label">主要功能</div>
         <div class="sb-item active" data-page="pg-dashboard"><span class="si">🏠</span> 儀表板</div>
-        <div class="sb-item" data-page="pg-inventory"><span class="si">📦</span> 效期庫存登錄</div>
+        <div class="sb-item" data-page="pg-inventory"><span class="si">📝</span> 效期庫存登錄</div>
         <div class="sb-section-label">管理設定</div>
+        <div class="sb-item admin-only" data-page="pg-products" style="display:none"><span class="si">🏷️</span> 品項管理</div>
         <div class="sb-item" data-page="pg-staff"><span class="si">👤</span> 訂貨人員</div>
         <div class="sb-item admin-only" data-page="pg-schedule" style="display:none"><span class="si">📧</span> 自動郵件排程</div>
         <div class="sb-item admin-only" data-page="pg-users" style="display:none"><span class="si">🔑</span> 使用者管理</div>
@@ -582,59 +560,24 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
       </div>
     </nav>
 
-    <!-- ════ 修改密碼 Modal ════ -->
-    <div id="pw-modal" style="
-      display:none; position:fixed; inset:0; z-index:9999;
-      background:rgba(10,15,30,.72);
-      align-items:center; justify-content:center;
-    ">
-      <div style="
-        background:var(--surface); border-radius:14px;
-        padding:28px 28px 24px; width:100%; max-width:380px;
-        box-shadow:0 20px 60px rgba(0,0,0,.3);
-        margin:0 16px;
-      ">
+    <!-- 修改密碼 Modal -->
+    <div id="pw-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(10,15,30,.72);align-items:center;justify-content:center;">
+      <div style="background:var(--surface);border-radius:14px;padding:28px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.3);margin:0 16px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-          <div style="font-size:1rem;font-weight:700;color:var(--ink)">🔒 修改密碼</div>
-          <button onclick="closePwModal()" style="
-            background:none;border:none;cursor:pointer;
-            font-size:1.1rem;color:var(--ink-3);padding:4px;
-          ">✕</button>
+          <div style="font-size:1rem;font-weight:700">🔒 修改密碼</div>
+          <button onclick="closePwModal()" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--ink-3)">✕</button>
         </div>
         <div style="display:flex;flex-direction:column;gap:14px">
-          <div class="fg">
-            <label>目前密碼</label>
-            <div class="pw-wrap">
-              <input type="password" class="fc" id="pw-old" placeholder="輸入目前的密碼">
-              <button class="pw-toggle" onclick="togglePw('pw-old',this)" type="button">👁</button>
-            </div>
-          </div>
-          <div class="fg">
-            <label>新密碼</label>
-            <div class="pw-wrap">
-              <input type="password" class="fc" id="pw-new" placeholder="至少 6 個字元">
-              <button class="pw-toggle" onclick="togglePw('pw-new',this)" type="button">👁</button>
-            </div>
-          </div>
-          <div class="fg">
-            <label>確認新密碼</label>
-            <div class="pw-wrap">
-              <input type="password" class="fc" id="pw-new2" placeholder="再輸入一次">
-              <button class="pw-toggle" onclick="togglePw('pw-new2',this)" type="button">👁</button>
-            </div>
-          </div>
-          <div id="pw-modal-err" style="
-            display:none; background:var(--red-lt); color:var(--red);
-            border-radius:7px; padding:9px 13px;
-            font-size:.78rem; font-weight:500;
-          "></div>
-          <button class="btn btn-dark btn-full" style="margin-top:4px" onclick="submitChangePw()">
-            確認修改密碼
-          </button>
+          <div class="fg"><label>目前密碼</label><div class="pw-wrap"><input type="password" class="fc" id="pw-old" placeholder="輸入目前的密碼"><button class="pw-toggle" onclick="togglePw('pw-old',this)" type="button">👁</button></div></div>
+          <div class="fg"><label>新密碼</label><div class="pw-wrap"><input type="password" class="fc" id="pw-new" placeholder="至少 6 個字元"><button class="pw-toggle" onclick="togglePw('pw-new',this)" type="button">👁</button></div></div>
+          <div class="fg"><label>確認新密碼</label><div class="pw-wrap"><input type="password" class="fc" id="pw-new2" placeholder="再輸入一次"><button class="pw-toggle" onclick="togglePw('pw-new2',this)" type="button">👁</button></div></div>
+          <div id="pw-modal-err" style="display:none;background:var(--red-lt);color:var(--red);border-radius:7px;padding:9px 13px;font-size:.78rem;font-weight:500;"></div>
+          <button class="btn btn-dark btn-full" style="margin-top:4px" onclick="submitChangePw()">確認修改密碼</button>
         </div>
       </div>
     </div>
 
+    <!-- MAIN -->
     <div class="main-content">
       <header class="topbar">
         <div style="display:flex;align-items:center;gap:10px">
@@ -642,97 +585,77 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
           <div class="topbar-title" id="topbar-title">儀表板</div>
         </div>
         <div style="display:flex;align-items:center;gap:12px">
-          <div class="api-pill" id="api-status-pill">
-            <div class="api-pill-dot"></div>
-            <span id="api-status-text">API 連線中</span>
-          </div>
+          <div class="api-pill" id="api-status-pill"><div class="api-pill-dot"></div><span id="api-status-text">連線中</span></div>
           <div class="topbar-meta" id="topbar-date"></div>
         </div>
       </header>
 
+      <!-- ════ PAGE: Dashboard ════ -->
       <div class="page active" id="pg-dashboard">
         <div class="page-eyebrow">總覽</div>
         <h1 class="pg-title">庫存儀表板</h1>
-        <p class="pg-sub">顯示最新一次盤點的即時庫存狀態與安全水位評估。</p>
+        <p class="pg-sub">顯示最新一次盤點的所有品項庫存狀態。</p>
 
-        <div class="dash-hero">
-          <div class="hero-left">
-            <div class="hero-eyebrow">目前總庫存量</div>
-            <div class="hero-num" id="d-total">—</div>
-            <div class="hero-unit">瓶　最低需求：<strong id="d-thresh" style="color:rgba(255,255,255,.6)">—</strong> 瓶</div>
-          </div>
-          <div class="hero-right">
-            <div class="hero-tag ht-nil" id="d-tag">尚無資料</div>
-            <div class="hero-stats">
-              與安全線差：<strong id="d-diff">—</strong>　　盤點日期：<strong id="d-date">—</strong>
-            </div>
-            <button class="btn btn-ghost btn-sm admin-only" onclick="exportReport()" style="margin-top:4px;display:none">
-              ↓ 匯出報表
-            </button>
-          </div>
+        <!-- KPI row -->
+        <div class="kpi-row" id="kpi-row">
+          <div class="kpi-card"><div class="kpi-label">品項數量</div><div class="kpi-value" id="kpi-products">—</div><div class="kpi-sub">正在管理中</div></div>
+          <div class="kpi-card"><div class="kpi-label">即期品總計</div><div class="kpi-value" id="kpi-expiring" style="color:var(--amber)">—</div><div class="kpi-sub">3 天內到期</div></div>
+          <div class="kpi-card"><div class="kpi-label">下次自動發信</div><div class="kpi-value" id="kpi-next-send" style="font-size:1rem;padding-top:4px">—</div><div class="kpi-sub">排程時間</div></div>
         </div>
 
-        <div class="stock-bar-wrap card" style="padding:18px 22px">
-          <div class="stock-bar-label">
-            <span>庫存水位</span>
-            <span id="bar-pct">—</span>
-          </div>
-          <div class="stock-bar-track">
-            <div class="stock-bar-fill" id="stock-bar" style="width:0%"></div>
-          </div>
+        <!-- Per-product cards -->
+        <div id="product-cards">
+          <div style="text-align:center;color:var(--ink-4);padding:48px;font-size:.83rem;">尚無盤點資料，請前往「效期庫存登錄」填報。</div>
         </div>
 
-        <div class="kpi-row">
-          <div class="kpi-card">
-            <div class="kpi-label">今日盤點批次</div>
-            <div class="kpi-value" id="kpi-batches">—</div>
-            <div class="kpi-sub">個效期批次</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">即期品數量</div>
-            <div class="kpi-value" id="kpi-expiring" style="color:var(--amber)">—</div>
-            <div class="kpi-sub">3 天內到期</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">下次自動發信</div>
-            <div class="kpi-value" id="kpi-next-send" style="font-size:1rem;padding-top:4px">—</div>
-            <div class="kpi-sub">排程時間</div>
-          </div>
-        </div>
-
-        <div class="card">
+        <!-- Detail table -->
+        <div class="card" id="dash-detail-card" style="display:none">
           <div class="card-head">
-            <span class="card-title">📋 各效期批次明細</span>
+            <span class="card-title">📋 最新盤點明細</span>
             <span class="topbar-meta" id="d-record-date"></span>
           </div>
           <div class="tbl-wrap">
             <table class="dt">
-              <thead><tr>
-                <th>有效期限</th><th>數量（瓶）</th><th>效期狀態</th><th>盤點人員</th><th>訂貨日</th>
-              </tr></thead>
-              <tbody id="d-tbody">
-                <tr><td colspan="5" class="empty-cell">尚無盤點資料，請前往「效期庫存登錄」填報。</td></tr>
-              </tbody>
+              <thead><tr><th>品項</th><th>有效期限</th><th>數量</th><th>單位</th><th>小計成本</th><th>效期狀態</th><th>盤點人員</th><th>訂貨日</th></tr></thead>
+              <tbody id="d-tbody"></tbody>
             </table>
+          </div>
+          <div class="admin-only" style="display:none;margin-top:14px">
+            <button class="btn btn-ghost btn-sm" onclick="exportReport()">↓ 匯出成本報表</button>
           </div>
         </div>
       </div>
 
+      <!-- ════ PAGE: Inventory ════ -->
       <div class="page" id="pg-inventory">
-        <div class="page-eyebrow">庫存管理</div>
+        <div class="page-eyebrow">庫存登錄</div>
         <h1 class="pg-title">效期庫存登錄</h1>
-        <p class="pg-sub">依不同有效期限分批填報現有數量，系統將同步至雲端資料庫。</p>
+        <p class="pg-sub">選擇品項後填報各效期批次數量，同步至雲端資料庫。每次填報一個品項。</p>
+
+        <div class="card">
+          <div class="card-title" style="margin-bottom:16px">📦 選擇品項</div>
+          <div class="form-row">
+            <div class="fg">
+              <label>品項</label>
+              <select class="fc" id="inv-product" onchange="onProductChange()"></select>
+            </div>
+            <div class="fg">
+              <label>單價（參考）</label>
+              <input type="text" class="fc mono" id="inv-unit-price" readonly style="background:var(--bg);color:var(--ink-3)">
+            </div>
+          </div>
+        </div>
 
         <div class="card">
           <div class="card-head">
-            <span class="card-title">📦 效期批次列表</span>
+            <span class="card-title">📋 效期批次</span>
             <button class="btn btn-ghost btn-sm" onclick="addBatchRow()">＋ 新增效期</button>
           </div>
           <div class="tbl-wrap">
-            <table class="dt" id="batch-tbl">
+            <table class="dt">
               <thead><tr>
                 <th style="width:180px">有效期限</th>
-                <th style="width:130px">數量（瓶）</th>
+                <th style="width:130px">數量</th>
                 <th>狀態評估</th>
                 <th style="width:36px"></th>
               </tr></thead>
@@ -745,8 +668,8 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
           <div class="card-title" style="margin-bottom:16px">⚙️ 盤點參數</div>
           <div class="form-row" style="margin-bottom:16px">
             <div class="fg">
-              <label>全店最低需求數量（瓶）</label>
-              <input type="number" class="fc mono" id="inv-thresh" value="15" min="0">
+              <label>最低需求數量</label>
+              <input type="number" class="fc mono" id="inv-thresh" value="0" min="0">
             </div>
             <div class="fg">
               <label>盤點／訂貨人員</label>
@@ -761,37 +684,59 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
               <input type="date" class="fc" id="inv-recorded">
             </div>
           </div>
-          <button class="btn btn-dark btn-full" onclick="saveInventory()">
-            ☁️ 儲存並同步至資料庫
-          </button>
+          <button class="btn btn-dark btn-full" onclick="saveInventory()">☁️ 儲存並同步至資料庫</button>
         </div>
       </div>
 
+      <!-- ════ PAGE: Products (admin only) ════ -->
+      <div class="page" id="pg-products">
+        <div class="page-eyebrow">品項管理</div>
+        <h1 class="pg-title">品項管理</h1>
+        <p class="pg-sub">新增、編輯或停用需要控管的品項。單價用於成本報表計算。</p>
+
+        <div class="card">
+          <div class="card-title" style="margin-bottom:14px">🏷️ 目前品項清單</div>
+          <div class="tbl-wrap">
+            <table class="dt">
+              <thead><tr><th>品項名稱</th><th>單位</th><th>單價（元）</th><th>狀態</th><th style="width:160px">操作</th></tr></thead>
+              <tbody id="products-tbody"><tr><td colspan="5" class="empty-cell">載入中…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title" style="margin-bottom:16px">➕ 新增品項</div>
+          <div class="form-row-3" style="margin-bottom:16px">
+            <div class="fg"><label>品項名稱</label><input type="text" class="fc" id="new-product-name" placeholder="例：鮮奶、優格、起司"></div>
+            <div class="fg"><label>單位</label><input type="text" class="fc" id="new-product-unit" placeholder="例：瓶、盒、片" value="瓶"></div>
+            <div class="fg"><label>單價（元）</label><input type="number" class="fc mono" id="new-product-price" placeholder="0" min="0" step="0.01"></div>
+          </div>
+          <button class="btn btn-dark" onclick="createProduct()">➕ 新增品項</button>
+        </div>
+      </div>
+
+      <!-- ════ PAGE: Staff ════ -->
       <div class="page" id="pg-staff">
         <div class="page-eyebrow">人員管理</div>
         <h1 class="pg-title">訂貨人員名單</h1>
-        <p class="pg-sub admin-only" style="display:none">新增或移除可出現在盤點下拉選單中的訂貨人員。變更即時同步至雲端。</p>
-        <p class="pg-sub staff-only">目前登記的訂貨人員清單（僅供查看，如需新增請聯絡管理員）。</p>
-
+        <p class="pg-sub admin-only" style="display:none">新增或移除盤點下拉選單中的訂貨人員。</p>
+        <p class="pg-sub staff-only">目前登記的訂貨人員清單（僅供查看）。</p>
         <div class="card">
           <div class="card-title" style="margin-bottom:14px">👥 目前人員清單</div>
           <ul class="person-list" id="staff-ul"></ul>
           <div class="divider admin-only" style="display:none"></div>
           <div class="admin-only" style="display:none;gap:10px;align-items:flex-end">
-            <div class="fg" style="flex:1">
-              <label>新增人員姓名</label>
-              <input type="text" class="fc" id="new-staff" placeholder="輸入姓名後按新增">
-            </div>
+            <div class="fg" style="flex:1"><label>新增人員姓名</label><input type="text" class="fc" id="new-staff" placeholder="輸入姓名後按新增"></div>
             <button class="btn btn-sky" onclick="addStaff()">＋ 新增</button>
           </div>
         </div>
       </div>
 
+      <!-- ════ PAGE: Schedule (admin only) ════ -->
       <div class="page" id="pg-schedule">
         <div class="page-eyebrow">郵件排程</div>
         <h1 class="pg-title">自動郵件設定</h1>
-        <p class="pg-sub">設定每日庫存日報的發信時間與收件對象。排程由後端 Cron Job 負責執行，儲存後下次執行時自動生效。</p>
-
+        <p class="pg-sub">設定每日庫存日報的發信時間與收件對象。排程由後端 Cron Job 負責執行。</p>
         <div class="card">
           <div class="card-title" style="margin-bottom:16px">⏰ 發信時間與收件人</div>
           <div class="form-row" style="margin-bottom:16px">
@@ -800,37 +745,22 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
               <input type="time" class="fc mono" id="sch-time" value="21:00" oninput="updateSchedPreview()">
               <span class="hint">Cron Job 每分鐘讀取此設定，時間到自動發信。</span>
             </div>
-            <div class="fg">
-              <label>本次發送收件人</label>
-              <select class="fc mono" id="sch-receiver"></select>
-            </div>
+            <div class="fg"><label>本次發送收件人</label><select class="fc mono" id="sch-receiver"></select></div>
           </div>
-          <div class="sched-preview">
-            <span class="pulse"></span>
-            <span id="sched-text">排程運作中，下次發信：—</span>
-          </div>
+          <div class="sched-preview"><span class="pulse"></span><span id="sched-text">排程運作中，下次發信：—</span></div>
           <div class="divider"></div>
           <button class="btn btn-dark" onclick="saveSchedule()">💾 儲存排程設定</button>
         </div>
-
         <div class="card">
           <div class="card-title" style="margin-bottom:12px">🔧 後端 Cron 參考設定</div>
-          <div class="cron-box" id="cron-preview">
-            <span class="cm"># 每天 21:00 自動執行</span><br>
-            <span class="cv">0 21 * * *</span>  python scheduler.py<br>
-            <span class="cm"># 需在 HuggingFace Space 或 VPS 上設定</span>
-          </div>
+          <div class="cron-box" id="cron-preview"><span class="cm"># 每天 21:00 自動執行</span><br><span class="cv">0 21 * * *</span>  python scheduler.py</div>
         </div>
-
         <div class="card">
           <div class="card-title" style="margin-bottom:14px">📬 收件人清單管理</div>
           <ul class="person-list" id="receiver-ul"></ul>
           <div class="divider"></div>
           <div style="display:flex;gap:10px;align-items:flex-end">
-            <div class="fg" style="flex:1">
-              <label>新增收件信箱</label>
-              <input type="email" class="fc mono" id="new-receiver" placeholder="email@example.com">
-            </div>
+            <div class="fg" style="flex:1"><label>新增收件信箱</label><input type="email" class="fc mono" id="new-receiver" placeholder="email@example.com"></div>
             <button class="btn btn-sky" onclick="addReceiver()">＋ 加入</button>
           </div>
         </div>
@@ -840,58 +770,31 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
       <div class="page" id="pg-users">
         <div class="page-eyebrow">系統管理</div>
         <h1 class="pg-title">使用者管理</h1>
-        <p class="pg-sub">新增或刪除系統帳號。管理員（admin）可使用所有功能；一般人員（staff）只能填報庫存與查看儀表板。</p>
-
+        <p class="pg-sub">新增或刪除系統帳號。admin 有完整權限；staff 只能填報庫存。</p>
         <div class="card">
           <div class="card-title" style="margin-bottom:14px">👥 目前帳號清單</div>
           <div class="tbl-wrap">
             <table class="dt">
-              <thead><tr>
-                <th>帳號</th><th>角色</th><th>建立時間</th><th style="width:80px"></th>
-              </tr></thead>
-              <tbody id="users-tbody">
-                <tr><td colspan="4" class="empty-cell">載入中…</td></tr>
-              </tbody>
+              <thead><tr><th>帳號</th><th>角色</th><th>建立時間</th><th style="width:80px"></th></tr></thead>
+              <tbody id="users-tbody"><tr><td colspan="4" class="empty-cell">載入中…</td></tr></tbody>
             </table>
           </div>
         </div>
-
         <div class="card">
           <div class="card-title" style="margin-bottom:16px">➕ 新增帳號</div>
           <div class="form-row" style="margin-bottom:16px">
-            <div class="fg">
-              <label>帳號名稱</label>
-              <input type="text" class="fc" id="new-username" placeholder="英數字，不可重複">
-            </div>
-            <div class="fg">
-              <label>角色</label>
-              <select class="fc" id="new-role">
-                <option value="staff">staff — 一般人員（僅庫存填報）</option>
-                <option value="admin">admin — 管理員（完整權限）</option>
-              </select>
-            </div>
-            <div class="fg">
-              <label>密碼</label>
-              <div class="pw-wrap">
-                <input type="password" class="fc" id="new-pw" placeholder="至少 6 個字元">
-                <button class="pw-toggle" onclick="togglePw('new-pw',this)" type="button">👁</button>
-              </div>
-            </div>
-            <div class="fg">
-              <label>確認密碼</label>
-              <div class="pw-wrap">
-                <input type="password" class="fc" id="new-pw2" placeholder="再輸入一次">
-                <button class="pw-toggle" onclick="togglePw('new-pw2',this)" type="button">👁</button>
-              </div>
-            </div>
+            <div class="fg"><label>帳號名稱</label><input type="text" class="fc" id="new-username" placeholder="英數字，不可重複"></div>
+            <div class="fg"><label>角色</label><select class="fc" id="new-role"><option value="staff">staff — 一般人員</option><option value="admin">admin — 管理員</option></select></div>
+            <div class="fg"><label>密碼</label><div class="pw-wrap"><input type="password" class="fc" id="new-pw" placeholder="至少 6 個字元"><button class="pw-toggle" onclick="togglePw('new-pw',this)" type="button">👁</button></div></div>
+            <div class="fg"><label>確認密碼</label><div class="pw-wrap"><input type="password" class="fc" id="new-pw2" placeholder="再輸入一次"><button class="pw-toggle" onclick="togglePw('new-pw2',this)" type="button">👁</button></div></div>
           </div>
           <button class="btn btn-dark" onclick="createUser()">➕ 建立帳號</button>
         </div>
       </div>
 
-    </div>
-  </div>
-</div>
+    </div><!-- /main-content -->
+  </div><!-- /app-shell -->
+</div><!-- /screen-app -->
 
 <div id="toast"></div>
 
@@ -902,68 +805,44 @@ let token       = localStorage.getItem('mf_token') || '';
 let currentUser = localStorage.getItem('mf_user')  || '';
 let currentRole = localStorage.getItem('mf_role')  || 'staff';
 const S = {
-  staff:     [],
-  receivers: [],
-  records:   [],
-  schedTime: '21:00',
-  activeRec: '',
-  users:     [],
+  staff: [], receivers: [], schedTime: '21:00', activeRec: '',
+  users: [], products: [],
+  latestDate: null, items: [],   // multi-product inventory cache
 };
 
+/* ── API helper ── */
 async function api(method, path, body) {
   const opts = {
     method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-    },
-    ...(body ? { body: JSON.stringify(body) } : {}),
+    headers: { 'Content-Type': 'application/json', ...(token ? {'Authorization':`Bearer ${token}`} : {}) },
+    ...(body ? {body: JSON.stringify(body)} : {}),
   };
   try {
-    const res = await fetch(API_BASE + path, opts);
+    const res  = await fetch(API_BASE + path, opts);
     if (res.status === 401) { doLogout(); return null; }
     const data = await res.json().catch(() => ({}));
     setPill(res.ok ? 'ok' : 'err', res.ok ? 'API 正常' : `錯誤 ${res.status}`);
     return res.ok ? data : null;
-  } catch (e) {
-    setPill('err', 'API 無法連線');
-    return null;
-  }
+  } catch(e) { setPill('err','API 無法連線'); return null; }
 }
 function setPill(state, text) {
   const pill = document.getElementById('api-status-pill');
   const txt  = document.getElementById('api-status-text');
-  pill.className = 'api-pill' + (state === 'err' ? ' err' : state === 'loading' ? ' loading' : '');
+  pill.className = 'api-pill' + (state==='err'?' err': state==='loading'?' loading':'');
   txt.textContent = text;
 }
 
+/* ── Auth ── */
 async function doLogin() {
-  const user = document.getElementById('login-user').value.trim();
-  const pass = document.getElementById('login-pass').value;
+  const user  = document.getElementById('login-user').value.trim();
+  const pass  = document.getElementById('login-pass').value;
   const errEl = document.getElementById('login-err');
   errEl.style.display = 'none';
-
-  if (API_BASE.includes('your-space')) {
-    if (user === 'admin' && pass === 'password') {
-      token = 'demo-jwt-token';
-      currentUser = user;
-      localStorage.setItem('mf_token', token);
-      localStorage.setItem('mf_user', user);
-      enterApp();
-    } else {
-      errEl.textContent = '帳號或密碼錯誤。';
-      errEl.style.display = 'block';
-    }
-    return;
-  }
-
   showLoading(true);
-  const data = await api('POST', '/auth/login', { username: user, password: pass });
+  const data = await api('POST', '/auth/login', {username: user, password: pass});
   showLoading(false);
   if (data?.token) {
-    token       = data.token;
-    currentUser = user;
-    currentRole = data.role || 'staff';
+    token = data.token; currentUser = user; currentRole = data.role || 'staff';
     localStorage.setItem('mf_token', token);
     localStorage.setItem('mf_user',  currentUser);
     localStorage.setItem('mf_role',  currentRole);
@@ -973,17 +852,12 @@ async function doLogin() {
     errEl.style.display = 'block';
   }
 }
-
-document.getElementById('login-pass').addEventListener('keydown', e => {
-  if (e.key === 'Enter') doLogin();
-});
+document.getElementById('login-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 
 function doLogout() {
   token = ''; currentUser = ''; currentRole = 'staff';
-  localStorage.removeItem('mf_token');
-  localStorage.removeItem('mf_user');
-  localStorage.removeItem('mf_role');
-  document.getElementById('screen-app').style.display = 'none';
+  ['mf_token','mf_user','mf_role'].forEach(k => localStorage.removeItem(k));
+  document.getElementById('screen-app').style.display  = 'none';
   document.getElementById('screen-login').style.display = 'flex';
 }
 
@@ -994,68 +868,30 @@ function enterApp() {
   document.getElementById('sb-ava').textContent   = currentUser[0]?.toUpperCase() || 'U';
   document.getElementById('sb-role').textContent  = currentRole === 'admin' ? '管理員' : '一般人員';
   document.getElementById('topbar-date').textContent =
-    new Date().toLocaleDateString('zh-TW', {year:'numeric', month:'2-digit', day:'2-digit', weekday:'short'});
-
+    new Date().toLocaleDateString('zh-TW',{year:'numeric',month:'2-digit',day:'2-digit',weekday:'short'});
   const isAdmin = currentRole === 'admin';
-
-  // admin-only：管理員顯示，一般人員隱藏
   document.querySelectorAll('.admin-only').forEach(el => {
-    // div 的新增表單需要 flex，其餘用預設 '' 讓 CSS 決定
-    const needsFlex = el.tagName === 'DIV' && el.querySelector('.fg');
+    const needsFlex = el.tagName==='DIV' && el.querySelector('.fg');
     el.style.display = isAdmin ? (needsFlex ? 'flex' : '') : 'none';
   });
-
-  // staff-only：一般人員顯示，管理員隱藏
-  document.querySelectorAll('.staff-only').forEach(el => {
-    el.style.display = isAdmin ? 'none' : '';
-  });
-
+  document.querySelectorAll('.staff-only').forEach(el => { el.style.display = isAdmin ? 'none' : ''; });
   initApp();
 }
 
-// 啟動時若 localStorage 有殘留 token，不直接信任它，而是先驗證是否仍然有效。
 (async function bootAuth() {
   if (!token) return;
-
-  if (API_BASE.includes('your-space')) {
-    enterApp();
-    return;
-  }
-
-  // 用 /users/me 同時驗證 token 有效性並取得最新 role
   showLoading(true);
   const me = await api('GET', '/users/me');
   showLoading(false);
-
-  if (me?.username) {
-    currentRole = me.role || 'staff';
-    localStorage.setItem('mf_role', currentRole);
-    enterApp();
-  } else {
-    doLogout();
-  }
+  if (me?.username) { currentRole = me.role || 'staff'; localStorage.setItem('mf_role', currentRole); enterApp(); }
+  else doLogout();
 })();
 
-async function initApp() {
-  const today = todayStr();
-  document.getElementById('inv-order').value    = today;
-  document.getElementById('inv-recorded').value = today;
-
-  if (document.getElementById('batch-body').rows.length === 0) addBatchRow();
-
-  const tasks = [loadStaff(), loadReceivers(), loadSchedule(), loadInventory()];
-  if (currentRole === 'admin') tasks.push(loadUsers());
-  await Promise.all(tasks);
-
-  updateSchedPreview();
-}
-
+/* ── Navigation ── */
 const PAGE_TITLES = {
-  'pg-dashboard': '儀表板',
-  'pg-inventory': '效期庫存登錄',
-  'pg-staff':     '訂貨人員',
-  'pg-schedule':  '自動郵件排程',
-  'pg-users':     '使用者管理',
+  'pg-dashboard':'儀表板','pg-inventory':'效期庫存登錄',
+  'pg-products':'品項管理','pg-staff':'訂貨人員',
+  'pg-schedule':'自動郵件排程','pg-users':'使用者管理',
 };
 document.querySelectorAll('.sb-item').forEach(el => {
   el.addEventListener('click', () => {
@@ -1064,81 +900,168 @@ document.querySelectorAll('.sb-item').forEach(el => {
     el.classList.add('active');
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById(target).classList.add('active');
-    document.getElementById('topbar-title').textContent = PAGE_TITLES[target];
+    document.getElementById('topbar-title').textContent = PAGE_TITLES[target] || '';
     document.getElementById('sidebar').classList.remove('open');
     if (target === 'pg-dashboard') renderDashboard();
   });
 });
 
+/* ── Init ── */
+async function initApp() {
+  const today = todayStr();
+  document.getElementById('inv-order').value    = today;
+  document.getElementById('inv-recorded').value = today;
+  if (!document.getElementById('batch-body').rows.length) addBatchRow();
+  const tasks = [loadProducts(), loadStaff(), loadReceivers(), loadSchedule(), loadInventory()];
+  if (currentRole === 'admin') tasks.push(loadUsers());
+  await Promise.all(tasks);
+  updateSchedPreview();
+}
+
+/* ── Products ── */
+async function loadProducts() {
+  if (API_BASE.includes('your-space')) {
+    S.products = [{id:1,name:'鮮奶',unit:'瓶',unit_price:35,active:true}];
+  } else {
+    const data = await api('GET', '/products');
+    if (data?.products) S.products = data.products.filter(p => p.active);
+  }
+  renderProductSelect();
+  renderProductsTable();
+}
+
+function renderProductSelect() {
+  const sel = document.getElementById('inv-product');
+  if (!sel) return;
+  const prev = parseInt(sel.value);
+  sel.innerHTML = S.products.map(p => `<option value="${p.id}">${p.name}（${p.unit}）</option>`).join('');
+  if (S.products.find(p => p.id === prev)) sel.value = prev;
+  onProductChange();
+}
+
+function onProductChange() {
+  const pid  = parseInt(document.getElementById('inv-product')?.value);
+  const prod = S.products.find(p => p.id === pid);
+  const priceEl = document.getElementById('inv-unit-price');
+  if (priceEl && prod) priceEl.value = `NT$ ${prod.unit_price} / ${prod.unit}`;
+}
+
+function renderProductsTable() {
+  const tbody = document.getElementById('products-tbody');
+  if (!tbody) return;
+  const all = [...S.products];
+  if (!all.length) { tbody.innerHTML='<tr><td colspan="5" class="empty-cell">尚無品項，請新增。</td></tr>'; return; }
+  tbody.innerHTML = all.map(p => `
+    <tr>
+      <td><strong>${p.name}</strong></td>
+      <td>${p.unit}</td>
+      <td class="mono">NT$ ${Number(p.unit_price).toFixed(2)}</td>
+      <td>${p.active ? '<span class="badge b-ok">啟用</span>' : '<span class="badge b-bad">停用</span>'}</td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-xs" onclick="editProduct(${p.id})">編輯</button>
+        <button class="btn btn-danger btn-xs" onclick="toggleProduct(${p.id},${!p.active})">${p.active?'停用':'啟用'}</button>
+        <button class="btn btn-danger btn-xs" onclick="deleteProduct(${p.id})">刪除</button>
+      </td>
+    </tr>`).join('');
+}
+
+async function createProduct() {
+  const name  = document.getElementById('new-product-name').value.trim();
+  const unit  = document.getElementById('new-product-unit').value.trim() || '瓶';
+  const price = parseFloat(document.getElementById('new-product-price').value) || 0;
+  if (!name) { toast('請填寫品項名稱','warn'); return; }
+  showLoading(true);
+  const res = await api('POST', '/products', {name, unit, unit_price: price});
+  showLoading(false);
+  if (!res) return;
+  document.getElementById('new-product-name').value  = '';
+  document.getElementById('new-product-price').value = '';
+  await loadProducts();
+  toast(`✅ 已新增品項：${name}`, 'ok');
+}
+
+function editProduct(id) {
+  const prod = S.products.find(p => p.id === id);
+  if (!prod) return;
+  const unit  = prompt(`修改「${prod.name}」的單位（目前：${prod.unit}）：`, prod.unit);
+  if (unit === null) return;
+  const price = prompt(`修改「${prod.name}」的單價（目前：${prod.unit_price}）：`, prod.unit_price);
+  if (price === null) return;
+  showLoading(true);
+  api('PUT', `/products/${id}`, {unit: unit.trim(), unit_price: parseFloat(price)||0})
+    .then(() => { showLoading(false); loadProducts(); toast('品項已更新','ok'); });
+}
+
+async function toggleProduct(id, active) {
+  showLoading(true);
+  await api('PUT', `/products/${id}`, {active});
+  showLoading(false);
+  await loadProducts();
+  toast(active ? '品項已啟用' : '品項已停用');
+}
+
+async function deleteProduct(id) {
+  const prod = S.products.find(p => p.id === id);
+  if (!confirm(`確定要刪除品項「${prod?.name}」？此操作無法復原。`)) return;
+  showLoading(true);
+  const res = await api('DELETE', `/products/${id}`);
+  showLoading(false);
+  if (!res) return;
+  await loadProducts();
+  toast('品項已刪除');
+}
+
+/* ── Inventory ── */
 async function loadInventory() {
   if (API_BASE.includes('your-space')) {
-    S.records = [
-      { exp: futureDate(4), qty: 8,  thresh: 15, staff: '林世杰', order: futureDate(1), recorded: todayStr() },
-      { exp: futureDate(7), qty: 12, thresh: 15, staff: '林世杰', order: futureDate(1), recorded: todayStr() },
-    ];
-    renderDashboard();
-    return;
-  }
-  // 後端 GET /inventory/latest 回傳 { record: {...主記錄}, batches: [...效期批次] }
-  // 主記錄（min_threshold / staff_name / order_date / recorded_date）和批次（expiry_date / quantity）是分開的，
-  // 批次陣列本身「沒有」這些欄位，必須從 record 補上，否則全部會是 undefined。
-  const data = await api('GET', '/inventory/latest');
-  if (data?.record && data?.batches) {
-    const rec = data.record;
-    S.records = data.batches.map(b => ({
-      exp:      b.expiry_date,
-      qty:      b.quantity,
-      thresh:   rec.min_threshold,
-      staff:    rec.staff_name,
-      order:    rec.order_date,
-      recorded: rec.recorded_date,
+    S.latestDate = todayStr();
+    S.items = S.products.map(p => ({
+      product_id: p.id, product_name: p.name, unit: p.unit, unit_price: p.unit_price,
+      min_threshold: 10, order_date: todayStr(), staff_name: '林世杰', total_qty: 20,
+      batches: [{expiry_date: futureDate(5), quantity: 20}],
     }));
   } else {
-    S.records = [];
+    const data = await api('GET', '/inventory/latest');
+    S.latestDate = data?.recorded_date || null;
+    S.items      = data?.items || [];
   }
   renderDashboard();
 }
 
 async function saveInventory() {
   const batches = getBatches();
-  if (!batches.length) { toast('請填寫至少一筆效期資料', 'warn'); return; }
-  const thresh   = parseInt(document.getElementById('inv-thresh').value) || 0;
+  if (!batches.length) { toast('請填寫至少一筆效期資料','warn'); return; }
+  const pid      = parseInt(document.getElementById('inv-product').value);
+  const thresh   = parseInt(document.getElementById('inv-thresh').value)  || 0;
   const staffVal = document.getElementById('inv-staff').value;
   const order    = document.getElementById('inv-order').value;
   const recorded = document.getElementById('inv-recorded').value;
+  if (!pid) { toast('請選擇品項','warn'); return; }
 
-  const payload = {
-    recorded_date: recorded,
-    min_threshold: thresh,
-    staff_name: staffVal,
-    order_date: order,
-    batches: batches.map(b => ({ expiry_date: b.exp, quantity: b.qty })),
-  };
+  showLoading(true);
+  const res = await api('POST', '/inventory/save', {
+    product_id: pid, recorded_date: recorded, min_threshold: thresh,
+    order_date: order, staff_name: staffVal,
+    batches: batches.map(b => ({expiry_date: b.exp, quantity: b.qty})),
+  });
+  showLoading(false);
+  if (!res) return;
 
-  if (!API_BASE.includes('your-space')) {
-    showLoading(true);
-    const res = await api('POST', '/inventory/save', payload);
-    showLoading(false);
-    if (!res) return;
-  }
-
-  S.records = S.records.filter(r => r.recorded !== recorded);
-  batches.forEach(b => S.records.push({ exp: b.exp, qty: b.qty, thresh, staff: staffVal, order, recorded }));
-  renderDashboard();
-  toast('盤點資料已同步儲存 ☁️', 'ok');
+  await loadInventory();
+  toast('盤點資料已同步儲存 ☁️','ok');
 }
 
-function addBatchRow(exp = '', qty = 0) {
-  const id  = 'r' + Date.now() + Math.random().toString(36).slice(2, 5);
+/* ── Batch rows ── */
+function addBatchRow(exp='', qty=0) {
+  const id  = 'r'+Date.now()+Math.random().toString(36).slice(2,5);
   const def = todayStr();
   const tr  = document.createElement('tr');
   tr.id = id;
   tr.innerHTML = `
-    <td><input type="date" class="bi" value="${exp || def}"></td>
+    <td><input type="date" class="bi" value="${exp||def}"></td>
     <td><input type="number" class="bi" value="${qty}" min="0" style="width:100px"></td>
     <td class="bst"></td>
-    <td><button class="icon-btn ib-del" onclick="delRow('${id}')">✕</button></td>
-  `;
+    <td><button class="icon-btn ib-del" onclick="delRow('${id}')">✕</button></td>`;
   document.getElementById('batch-body').appendChild(tr);
   tr.querySelector('input[type=date]').addEventListener('change', () => evalRow(tr));
   evalRow(tr);
@@ -1150,434 +1073,321 @@ function delRow(id) {
 function evalRow(tr) {
   const v = tr.querySelector('input[type=date]').value;
   const c = tr.querySelector('.bst');
-  if (!v) { c.innerHTML = ''; return; }
+  if (!v) { c.innerHTML=''; return; }
   const d = daysDiff(v);
-  c.innerHTML = d < 0  ? '<span class="badge b-bad">❌ 已過期</span>'
-              : d <= 3 ? '<span class="badge b-warn">⏳ 即期品</span>'
-                       : '<span class="badge b-ok">🟢 安全期</span>';
+  c.innerHTML = d<0  ? '<span class="badge b-bad">❌ 已過期</span>'
+              : d<=3 ? '<span class="badge b-warn">⏳ 即期品</span>'
+                     : '<span class="badge b-ok">🟢 安全期</span>';
 }
 function getBatches() {
   return [...document.getElementById('batch-body').rows].map(r => ({
     exp: r.querySelector('input[type=date]').value,
-    qty: parseInt(r.querySelector('input[type=number]').value) || 0,
+    qty: parseInt(r.querySelector('input[type=number]').value)||0,
   })).filter(b => b.exp);
 }
 
+/* ── Dashboard ── */
 function renderDashboard() {
-  if (!S.records.length) {
-    setHero(null); return;
-  }
-  const latest = [...new Set(S.records.map(r => r.recorded))].sort().at(-1);
-  const rows   = S.records.filter(r => r.recorded === latest);
-  const total  = rows.reduce((s, r) => s + r.qty, 0);
-  const thresh = rows[0].thresh;
-  const diff   = total - thresh;
-  const expiring = rows.filter(r => daysDiff(r.exp) >= 0 && daysDiff(r.exp) <= 3)
-                       .reduce((s, r) => s + r.qty, 0);
+  const kpiProds    = document.getElementById('kpi-products');
+  const kpiExpiring = document.getElementById('kpi-expiring');
+  const container   = document.getElementById('product-cards');
+  const detailCard  = document.getElementById('dash-detail-card');
+  const dateLabel   = document.getElementById('d-record-date');
+  const tbody       = document.getElementById('d-tbody');
 
-  setHero({ total, thresh, diff, latest, rows, expiring });
-  document.getElementById('kpi-batches').textContent  = rows.length;
-  document.getElementById('kpi-expiring').textContent = expiring;
-
-  const tbody = document.getElementById('d-tbody');
-  tbody.innerHTML = rows.map(r => {
-    const d = daysDiff(r.exp);
-    const badge = d < 0  ? '<span class="badge b-bad">❌ 已過期</span>'
-                : d <= 3 ? '<span class="badge b-warn">⏳ 即期品</span>'
-                         : '<span class="badge b-ok">🟢 安全期</span>';
-    return `<tr>
-      <td class="mono">${r.exp}</td>
-      <td class="mono">${r.qty}</td>
-      <td>${badge}</td>
-      <td>${r.staff}</td>
-      <td class="mono">${r.order}</td>
-    </tr>`;
-  }).join('');
-  document.getElementById('d-record-date').textContent = `盤點日：${latest}`;
-}
-
-function setHero(d) {
-  const el  = document.getElementById('d-total');
-  const tag = document.getElementById('d-tag');
-  const bar = document.getElementById('stock-bar');
-  if (!d) {
-    el.textContent  = '—'; el.className = 'hero-num';
-    tag.textContent = '尚無資料'; tag.className = 'hero-tag ht-nil';
-    document.getElementById('d-thresh').textContent = '—';
-    document.getElementById('d-diff').textContent   = '—';
-    document.getElementById('d-date').textContent   = '—';
-    document.getElementById('bar-pct').textContent  = '—';
-    bar.style.width = '0%'; bar.className = 'stock-bar-fill';
-    document.getElementById('d-tbody').innerHTML =
-      '<tr><td colspan="5" class="empty-cell">尚無盤點資料，請前往「效期庫存登錄」填報。</td></tr>';
+  if (!S.items.length) {
+    kpiProds.textContent    = '—';
+    kpiExpiring.textContent = '—';
+    container.innerHTML = '<div style="text-align:center;color:var(--ink-4);padding:48px;font-size:.83rem;">尚無盤點資料，請前往「效期庫存登錄」填報。</div>';
+    detailCard.style.display = 'none';
     return;
   }
-  el.textContent = d.total;
-  document.getElementById('d-thresh').textContent = d.thresh;
-  document.getElementById('d-diff').textContent   = (d.diff >= 0 ? '+' : '') + d.diff + ' 瓶';
-  document.getElementById('d-date').textContent   = d.latest;
 
-  const pct = d.thresh > 0 ? Math.min(Math.round(d.total / d.thresh * 100), 100) : 100;
-  document.getElementById('bar-pct').textContent = pct + '%';
-  bar.style.width = pct + '%';
+  kpiProds.textContent = S.items.length;
+  let totalExpiring = 0;
+  S.items.forEach(item => {
+    item.batches.forEach(b => {
+      const d = daysDiff(b.expiry_date);
+      if (d >= 0 && d <= 3) totalExpiring += b.quantity;
+    });
+  });
+  kpiExpiring.textContent = totalExpiring;
 
-  if (d.diff <= 0) {
-    el.className = 'hero-num bad';
-    tag.textContent = '⚠️ 需要叫貨'; tag.className = 'hero-tag ht-bad';
-    bar.className = 'stock-bar-fill bad';
-  } else if (d.diff <= 5) {
-    el.className = 'hero-num warn';
-    tag.textContent = '⏳ 即將見底'; tag.className = 'hero-tag ht-warn';
-    bar.className = 'stock-bar-fill warn';
-  } else {
-    el.className = 'hero-num ok';
-    tag.textContent = '✅ 庫存充足'; tag.className = 'hero-tag ht-ok';
-    bar.className = 'stock-bar-fill';
-  }
+  // Per-product hero cards
+  container.innerHTML = S.items.map(item => {
+    const total = item.total_qty;
+    const diff  = total - item.min_threshold;
+    const pct   = item.min_threshold > 0 ? Math.min(Math.round(total/item.min_threshold*100),100) : 100;
+    const statusCls = diff<=0 ? 'bad' : diff<=5 ? 'warn' : 'ok';
+    const tagMap = {ok:'✅ 庫存充足', warn:'⏳ 即將見底', bad:'⚠️ 需要叫貨'};
+    const barCls = {ok:'', warn:'warn', bad:'bad'};
+    const cost   = (total * item.unit_price).toFixed(0);
+    return `
+    <div class="card" style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+        <div>
+          <div style="font-size:.67rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px">${item.product_name}</div>
+          <div style="font-family:'DM Serif Display',serif;font-size:2.8rem;line-height:1;color:${statusCls==='ok'?'var(--green)':statusCls==='warn'?'var(--amber)':'var(--red)'}">${total}</div>
+          <div style="font-size:.75rem;color:var(--ink-3);margin-top:4px">${item.unit}　最低需求：${item.min_threshold} ${item.unit}</div>
+        </div>
+        <div style="text-align:right">
+          <div class="hero-tag ht-${statusCls}" style="margin-bottom:8px">${tagMap[statusCls]}</div>
+          <div style="font-size:.75rem;color:var(--ink-3)">與安全線差：<strong>${diff>=0?'+':''}${diff}</strong></div>
+          <div style="font-size:.75rem;color:var(--ink-3)">庫存成本：<strong>NT$ ${Number(cost).toLocaleString()}</strong></div>
+        </div>
+      </div>
+      <div class="stock-bar-label"><span>庫存水位</span><span>${pct}%</span></div>
+      <div class="stock-bar-track"><div class="stock-bar-fill ${barCls[statusCls]}" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+
+  // Detail table
+  detailCard.style.display = 'block';
+  if (S.latestDate) dateLabel.textContent = `盤點日：${S.latestDate}`;
+  const rows = [];
+  S.items.forEach(item => {
+    item.batches.forEach(b => {
+      const d    = daysDiff(b.expiry_date);
+      const badge = d<0 ? '<span class="badge b-bad">❌ 已過期</span>'
+                  : d<=3 ? '<span class="badge b-warn">⏳ 即期品</span>'
+                         : '<span class="badge b-ok">🟢 安全期</span>';
+      const cost  = (b.quantity * item.unit_price).toFixed(2);
+      rows.push(`<tr>
+        <td><strong>${item.product_name}</strong></td>
+        <td class="mono">${b.expiry_date}</td>
+        <td class="mono">${b.quantity}</td>
+        <td>${item.unit}</td>
+        <td class="mono">NT$ ${Number(cost).toLocaleString()}</td>
+        <td>${badge}</td>
+        <td>${item.staff_name}</td>
+        <td class="mono">${item.order_date||'—'}</td>
+      </tr>`);
+    });
+  });
+  tbody.innerHTML = rows.join('');
 }
 
+/* ── Staff ── */
 async function loadStaff() {
-  if (API_BASE.includes('your-space')) {
-    S.staff = ['林世杰', '張店長', '陳組長'];
-  } else {
+  if (API_BASE.includes('your-space')) { S.staff = ['林世杰','張店長','陳組長']; }
+  else {
     const data = await api('GET', '/staff');
     if (data?.staff) S.staff = data.staff.map(s => s.name);
   }
-  renderStaffList();
-  renderStaffSelect();
+  renderStaffList(); renderStaffSelect();
 }
 function renderStaffList() {
   const isAdmin = currentRole === 'admin';
   document.getElementById('staff-ul').innerHTML = S.staff.length
-    ? S.staff.map(n => `
-      <li class="person-li">
-        <span><span class="person-avatar">${n[0]}</span>${n}</span>
-        ${isAdmin ? `<button class="btn btn-danger btn-xs" onclick="removeStaff('${n}')">移除</button>` : ''}
-      </li>`).join('')
-    : '<li style="color:var(--ink-4);font-size:.8rem;padding:8px 10px">尚無人員，請新增。</li>';
+    ? S.staff.map(n => `<li class="person-li"><span><span class="person-avatar">${n[0]}</span>${n}</span>${isAdmin?`<button class="btn btn-danger btn-xs" onclick="removeStaff('${n}')">移除</button>`:''}</li>`).join('')
+    : '<li style="color:var(--ink-4);font-size:.8rem;padding:8px 10px">尚無人員。</li>';
 }
 function renderStaffSelect() {
-  const sel  = document.getElementById('inv-staff');
+  const sel = document.getElementById('inv-staff');
   const prev = sel.value;
   sel.innerHTML = S.staff.map(n => `<option value="${n}">${n}</option>`).join('');
   if (S.staff.includes(prev)) sel.value = prev;
 }
 async function addStaff() {
   const name = document.getElementById('new-staff').value.trim();
-  if (!name) { toast('請填寫姓名', 'warn'); return; }
-  if (S.staff.includes(name)) { toast('此姓名已存在', 'warn'); return; }
-
-  if (!API_BASE.includes('your-space')) {
-    showLoading(true);
-    const res = await api('POST', '/staff', { name });
-    showLoading(false);
-    if (!res) return;
-  }
+  if (!name) { toast('請填寫姓名','warn'); return; }
+  showLoading(true);
+  const res = await api('POST', '/staff', {name});
+  showLoading(false);
+  if (!res) return;
   S.staff.push(name);
   document.getElementById('new-staff').value = '';
   renderStaffList(); renderStaffSelect();
-  toast('已新增：' + name, 'ok');
+  toast('已新增：'+name,'ok');
 }
 async function removeStaff(name) {
-  if (!API_BASE.includes('your-space')) {
-    showLoading(true);
-    const res = await api('DELETE', `/staff/${encodeURIComponent(name)}`);
-    showLoading(false);
-    if (!res) return;
-  }
+  showLoading(true);
+  const res = await api('DELETE', `/staff/${encodeURIComponent(name)}`);
+  showLoading(false);
+  if (!res) return;
   S.staff = S.staff.filter(n => n !== name);
   renderStaffList(); renderStaffSelect();
-  toast('已移除：' + name);
+  toast('已移除：'+name);
 }
 
+/* ── Receivers ── */
 async function loadReceivers() {
-  if (API_BASE.includes('your-space')) {
-    S.receivers  = ['applin804@gmail.com'];
-    S.activeRec  = 'applin804@gmail.com';
-  } else {
-    const data = await api('GET', '/schedule');
-    if (data) {
-      S.receivers = data.receivers || [];
-      S.activeRec = data.active_receiver || '';
-    }
-  }
-  renderReceiverList();
-  renderReceiverDropdown();
+  if (API_BASE.includes('your-space')) { S.receivers=['applin804@gmail.com']; S.activeRec='applin804@gmail.com'; return; }
+  const data = await api('GET', '/schedule');
+  if (data) { S.receivers = data.receivers||[]; S.activeRec = data.active_receiver||''; }
+  renderReceiverList(); renderReceiverDropdown();
 }
 function renderReceiverList() {
   document.getElementById('receiver-ul').innerHTML = S.receivers.length
-    ? S.receivers.map(e => `
-      <li class="person-li">
-        <span style="font-family:'DM Mono',monospace;font-size:.79rem">${e}</span>
-        <button class="btn btn-danger btn-xs" onclick="removeReceiver('${e}')">移除</button>
-      </li>`).join('')
+    ? S.receivers.map(e => `<li class="person-li"><span style="font-family:'DM Mono',monospace;font-size:.79rem">${e}</span><button class="btn btn-danger btn-xs" onclick="removeReceiver('${e}')">移除</button></li>`).join('')
     : '<li style="color:var(--ink-4);font-size:.8rem;padding:8px 10px">尚無收件人。</li>';
 }
 function renderReceiverDropdown() {
   const sel = document.getElementById('sch-receiver');
-  sel.innerHTML = S.receivers.map(e =>
-    `<option value="${e}"${e === S.activeRec ? ' selected' : ''}>${e}</option>`).join('');
+  sel.innerHTML = S.receivers.map(e => `<option value="${e}"${e===S.activeRec?' selected':''}>${e}</option>`).join('');
 }
 async function addReceiver() {
   const val = document.getElementById('new-receiver').value.trim();
-  if (!val || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) { toast('請輸入有效信箱', 'warn'); return; }
-  if (S.receivers.includes(val)) { toast('此信箱已存在', 'warn'); return; }
-  S.receivers.push(val);
-  document.getElementById('new-receiver').value = '';
+  if (!val||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) { toast('請輸入有效信箱','warn'); return; }
+  if (S.receivers.includes(val)) { toast('此信箱已存在','warn'); return; }
+  S.receivers.push(val); document.getElementById('new-receiver').value='';
   renderReceiverList(); renderReceiverDropdown();
-  toast('已新增收件人：' + val, 'ok');
+  toast('已新增：'+val,'ok');
 }
 async function removeReceiver(e) {
-  S.receivers = S.receivers.filter(x => x !== e);
-  if (S.activeRec === e) S.activeRec = S.receivers[0] || '';
-  renderReceiverList(); renderReceiverDropdown();
-  toast('已移除：' + e);
+  S.receivers = S.receivers.filter(x => x!==e);
+  if (S.activeRec===e) S.activeRec = S.receivers[0]||'';
+  renderReceiverList(); renderReceiverDropdown(); toast('已移除：'+e);
 }
 
+/* ── Schedule ── */
 async function loadSchedule() {
-  if (!API_BASE.includes('your-space')) {
-    const data = await api('GET', '/schedule');
-    if (data?.schedule_time) {
-      // PostgreSQL 的 TIME 欄位用 ::text 轉換後可能是 "21:00:00"（含秒），
-      // 但 <input type="time"> 只接受 "HH:MM"，這裡統一裁切前 5 碼。
-      S.schedTime = data.schedule_time.slice(0, 5);
-      document.getElementById('sch-time').value = S.schedTime;
-    }
+  if (API_BASE.includes('your-space')) return;
+  const data = await api('GET', '/schedule');
+  if (data?.schedule_time) {
+    S.schedTime = data.schedule_time.slice(0,5);
+    document.getElementById('sch-time').value = S.schedTime;
+    S.receivers  = data.receivers||[];
+    S.activeRec  = data.active_receiver||'';
+    renderReceiverList(); renderReceiverDropdown();
   }
   updateSchedPreview();
 }
 async function saveSchedule() {
-  const t   = document.getElementById('sch-time').value.slice(0, 5);
+  const t   = document.getElementById('sch-time').value.slice(0,5);
   const rec = document.getElementById('sch-receiver').value;
   S.schedTime = t; S.activeRec = rec;
-
-  if (!API_BASE.includes('your-space')) {
-    showLoading(true);
-    const res = await api('PUT', '/schedule', {
-      schedule_time: t,
-      active_receiver: rec,
-      receivers: S.receivers,
-    });
-    showLoading(false);
-    if (!res) return;
-  }
-  updateSchedPreview();
-  toast('排程設定已儲存 ✔', 'ok');
+  showLoading(true);
+  const res = await api('PUT', '/schedule', {schedule_time:t, active_receiver:rec, receivers:S.receivers});
+  showLoading(false);
+  if (!res) return;
+  updateSchedPreview(); toast('排程設定已儲存 ✔','ok');
 }
 function updateSchedPreview() {
   const t = document.getElementById('sch-time')?.value || S.schedTime;
-  const [h, m] = t.split(':').map(Number);
-  const now  = new Date();
-  const next = new Date(); next.setHours(h, m, 0, 0);
-  if (next <= now) next.setDate(next.getDate() + 1);
-  const label = next.toLocaleDateString('zh-TW', { month: '2-digit', day: '2-digit' });
-  const txt = `排程運作中，下次發信：${label} ${t}`;
-  const el  = document.getElementById('sched-text');
-  if (el) el.textContent = txt;
+  const [h,m] = t.split(':').map(Number);
+  const now = new Date(), next = new Date();
+  next.setHours(h,m,0,0);
+  if (next<=now) next.setDate(next.getDate()+1);
+  const label = next.toLocaleDateString('zh-TW',{month:'2-digit',day:'2-digit'});
+  const el = document.getElementById('sched-text');
+  if (el) el.textContent = `排程運作中，下次發信：${label} ${t}`;
   document.getElementById('kpi-next-send').textContent = `${label} ${t}`;
-  const [hh] = t.split(':').map(Number);
-  const mm   = parseInt(t.split(':')[1]);
-  document.getElementById('cron-preview').innerHTML =
-    `<span class="cm"># 每天 ${t} 自動執行</span><br>` +
-    `<span class="cv">${mm} ${hh} * * *</span>  python scheduler.py<br>` +
-    `<span class="cm"># 需在 HuggingFace Space 或 VPS 上設定</span>`;
+  const mm = parseInt(t.split(':')[1]), hh = parseInt(t.split(':')[0]);
+  const cp = document.getElementById('cron-preview');
+  if (cp) cp.innerHTML = `<span class="cm"># 每天 ${t} 自動執行</span><br><span class="cv">${mm} ${hh} * * *</span>  python scheduler.py`;
 }
 
+/* ── Export ── */
 async function exportReport() {
-  if (!S.records.length) { toast('尚無資料可匯出', 'warn'); return; }
-
-  if (!API_BASE.includes('your-space')) {
-    // 後端 GET /export/report 回傳的是 StreamingResponse（Content-Type: text/csv），
-    // 不是 JSON，因此不能走共用的 api() helper（內部用 res.json() 解析會直接失敗）。
-    // 這裡改用原生 fetch，直接把回應當作檔案處理。
-    showLoading(true);
-    try {
-      const res = await fetch(API_BASE + '/export/report', {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      showLoading(false);
-      if (res.status === 401) { doLogout(); return; }
-      if (!res.ok) { toast('匯出失敗，請稍後再試', 'warn'); return; }
-
-      const blob = await res.blob();
-      // 從後端的 Content-Disposition header 取檔名，沒有的話 fallback 用今天日期命名
-      const disposition = res.headers.get('Content-Disposition') || '';
-      const match = disposition.match(/filename=([^;]+)/);
-      const filename = match ? match[1].trim() : `milk_report_${todayStr()}.csv`;
-
-      const url = URL.createObjectURL(blob);
-      const a = Object.assign(document.createElement('a'), { href: url, download: filename });
-      a.click();
-      URL.revokeObjectURL(url);
-      toast('報表已匯出', 'ok');
-    } catch (e) {
-      showLoading(false);
-      toast('匯出失敗，API 無法連線', 'warn');
-    }
-    return;
-  }
-
-  // Demo 模式：本地組裝 CSV
-  const latest = [...new Set(S.records.map(r => r.recorded))].sort().at(-1);
-  const rows   = S.records.filter(r => r.recorded === latest);
-  let csv      = '有效期限,數量（瓶）,最低需求,盤點人員,訂貨日,盤點日\n';
-  rows.forEach(r => { csv += `${r.exp},${r.qty},${r.thresh},${r.staff},${r.order},${r.recorded}\n`; });
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url  = URL.createObjectURL(blob);
-  const a    = Object.assign(document.createElement('a'), { href: url, download: `milk_report_${todayStr()}.csv` });
-  a.click(); URL.revokeObjectURL(url);
-  toast('報表已匯出', 'ok');
+  if (!S.items.length) { toast('尚無資料可匯出','warn'); return; }
+  showLoading(true);
+  try {
+    const res = await fetch(API_BASE+'/export/report', {headers:{'Authorization':`Bearer ${token}`}});
+    showLoading(false);
+    if (res.status===401) { doLogout(); return; }
+    if (!res.ok) { toast('匯出失敗','warn'); return; }
+    const blob = await res.blob();
+    const disp = res.headers.get('Content-Disposition')||'';
+    const match = disp.match(/filename=([^;]+)/);
+    const fname = match ? match[1].trim() : `report_${todayStr()}.csv`;
+    const url = URL.createObjectURL(blob);
+    Object.assign(document.createElement('a'),{href:url,download:fname}).click();
+    URL.revokeObjectURL(url);
+    toast('報表已匯出','ok');
+  } catch(e) { showLoading(false); toast('匯出失敗','warn'); }
 }
 
-/* ──────────────────────────────────────
-   USERS（admin only）
-────────────────────────────────────── */
+/* ── Users ── */
 async function loadUsers() {
   const data = await api('GET', '/users');
   if (!data?.users) return;
   S.users = data.users;
   renderUsersTable();
 }
-
 function renderUsersTable() {
   const tbody = document.getElementById('users-tbody');
   if (!tbody) return;
-  if (!S.users.length) {
-    tbody.innerHTML = '<tr><td colspan="4" class="empty-cell">尚無帳號資料。</td></tr>';
-    return;
-  }
+  if (!S.users.length) { tbody.innerHTML='<tr><td colspan="4" class="empty-cell">尚無帳號。</td></tr>'; return; }
   tbody.innerHTML = S.users.map(u => {
-    const roleLabel = u.role === 'admin'
+    const roleLabel = u.role==='admin'
       ? '<span class="badge b-sky">admin</span>'
       : '<span class="badge" style="background:var(--border);color:var(--ink-3)">staff</span>';
-    const isSelf   = u.username === currentUser;
-    const delBtn   = isSelf
+    const isSelf = u.username === currentUser;
+    const delBtn = isSelf
       ? '<span style="font-size:.72rem;color:var(--ink-4)">（目前登入）</span>'
       : `<button class="btn btn-danger btn-xs" onclick="deleteUser('${u.username}')">刪除</button>`;
-    const time     = u.created_at ? u.created_at.slice(0, 10) : '—';
-    return `<tr>
-      <td><strong>${u.username}</strong></td>
-      <td>${roleLabel}</td>
-      <td class="mono" style="color:var(--ink-3)">${time}</td>
-      <td>${delBtn}</td>
-    </tr>`;
+    return `<tr><td><strong>${u.username}</strong></td><td>${roleLabel}</td><td class="mono" style="color:var(--ink-3)">${(u.created_at||'').slice(0,10)}</td><td>${delBtn}</td></tr>`;
   }).join('');
 }
-
 async function createUser() {
   const username = document.getElementById('new-username').value.trim();
   const role     = document.getElementById('new-role').value;
   const pw       = document.getElementById('new-pw').value;
   const pw2      = document.getElementById('new-pw2').value;
-
-  if (!username)      { toast('請填寫帳號名稱', 'warn'); return; }
-  if (pw.length < 6)  { toast('密碼至少 6 個字元', 'warn'); return; }
-  if (pw !== pw2)     { toast('兩次密碼輸入不一致', 'warn'); return; }
-
+  if (!username)     { toast('請填寫帳號','warn'); return; }
+  if (pw.length < 6) { toast('密碼至少 6 個字元','warn'); return; }
+  if (pw !== pw2)    { toast('兩次密碼不一致','warn'); return; }
   showLoading(true);
-  const res = await api('POST', '/users', { username, password: pw, role });
+  const res = await api('POST','/users',{username,password:pw,role});
   showLoading(false);
   if (!res) return;
-
-  document.getElementById('new-username').value = '';
-  document.getElementById('new-pw').value       = '';
-  document.getElementById('new-pw2').value      = '';
-  await loadUsers();
-  toast(`✅ 已建立帳號：${username}（${role}）`, 'ok');
+  ['new-username','new-pw','new-pw2'].forEach(id => document.getElementById(id).value='');
+  await loadUsers(); toast(`✅ 已建立帳號：${username}（${role}）`,'ok');
 }
-
 async function deleteUser(username) {
   showLoading(true);
-  const res = await api('DELETE', `/users/${encodeURIComponent(username)}`);
+  const res = await api('DELETE',`/users/${encodeURIComponent(username)}`);
   showLoading(false);
   if (!res) return;
-  await loadUsers();
-  toast(`已刪除帳號：${username}`);
+  await loadUsers(); toast('已刪除帳號：'+username);
 }
 
-function togglePw(inputId, btn) {
-  const input = document.getElementById(inputId);
-  if (input.type === 'password') {
-    input.type = 'text'; btn.textContent = '🙈';
-  } else {
-    input.type = 'password'; btn.textContent = '👁';
-  }
-}
-
-/* ──────────────────────────────────────
-   修改密碼 Modal
-────────────────────────────────────── */
+/* ── Password modal ── */
 function openPwModal() {
-  document.getElementById('pw-old').value      = '';
-  document.getElementById('pw-new').value      = '';
-  document.getElementById('pw-new2').value     = '';
-  document.getElementById('pw-modal-err').style.display = 'none';
-  document.getElementById('pw-modal').style.display     = 'flex';
-  // 點選背景關閉
-  document.getElementById('pw-modal').onclick = e => {
-    if (e.target === document.getElementById('pw-modal')) closePwModal();
-  };
+  ['pw-old','pw-new','pw-new2'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('pw-modal-err').style.display='none';
+  document.getElementById('pw-modal').style.display='flex';
+  document.getElementById('pw-modal').onclick = e => { if(e.target===document.getElementById('pw-modal')) closePwModal(); };
   setTimeout(() => document.getElementById('pw-old').focus(), 50);
 }
-
-function closePwModal() {
-  document.getElementById('pw-modal').style.display = 'none';
-}
-
+function closePwModal() { document.getElementById('pw-modal').style.display='none'; }
 async function submitChangePw() {
   const oldPw = document.getElementById('pw-old').value;
   const newPw = document.getElementById('pw-new').value;
-  const newPw2 = document.getElementById('pw-new2').value;
-  const errEl  = document.getElementById('pw-modal-err');
-  errEl.style.display = 'none';
-
+  const newPw2= document.getElementById('pw-new2').value;
   if (!oldPw)           { showPwErr('請輸入目前密碼'); return; }
   if (newPw.length < 6) { showPwErr('新密碼至少 6 個字元'); return; }
-  if (newPw !== newPw2)  { showPwErr('兩次新密碼輸入不一致'); return; }
+  if (newPw !== newPw2)  { showPwErr('兩次新密碼不一致'); return; }
   if (oldPw === newPw)   { showPwErr('新密碼不能與目前密碼相同'); return; }
-
   showLoading(true);
-  const res = await api('PUT', '/users/me/password', {
-    old_password: oldPw,
-    new_password: newPw,
-  });
+  const res = await api('PUT','/users/me/password',{old_password:oldPw,new_password:newPw});
   showLoading(false);
-
-  if (res?.ok) {
-    closePwModal();
-    toast('✅ 密碼已更新，下次登入請使用新密碼', 'ok');
-  } else {
-    // api() 回傳 null 時後端通常回了 401（舊密碼錯誤）
-    showPwErr('目前密碼輸入錯誤，請再試一次');
-  }
+  if (res?.ok) { closePwModal(); toast('✅ 密碼已更新','ok'); }
+  else showPwErr('目前密碼輸入錯誤，請再試一次');
 }
-
 function showPwErr(msg) {
-  const el = document.getElementById('pw-modal-err');
-  el.textContent     = msg;
-  el.style.display   = 'block';
+  const el=document.getElementById('pw-modal-err');
+  el.textContent=msg; el.style.display='block';
 }
 
-/* ──────────────────────────────────────
-   UTILITIES
-────────────────────────────────────── */
-function todayStr() { return new Date().toISOString().split('T')[0]; }
-function futureDate(n) {
-  const d = new Date(); d.setDate(d.getDate() + n);
-  return d.toISOString().split('T')[0];
+/* ── Toggle PW visibility ── */
+function togglePw(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (input.type==='password') { input.type='text'; btn.textContent='🙈'; }
+  else { input.type='password'; btn.textContent='👁'; }
 }
-function daysDiff(dateStr) {
-  return Math.ceil((new Date(dateStr) - new Date(todayStr())) / 864e5);
-}
-function showLoading(on) {
-  document.getElementById('loading').classList[on ? 'add' : 'remove']('show');
-}
+
+/* ── Utilities ── */
+function todayStr()  { return new Date().toISOString().split('T')[0]; }
+function futureDate(n) { const d=new Date(); d.setDate(d.getDate()+n); return d.toISOString().split('T')[0]; }
+function daysDiff(dateStr) { return Math.ceil((new Date(dateStr)-new Date(todayStr()))/864e5); }
+function showLoading(on) { document.getElementById('loading').classList[on?'add':'remove']('show'); }
 let _tt;
-function toast(msg, type = '') {
-  const el = document.getElementById('toast');
-  el.textContent = msg; el.className = type;
-  el.style.display = 'block';
-  clearTimeout(_tt); _tt = setTimeout(() => el.style.display = 'none', 2800);
+function toast(msg, type='') {
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.className=type; el.style.display='block';
+  clearTimeout(_tt); _tt=setTimeout(()=>el.style.display='none',2800);
 }
 </script>
 </body>
