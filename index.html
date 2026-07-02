@@ -431,6 +431,22 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
 }
 .cron-box .cm { color: var(--ink-4); font-style: italic; }
 .cron-box .cv { color: var(--sky-dk); font-weight: 500; }
+/* role badge in sidebar */
+.role-badge {
+  display: inline-flex; align-items: center;
+  font-size: .6rem; font-weight: 700; letter-spacing: .06em;
+  padding: 2px 7px; border-radius: 99px; margin-left: 6px;
+}
+.role-admin { background: rgba(56,189,248,.2); color: var(--sky); }
+.role-staff { background: rgba(255,255,255,.08); color: rgba(255,255,255,.4); }
+/* password input toggle */
+.pw-wrap { position: relative; }
+.pw-wrap .fc { width: 100%; padding-right: 40px; }
+.pw-toggle {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; cursor: pointer;
+  color: var(--ink-3); font-size: .85rem;
+}
 .loading-overlay {
   position: fixed; inset: 0; z-index: 9000;
   background: rgba(10,15,30,.72);
@@ -550,14 +566,15 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
         <div class="sb-item" data-page="pg-inventory"><span class="si">📦</span> 效期庫存登錄</div>
         <div class="sb-section-label">管理設定</div>
         <div class="sb-item" data-page="pg-staff"><span class="si">👤</span> 訂貨人員</div>
-        <div class="sb-item" data-page="pg-schedule"><span class="si">📧</span> 自動郵件排程</div>
+        <div class="sb-item admin-only" data-page="pg-schedule" style="display:none"><span class="si">📧</span> 自動郵件排程</div>
+        <div class="sb-item admin-only" data-page="pg-users" style="display:none"><span class="si">🔑</span> 使用者管理</div>
       </div>
       <div class="sb-bottom">
         <div class="sb-user">
           <div class="sb-avatar" id="sb-ava">A</div>
           <div class="sb-user-info">
             <div class="sb-user-name" id="sb-uname">admin</div>
-            <div class="sb-user-role">管理員</div>
+            <div class="sb-user-role" id="sb-role">管理員</div>
           </div>
           <button class="sb-logout-btn" onclick="doLogout()">登出</button>
         </div>
@@ -595,7 +612,7 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
             <div class="hero-stats">
               與安全線差：<strong id="d-diff">—</strong>　　盤點日期：<strong id="d-date">—</strong>
             </div>
-            <button class="btn btn-ghost btn-sm" onclick="exportReport()" style="margin-top:4px">
+            <button class="btn btn-ghost btn-sm admin-only" onclick="exportReport()" style="margin-top:4px;display:none">
               ↓ 匯出報表
             </button>
           </div>
@@ -699,13 +716,14 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
       <div class="page" id="pg-staff">
         <div class="page-eyebrow">人員管理</div>
         <h1 class="pg-title">訂貨人員名單</h1>
-        <p class="pg-sub">新增或移除可出現在盤點下拉選單中的訂貨人員。變更即時同步至雲端。</p>
+        <p class="pg-sub admin-only" style="display:none">新增或移除可出現在盤點下拉選單中的訂貨人員。變更即時同步至雲端。</p>
+        <p class="pg-sub staff-only">目前登記的訂貨人員清單（僅供查看，如需新增請聯絡管理員）。</p>
 
         <div class="card">
           <div class="card-title" style="margin-bottom:14px">👥 目前人員清單</div>
           <ul class="person-list" id="staff-ul"></ul>
-          <div class="divider"></div>
-          <div style="display:flex;gap:10px;align-items:flex-end">
+          <div class="divider admin-only" style="display:none"></div>
+          <div class="admin-only" style="display:none;gap:10px;align-items:flex-end">
             <div class="fg" style="flex:1">
               <label>新增人員姓名</label>
               <input type="text" class="fc" id="new-staff" placeholder="輸入姓名後按新增">
@@ -764,6 +782,59 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
         </div>
       </div>
 
+      <!-- ════ PAGE: Users (admin only) ════ -->
+      <div class="page" id="pg-users">
+        <div class="page-eyebrow">系統管理</div>
+        <h1 class="pg-title">使用者管理</h1>
+        <p class="pg-sub">新增或刪除系統帳號。管理員（admin）可使用所有功能；一般人員（staff）只能填報庫存與查看儀表板。</p>
+
+        <div class="card">
+          <div class="card-title" style="margin-bottom:14px">👥 目前帳號清單</div>
+          <div class="tbl-wrap">
+            <table class="dt">
+              <thead><tr>
+                <th>帳號</th><th>角色</th><th>建立時間</th><th style="width:80px"></th>
+              </tr></thead>
+              <tbody id="users-tbody">
+                <tr><td colspan="4" class="empty-cell">載入中…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title" style="margin-bottom:16px">➕ 新增帳號</div>
+          <div class="form-row" style="margin-bottom:16px">
+            <div class="fg">
+              <label>帳號名稱</label>
+              <input type="text" class="fc" id="new-username" placeholder="英數字，不可重複">
+            </div>
+            <div class="fg">
+              <label>角色</label>
+              <select class="fc" id="new-role">
+                <option value="staff">staff — 一般人員（僅庫存填報）</option>
+                <option value="admin">admin — 管理員（完整權限）</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label>密碼</label>
+              <div class="pw-wrap">
+                <input type="password" class="fc" id="new-pw" placeholder="至少 6 個字元">
+                <button class="pw-toggle" onclick="togglePw('new-pw',this)" type="button">👁</button>
+              </div>
+            </div>
+            <div class="fg">
+              <label>確認密碼</label>
+              <div class="pw-wrap">
+                <input type="password" class="fc" id="new-pw2" placeholder="再輸入一次">
+                <button class="pw-toggle" onclick="togglePw('new-pw2',this)" type="button">👁</button>
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-dark" onclick="createUser()">➕ 建立帳號</button>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -773,14 +844,16 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
 <script>
 const API_BASE = 'https://adrianli33-milkfloat.hf.space';
 
-let token   = localStorage.getItem('mf_token') || '';
-let currentUser = localStorage.getItem('mf_user') || '';
+let token       = localStorage.getItem('mf_token') || '';
+let currentUser = localStorage.getItem('mf_user')  || '';
+let currentRole = localStorage.getItem('mf_role')  || 'staff';
 const S = {
   staff:     [],
   receivers: [],
   records:   [],
   schedTime: '21:00',
   activeRec: '',
+  users:     [],
 };
 
 async function api(method, path, body) {
@@ -834,10 +907,12 @@ async function doLogin() {
   const data = await api('POST', '/auth/login', { username: user, password: pass });
   showLoading(false);
   if (data?.token) {
-    token = data.token;
+    token       = data.token;
     currentUser = user;
+    currentRole = data.role || 'staff';
     localStorage.setItem('mf_token', token);
-    localStorage.setItem('mf_user', user);
+    localStorage.setItem('mf_user',  currentUser);
+    localStorage.setItem('mf_role',  currentRole);
     enterApp();
   } else {
     errEl.textContent = '帳號或密碼錯誤，或 API 無法連線。';
@@ -850,45 +925,58 @@ document.getElementById('login-pass').addEventListener('keydown', e => {
 });
 
 function doLogout() {
-  token = ''; currentUser = '';
+  token = ''; currentUser = ''; currentRole = 'staff';
   localStorage.removeItem('mf_token');
   localStorage.removeItem('mf_user');
+  localStorage.removeItem('mf_role');
   document.getElementById('screen-app').style.display = 'none';
   document.getElementById('screen-login').style.display = 'flex';
 }
 
 function enterApp() {
   document.getElementById('screen-login').style.display = 'none';
-  document.getElementById('screen-app').style.display = 'block';
+  document.getElementById('screen-app').style.display   = 'block';
   document.getElementById('sb-uname').textContent = currentUser;
-  document.getElementById('sb-ava').textContent   = currentUser[0]?.toUpperCase() || 'U';
+  document.getElementById('sb-role').textContent  = currentRole === 'admin' ? '管理員' : '一般人員';
   document.getElementById('topbar-date').textContent =
     new Date().toLocaleDateString('zh-TW', {year:'numeric', month:'2-digit', day:'2-digit', weekday:'short'});
+
+  const isAdmin = currentRole === 'admin';
+
+  // admin-only：管理員顯示，一般人員隱藏
+  document.querySelectorAll('.admin-only').forEach(el => {
+    // div 的新增表單需要 flex，其餘用預設 '' 讓 CSS 決定
+    const needsFlex = el.tagName === 'DIV' && el.querySelector('.fg');
+    el.style.display = isAdmin ? (needsFlex ? 'flex' : '') : 'none';
+  });
+
+  // staff-only：一般人員顯示，管理員隱藏
+  document.querySelectorAll('.staff-only').forEach(el => {
+    el.style.display = isAdmin ? 'none' : '';
+  });
+
   initApp();
 }
 
 // 啟動時若 localStorage 有殘留 token，不直接信任它，而是先驗證是否仍然有效。
-// 原本的寫法（if (token) enterApp()）只要 token 存在就跳過登入畫面，
-// 會導致先前 Demo 模式測試留下的假 token，或過期/失效的真 token，
-// 都能繞過登入直接進入系統。
 (async function bootAuth() {
-  if (!token) return;  // 沒有 token，停留在登入畫面，正常情況
+  if (!token) return;
 
   if (API_BASE.includes('your-space')) {
-    // 仍在 Demo 模式下開發，沿用舊行為
     enterApp();
     return;
   }
 
-  // 真實後端：呼叫一個需要驗證的端點，確認 token 真的有效
+  // 用 /users/me 同時驗證 token 有效性並取得最新 role
   showLoading(true);
-  const valid = await api('GET', '/staff');
+  const me = await api('GET', '/users/me');
   showLoading(false);
 
-  if (valid) {
+  if (me?.username) {
+    currentRole = me.role || 'staff';
+    localStorage.setItem('mf_role', currentRole);
     enterApp();
   } else {
-    // token 無效、過期，或屬於先前 Demo 模式留下的假資料 → 清除並停留在登入畫面
     doLogout();
   }
 })();
@@ -900,12 +988,9 @@ async function initApp() {
 
   if (document.getElementById('batch-body').rows.length === 0) addBatchRow();
 
-  await Promise.all([
-    loadStaff(),
-    loadReceivers(),
-    loadSchedule(),
-    loadInventory(),
-  ]);
+  const tasks = [loadStaff(), loadReceivers(), loadSchedule(), loadInventory()];
+  if (currentRole === 'admin') tasks.push(loadUsers());
+  await Promise.all(tasks);
 
   updateSchedPreview();
 }
@@ -915,6 +1000,7 @@ const PAGE_TITLES = {
   'pg-inventory': '效期庫存登錄',
   'pg-staff':     '訂貨人員',
   'pg-schedule':  '自動郵件排程',
+  'pg-users':     '使用者管理',
 };
 document.querySelectorAll('.sb-item').forEach(el => {
   el.addEventListener('click', () => {
@@ -1106,11 +1192,12 @@ async function loadStaff() {
   renderStaffSelect();
 }
 function renderStaffList() {
+  const isAdmin = currentRole === 'admin';
   document.getElementById('staff-ul').innerHTML = S.staff.length
     ? S.staff.map(n => `
       <li class="person-li">
         <span><span class="person-avatar">${n[0]}</span>${n}</span>
-        <button class="btn btn-danger btn-xs" onclick="removeStaff('${n}')">移除</button>
+        ${isAdmin ? `<button class="btn btn-danger btn-xs" onclick="removeStaff('${n}')">移除</button>` : ''}
       </li>`).join('')
     : '<li style="color:var(--ink-4);font-size:.8rem;padding:8px 10px">尚無人員，請新增。</li>';
 }
@@ -1287,7 +1374,85 @@ async function exportReport() {
   toast('報表已匯出', 'ok');
 }
 
-function todayStr()  { return new Date().toISOString().split('T')[0]; }
+/* ──────────────────────────────────────
+   USERS（admin only）
+────────────────────────────────────── */
+async function loadUsers() {
+  const data = await api('GET', '/users');
+  if (!data?.users) return;
+  S.users = data.users;
+  renderUsersTable();
+}
+
+function renderUsersTable() {
+  const tbody = document.getElementById('users-tbody');
+  if (!tbody) return;
+  if (!S.users.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="empty-cell">尚無帳號資料。</td></tr>';
+    return;
+  }
+  tbody.innerHTML = S.users.map(u => {
+    const roleLabel = u.role === 'admin'
+      ? '<span class="badge b-sky">admin</span>'
+      : '<span class="badge" style="background:var(--border);color:var(--ink-3)">staff</span>';
+    const isSelf   = u.username === currentUser;
+    const delBtn   = isSelf
+      ? '<span style="font-size:.72rem;color:var(--ink-4)">（目前登入）</span>'
+      : `<button class="btn btn-danger btn-xs" onclick="deleteUser('${u.username}')">刪除</button>`;
+    const time     = u.created_at ? u.created_at.slice(0, 10) : '—';
+    return `<tr>
+      <td><strong>${u.username}</strong></td>
+      <td>${roleLabel}</td>
+      <td class="mono" style="color:var(--ink-3)">${time}</td>
+      <td>${delBtn}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function createUser() {
+  const username = document.getElementById('new-username').value.trim();
+  const role     = document.getElementById('new-role').value;
+  const pw       = document.getElementById('new-pw').value;
+  const pw2      = document.getElementById('new-pw2').value;
+
+  if (!username)      { toast('請填寫帳號名稱', 'warn'); return; }
+  if (pw.length < 6)  { toast('密碼至少 6 個字元', 'warn'); return; }
+  if (pw !== pw2)     { toast('兩次密碼輸入不一致', 'warn'); return; }
+
+  showLoading(true);
+  const res = await api('POST', '/users', { username, password: pw, role });
+  showLoading(false);
+  if (!res) return;
+
+  document.getElementById('new-username').value = '';
+  document.getElementById('new-pw').value       = '';
+  document.getElementById('new-pw2').value      = '';
+  await loadUsers();
+  toast(`✅ 已建立帳號：${username}（${role}）`, 'ok');
+}
+
+async function deleteUser(username) {
+  showLoading(true);
+  const res = await api('DELETE', `/users/${encodeURIComponent(username)}`);
+  showLoading(false);
+  if (!res) return;
+  await loadUsers();
+  toast(`已刪除帳號：${username}`);
+}
+
+function togglePw(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (input.type === 'password') {
+    input.type = 'text'; btn.textContent = '🙈';
+  } else {
+    input.type = 'password'; btn.textContent = '👁';
+  }
+}
+
+/* ──────────────────────────────────────
+   UTILITIES
+────────────────────────────────────── */
+function todayStr() { return new Date().toISOString().split('T')[0]; }
 function futureDate(n) {
   const d = new Date(); d.setDate(d.getDate() + n);
   return d.toISOString().split('T')[0];
