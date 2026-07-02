@@ -758,20 +758,9 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
         <!-- LINE 設定 -->
         <div class="card">
           <div class="card-title" style="margin-bottom:4px">🟢 LINE 推播通知</div>
-          <p style="font-size:.78rem;color:var(--ink-3);margin-bottom:16px">填入 LINE Bot 的接收對象 ID，到時間自動推播庫存摘要。User ID 以 <code>U</code> 開頭，Group ID 以 <code>C</code> 開頭。</p>
-          <div class="form-row" style="margin-bottom:14px">
-            <div class="fg">
-              <label>接收對象 ID（User ID 或 Group ID）</label>
-              <input type="text" class="fc mono" id="sch-line-id" placeholder="Uxxxxxxxxxxxx 或 Cxxxxxxxxxxxx">
-              <span class="hint">在 LINE Developers Console → Messaging API → Your user ID 取得。</span>
-            </div>
-            <div class="fg">
-              <label>LINE Channel Access Token 狀態</label>
-              <input type="text" class="fc mono" id="sch-line-status" readonly
-                style="background:var(--bg);color:var(--ink-3);cursor:default"
-                value="Token 請設定在 HF Space Secrets → LINE_CHANNEL_ACCESS_TOKEN">
-            </div>
-          </div>
+          <p style="font-size:.78rem;color:var(--ink-3);margin-bottom:0">
+            將 Bot 加入 LINE 群組後，群組會自動出現在下方「LINE 群組通知管理」清單，無需手動填寫 ID。
+          </p>
         </div>
 
         <button class="btn btn-dark" onclick="saveSchedule()" style="margin-bottom:20px">💾 儲存通知設定</button>
@@ -1307,21 +1296,16 @@ async function loadSchedule() {
     S.receivers  = data.receivers||[];
     S.activeRec  = data.active_receiver||'';
     renderReceiverList(); renderReceiverDropdown();
-    // LINE ID
-    const lineEl = document.getElementById('sch-line-id');
-    if (lineEl) lineEl.value = data.line_notify_id || '';
   }
   updateSchedPreview();
 }
 async function saveSchedule() {
-  const t      = document.getElementById('sch-time').value.slice(0,5);
-  const rec    = document.getElementById('sch-receiver').value;
-  const lineId = (document.getElementById('sch-line-id')?.value || '').trim();
-  S.schedTime  = t; S.activeRec = rec;
+  const t   = document.getElementById('sch-time').value.slice(0,5);
+  const rec = document.getElementById('sch-receiver').value;
+  S.schedTime = t; S.activeRec = rec;
   showLoading(true);
   const res = await api('PUT', '/schedule', {
     schedule_time: t, active_receiver: rec,
-    line_notify_id: lineId || null,
     receivers: S.receivers,
   });
   showLoading(false);
