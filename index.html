@@ -576,10 +576,64 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
             <div class="sb-user-name" id="sb-uname">admin</div>
             <div class="sb-user-role" id="sb-role">管理員</div>
           </div>
+          <button class="sb-logout-btn" onclick="openPwModal()" title="修改密碼" style="margin-right:2px">🔒</button>
           <button class="sb-logout-btn" onclick="doLogout()">登出</button>
         </div>
       </div>
     </nav>
+
+    <!-- ════ 修改密碼 Modal ════ -->
+    <div id="pw-modal" style="
+      display:none; position:fixed; inset:0; z-index:9999;
+      background:rgba(10,15,30,.72);
+      align-items:center; justify-content:center;
+    ">
+      <div style="
+        background:var(--surface); border-radius:14px;
+        padding:28px 28px 24px; width:100%; max-width:380px;
+        box-shadow:0 20px 60px rgba(0,0,0,.3);
+        margin:0 16px;
+      ">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <div style="font-size:1rem;font-weight:700;color:var(--ink)">🔒 修改密碼</div>
+          <button onclick="closePwModal()" style="
+            background:none;border:none;cursor:pointer;
+            font-size:1.1rem;color:var(--ink-3);padding:4px;
+          ">✕</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="fg">
+            <label>目前密碼</label>
+            <div class="pw-wrap">
+              <input type="password" class="fc" id="pw-old" placeholder="輸入目前的密碼">
+              <button class="pw-toggle" onclick="togglePw('pw-old',this)" type="button">👁</button>
+            </div>
+          </div>
+          <div class="fg">
+            <label>新密碼</label>
+            <div class="pw-wrap">
+              <input type="password" class="fc" id="pw-new" placeholder="至少 6 個字元">
+              <button class="pw-toggle" onclick="togglePw('pw-new',this)" type="button">👁</button>
+            </div>
+          </div>
+          <div class="fg">
+            <label>確認新密碼</label>
+            <div class="pw-wrap">
+              <input type="password" class="fc" id="pw-new2" placeholder="再輸入一次">
+              <button class="pw-toggle" onclick="togglePw('pw-new2',this)" type="button">👁</button>
+            </div>
+          </div>
+          <div id="pw-modal-err" style="
+            display:none; background:var(--red-lt); color:var(--red);
+            border-radius:7px; padding:9px 13px;
+            font-size:.78rem; font-weight:500;
+          "></div>
+          <button class="btn btn-dark btn-full" style="margin-top:4px" onclick="submitChangePw()">
+            確認修改密碼
+          </button>
+        </div>
+      </div>
+    </div>
 
     <div class="main-content">
       <header class="topbar">
@@ -937,6 +991,7 @@ function enterApp() {
   document.getElementById('screen-login').style.display = 'none';
   document.getElementById('screen-app').style.display   = 'block';
   document.getElementById('sb-uname').textContent = currentUser;
+  document.getElementById('sb-ava').textContent   = currentUser[0]?.toUpperCase() || 'U';
   document.getElementById('sb-role').textContent  = currentRole === 'admin' ? '管理員' : '一般人員';
   document.getElementById('topbar-date').textContent =
     new Date().toLocaleDateString('zh-TW', {year:'numeric', month:'2-digit', day:'2-digit', weekday:'short'});
@@ -1447,6 +1502,60 @@ function togglePw(inputId, btn) {
   } else {
     input.type = 'password'; btn.textContent = '👁';
   }
+}
+
+/* ──────────────────────────────────────
+   修改密碼 Modal
+────────────────────────────────────── */
+function openPwModal() {
+  document.getElementById('pw-old').value      = '';
+  document.getElementById('pw-new').value      = '';
+  document.getElementById('pw-new2').value     = '';
+  document.getElementById('pw-modal-err').style.display = 'none';
+  document.getElementById('pw-modal').style.display     = 'flex';
+  // 點選背景關閉
+  document.getElementById('pw-modal').onclick = e => {
+    if (e.target === document.getElementById('pw-modal')) closePwModal();
+  };
+  setTimeout(() => document.getElementById('pw-old').focus(), 50);
+}
+
+function closePwModal() {
+  document.getElementById('pw-modal').style.display = 'none';
+}
+
+async function submitChangePw() {
+  const oldPw = document.getElementById('pw-old').value;
+  const newPw = document.getElementById('pw-new').value;
+  const newPw2 = document.getElementById('pw-new2').value;
+  const errEl  = document.getElementById('pw-modal-err');
+  errEl.style.display = 'none';
+
+  if (!oldPw)           { showPwErr('請輸入目前密碼'); return; }
+  if (newPw.length < 6) { showPwErr('新密碼至少 6 個字元'); return; }
+  if (newPw !== newPw2)  { showPwErr('兩次新密碼輸入不一致'); return; }
+  if (oldPw === newPw)   { showPwErr('新密碼不能與目前密碼相同'); return; }
+
+  showLoading(true);
+  const res = await api('PUT', '/users/me/password', {
+    old_password: oldPw,
+    new_password: newPw,
+  });
+  showLoading(false);
+
+  if (res?.ok) {
+    closePwModal();
+    toast('✅ 密碼已更新，下次登入請使用新密碼', 'ok');
+  } else {
+    // api() 回傳 null 時後端通常回了 401（舊密碼錯誤）
+    showPwErr('目前密碼輸入錯誤，請再試一次');
+  }
+}
+
+function showPwErr(msg) {
+  const el = document.getElementById('pw-modal-err');
+  el.textContent     = msg;
+  el.style.display   = 'block';
 }
 
 /* ──────────────────────────────────────
