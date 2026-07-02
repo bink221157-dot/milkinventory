@@ -544,7 +544,7 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
         <div class="sb-section-label">管理設定</div>
         <div class="sb-item admin-only" data-page="pg-products" style="display:none"><span class="si">🏷️</span> 品項管理</div>
         <div class="sb-item" data-page="pg-staff"><span class="si">👤</span> 訂貨人員</div>
-        <div class="sb-item admin-only" data-page="pg-schedule" style="display:none"><span class="si">📧</span> 自動郵件排程</div>
+        <div class="sb-item admin-only" data-page="pg-schedule" style="display:none"><span class="si">🔔</span> 通知設定</div>
         <div class="sb-item admin-only" data-page="pg-users" style="display:none"><span class="si">🔑</span> 使用者管理</div>
       </div>
       <div class="sb-bottom">
@@ -734,35 +734,92 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
 
       <!-- ════ PAGE: Schedule (admin only) ════ -->
       <div class="page" id="pg-schedule">
-        <div class="page-eyebrow">郵件排程</div>
-        <h1 class="pg-title">自動郵件設定</h1>
-        <p class="pg-sub">設定每日庫存日報的發信時間與收件對象。排程由後端 Cron Job 負責執行。</p>
+        <div class="page-eyebrow">通知設定</div>
+        <h1 class="pg-title">自動通知設定</h1>
+        <p class="pg-sub">設定每日庫存日報的發送時間。時間到時同時發送 Email 與 LINE 推播。</p>
+
+        <!-- 時間與收件人 -->
         <div class="card">
-          <div class="card-title" style="margin-bottom:16px">⏰ 發信時間與收件人</div>
+          <div class="card-title" style="margin-bottom:16px">⏰ 發送時間</div>
           <div class="form-row" style="margin-bottom:16px">
             <div class="fg">
-              <label>每日固定發信時間</label>
+              <label>每日固定發送時間（台灣時間）</label>
               <input type="time" class="fc mono" id="sch-time" value="21:00" oninput="updateSchedPreview()">
-              <span class="hint">Cron Job 每分鐘讀取此設定，時間到自動發信。</span>
+              <span class="hint">後端每分鐘讀取此設定，時間到自動發送。</span>
             </div>
-            <div class="fg"><label>本次發送收件人</label><select class="fc mono" id="sch-receiver"></select></div>
+            <div class="fg">
+              <label>Email 收件人</label>
+              <select class="fc mono" id="sch-receiver"></select>
+            </div>
           </div>
-          <div class="sched-preview"><span class="pulse"></span><span id="sched-text">排程運作中，下次發信：—</span></div>
-          <div class="divider"></div>
-          <button class="btn btn-dark" onclick="saveSchedule()">💾 儲存排程設定</button>
+          <div class="sched-preview"><span class="pulse"></span><span id="sched-text">排程運作中，下次發送：—</span></div>
         </div>
+
+        <!-- LINE 設定 -->
+        <div class="card">
+          <div class="card-title" style="margin-bottom:4px">🟢 LINE 推播通知</div>
+          <p style="font-size:.78rem;color:var(--ink-3);margin-bottom:16px">填入 LINE Bot 的接收對象 ID，到時間自動推播庫存摘要。User ID 以 <code>U</code> 開頭，Group ID 以 <code>C</code> 開頭。</p>
+          <div class="form-row" style="margin-bottom:14px">
+            <div class="fg">
+              <label>接收對象 ID（User ID 或 Group ID）</label>
+              <input type="text" class="fc mono" id="sch-line-id" placeholder="Uxxxxxxxxxxxx 或 Cxxxxxxxxxxxx">
+              <span class="hint">在 LINE Developers Console → Messaging API → Your user ID 取得。</span>
+            </div>
+            <div class="fg">
+              <label>LINE Channel Access Token 狀態</label>
+              <input type="text" class="fc mono" id="sch-line-status" readonly
+                style="background:var(--bg);color:var(--ink-3);cursor:default"
+                value="Token 請設定在 HF Space Secrets → LINE_CHANNEL_ACCESS_TOKEN">
+            </div>
+          </div>
+        </div>
+
+        <button class="btn btn-dark" onclick="saveSchedule()" style="margin-bottom:20px">💾 儲存通知設定</button>
+
+        <!-- Cron 參考 -->
         <div class="card">
           <div class="card-title" style="margin-bottom:12px">🔧 後端 Cron 參考設定</div>
           <div class="cron-box" id="cron-preview"><span class="cm"># 每天 21:00 自動執行</span><br><span class="cv">0 21 * * *</span>  python scheduler.py</div>
         </div>
+
+        <!-- 收件人清單 -->
         <div class="card">
-          <div class="card-title" style="margin-bottom:14px">📬 收件人清單管理</div>
+          <div class="card-title" style="margin-bottom:14px">📬 Email 收件人清單</div>
           <ul class="person-list" id="receiver-ul"></ul>
           <div class="divider"></div>
           <div style="display:flex;gap:10px;align-items:flex-end">
             <div class="fg" style="flex:1"><label>新增收件信箱</label><input type="email" class="fc mono" id="new-receiver" placeholder="email@example.com"></div>
             <button class="btn btn-sky" onclick="addReceiver()">＋ 加入</button>
           </div>
+        </div>
+
+        <!-- LINE 群組管理 -->
+        <div class="card">
+          <div class="card-title" style="margin-bottom:6px">🟢 LINE 群組通知管理</div>
+          <p style="font-size:.78rem;color:var(--ink-3);margin-bottom:14px">
+            將 Bot 加入 LINE 群組後，群組會自動出現在下方清單。每個群組可獨立設定發送時間。
+          </p>
+          <div class="tbl-wrap">
+            <table class="dt">
+              <thead><tr>
+                <th>群組 ID</th><th>排程時間</th><th>狀態</th><th>上次發送</th><th style="width:140px">操作</th>
+              </tr></thead>
+              <tbody id="line-groups-tbody">
+                <tr><td colspan="5" class="empty-cell">尚無綁定群組。將 Bot 加入 LINE 群組後自動出現。</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Webhook 設定說明 -->
+        <div class="card">
+          <div class="card-title" style="margin-bottom:10px">⚙️ LINE Webhook 設定參考</div>
+          <div class="cron-box">
+            <span class="cm"># LINE Developers Console → Messaging API → Webhook URL</span><br>
+            <span class="cv" id="webhook-url-display">https://your-space.hf.space/webhook/line</span><br>
+            <span class="cm"># 記得開啟 Use webhook ✓ 並關閉自動回應訊息</span>
+          </div>
+          <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="copyWebhookUrl()">複製 Webhook URL</button>
         </div>
       </div>
 
@@ -891,7 +948,7 @@ function enterApp() {
 const PAGE_TITLES = {
   'pg-dashboard':'儀表板','pg-inventory':'效期庫存登錄',
   'pg-products':'品項管理','pg-staff':'訂貨人員',
-  'pg-schedule':'自動郵件排程','pg-users':'使用者管理',
+  'pg-schedule':'自動通知設定','pg-users':'使用者管理',
 };
 document.querySelectorAll('.sb-item').forEach(el => {
   el.addEventListener('click', () => {
@@ -913,7 +970,7 @@ async function initApp() {
   document.getElementById('inv-recorded').value = today;
   if (!document.getElementById('batch-body').rows.length) addBatchRow();
   const tasks = [loadProducts(), loadStaff(), loadReceivers(), loadSchedule(), loadInventory()];
-  if (currentRole === 'admin') tasks.push(loadUsers());
+  if (currentRole === 'admin') tasks.push(loadUsers(), loadLineGroups());
   await Promise.all(tasks);
   updateSchedPreview();
 }
@@ -1250,18 +1307,27 @@ async function loadSchedule() {
     S.receivers  = data.receivers||[];
     S.activeRec  = data.active_receiver||'';
     renderReceiverList(); renderReceiverDropdown();
+    // LINE ID
+    const lineEl = document.getElementById('sch-line-id');
+    if (lineEl) lineEl.value = data.line_notify_id || '';
   }
   updateSchedPreview();
 }
 async function saveSchedule() {
-  const t   = document.getElementById('sch-time').value.slice(0,5);
-  const rec = document.getElementById('sch-receiver').value;
-  S.schedTime = t; S.activeRec = rec;
+  const t      = document.getElementById('sch-time').value.slice(0,5);
+  const rec    = document.getElementById('sch-receiver').value;
+  const lineId = (document.getElementById('sch-line-id')?.value || '').trim();
+  S.schedTime  = t; S.activeRec = rec;
   showLoading(true);
-  const res = await api('PUT', '/schedule', {schedule_time:t, active_receiver:rec, receivers:S.receivers});
+  const res = await api('PUT', '/schedule', {
+    schedule_time: t, active_receiver: rec,
+    line_notify_id: lineId || null,
+    receivers: S.receivers,
+  });
   showLoading(false);
   if (!res) return;
-  updateSchedPreview(); toast('排程設定已儲存 ✔','ok');
+  updateSchedPreview();
+  toast('通知設定已儲存 ✔','ok');
 }
 function updateSchedPreview() {
   const t = document.getElementById('sch-time')?.value || S.schedTime;
@@ -1276,6 +1342,65 @@ function updateSchedPreview() {
   const mm = parseInt(t.split(':')[1]), hh = parseInt(t.split(':')[0]);
   const cp = document.getElementById('cron-preview');
   if (cp) cp.innerHTML = `<span class="cm"># 每天 ${t} 自動執行</span><br><span class="cv">${mm} ${hh} * * *</span>  python scheduler.py`;
+}
+
+/* ── LINE Groups ── */
+async function loadLineGroups() {
+  const el = document.getElementById('line-groups-tbody');
+  if (!el) return;
+  const data = await api('GET', '/line/groups');
+  if (!data?.groups?.length) {
+    el.innerHTML = '<tr><td colspan="5" class="empty-cell">尚無綁定群組。將 Bot 加入 LINE 群組後自動出現。</td></tr>';
+    return;
+  }
+  el.innerHTML = data.groups.map(g => {
+    const shortId = g.group_id.slice(0, 12) + '…';
+    const stime   = (g.schedule_time || '21:00').slice(0, 5);
+    const active  = g.active
+      ? '<span class="badge b-ok">啟用</span>'
+      : '<span class="badge b-bad">停用</span>';
+    const last    = g.last_sent_date || '—';
+    return `<tr>
+      <td class="mono" style="font-size:.72rem" title="${g.group_id}">${shortId}</td>
+      <td>
+        <input type="time" class="fc mono" style="height:30px;font-size:.75rem;width:100px"
+          value="${stime}"
+          onchange="updateGroupTime('${g.group_id}', this.value)">
+      </td>
+      <td>${active}</td>
+      <td class="mono" style="color:var(--ink-3)">${last}</td>
+      <td style="display:flex;gap:6px">
+        <button class="btn btn-ghost btn-xs" onclick="toggleGroup('${g.group_id}', ${!g.active})">
+          ${g.active ? '停用' : '啟用'}
+        </button>
+        <button class="btn btn-danger btn-xs" onclick="deleteGroup('${g.group_id}')">移除</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function updateGroupTime(groupId, time) {
+  await api('PUT', `/line/groups/${encodeURIComponent(groupId)}`, {schedule_time: time.slice(0,5)});
+  toast('已更新群組發送時間','ok');
+}
+
+async function toggleGroup(groupId, active) {
+  await api('PUT', `/line/groups/${encodeURIComponent(groupId)}`, {active});
+  await loadLineGroups();
+  toast(active ? '已啟用群組通知' : '已停用群組通知');
+}
+
+async function deleteGroup(groupId) {
+  if (!confirm('確定要移除此群組綁定？Bot 不會自動離開群組，只是停止發送通知。')) return;
+  await api('DELETE', `/line/groups/${encodeURIComponent(groupId)}`);
+  await loadLineGroups();
+  toast('已移除群組');
+}
+
+function copyWebhookUrl() {
+  const url = `${API_BASE}/webhook/line`;
+  navigator.clipboard.writeText(url).then(() => toast('已複製 Webhook URL','ok'));
+  document.getElementById('webhook-url-display').textContent = url;
 }
 
 /* ── Export ── */
