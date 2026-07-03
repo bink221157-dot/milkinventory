@@ -501,13 +501,13 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
     <div class="login-brand">
       <div class="login-icon">📦</div>
       <div class="login-name">StockFlow</div>
-      <div class="login-tagline">多品項庫存智慧控管平台</div>
+      <div class="login-tagline">庫存控管系統</div>
     </div>
     <div class="login-features">
       <div class="login-feat"><div class="feat-icon">📦</div><div>多品項效期批次追蹤，即期品自動警示</div></div>
-      <div class="login-feat"><div class="feat-icon">💰</div><div>單價管理，一鍵匯出成本統計報表</div></div>
-      <div class="login-feat"><div class="feat-icon">📧</div><div>自訂排程，每日自動發送庫存日報 Email</div></div>
-      <div class="login-feat"><div class="feat-icon">☁️</div><div>資料同步雲端 PostgreSQL，多裝置存取</div></div>
+      <div class="login-feat"><div class="feat-icon">💰</div><div>記錄消耗量，自動計算建議叫貨數</div></div>
+      <div class="login-feat"><div class="feat-icon">📧</div><div>每天自動發送 Email 與 LINE 庫存通知</div></div>
+      <div class="login-feat"><div class="feat-icon">☁️</div><div>雲端同步，手機電腦都能操作</div></div>
     </div>
   </div>
   <div class="login-right">
@@ -534,18 +534,18 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
         <div class="sb-logo">📦</div>
         <div class="sb-brand-text">
           <div class="sb-brand-name">StockFlow</div>
-          <div class="sb-brand-ver">v2.1 · GitHub Pages</div>
+          <div class="sb-brand-ver">v2.3</div>
         </div>
       </div>
       <div class="sb-nav">
         <div class="sb-section-label">主要功能</div>
         <div class="sb-item active" data-page="pg-dashboard"><span class="si">🏠</span> 儀表板</div>
-        <div class="sb-item" data-page="pg-inventory"><span class="si">📝</span> 效期庫存登錄</div>
+        <div class="sb-item" data-page="pg-inventory"><span class="si">📝</span> 今日盤點</div>
         <div class="sb-section-label">管理設定</div>
-        <div class="sb-item admin-only" data-page="pg-products" style="display:none"><span class="si">🏷️</span> 品項管理</div>
-        <div class="sb-item" data-page="pg-staff"><span class="si">👤</span> 訂貨人員</div>
+        <div class="sb-item admin-only" data-page="pg-products" style="display:none"><span class="si">🏷️</span> 品項設定</div>
+        <div class="sb-item" data-page="pg-staff"><span class="si">👤</span> 人員名單</div>
         <div class="sb-item admin-only" data-page="pg-schedule" style="display:none"><span class="si">🔔</span> 通知設定</div>
-        <div class="sb-item admin-only" data-page="pg-users" style="display:none"><span class="si">🔑</span> 使用者管理</div>
+        <div class="sb-item admin-only" data-page="pg-users" style="display:none"><span class="si">🔑</span> 帳號管理</div>
       </div>
       <div class="sb-bottom">
         <div class="sb-user">
@@ -593,14 +593,14 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
       <!-- ════ PAGE: Dashboard ════ -->
       <div class="page active" id="pg-dashboard">
         <div class="page-eyebrow">總覽</div>
-        <h1 class="pg-title">庫存儀表板</h1>
-        <p class="pg-sub">顯示最新一次盤點的所有品項庫存狀態。</p>
+        <h1 class="pg-title">庫存總覽</h1>
+        <p class="pg-sub">查看各品項目前庫存、消耗趨勢與建議叫貨量。</p>
 
         <!-- KPI row -->
         <div class="kpi-row" id="kpi-row">
-          <div class="kpi-card"><div class="kpi-label">品項數量</div><div class="kpi-value" id="kpi-products">—</div><div class="kpi-sub">正在管理中</div></div>
-          <div class="kpi-card"><div class="kpi-label">即期品總計</div><div class="kpi-value" id="kpi-expiring" style="color:var(--amber)">—</div><div class="kpi-sub">3 天內到期</div></div>
-          <div class="kpi-card"><div class="kpi-label">下次自動發信</div><div class="kpi-value" id="kpi-next-send" style="font-size:1rem;padding-top:4px">—</div><div class="kpi-sub">排程時間</div></div>
+          <div class="kpi-card"><div class="kpi-label">管理品項</div><div class="kpi-value" id="kpi-products">—</div><div class="kpi-sub">個品項</div></div>
+          <div class="kpi-card"><div class="kpi-label">即將到期</div><div class="kpi-value" id="kpi-expiring" style="color:var(--amber)">—</div><div class="kpi-sub">3 天內到期（瓶/盒/片）</div></div>
+          <div class="kpi-card"><div class="kpi-label">下次自動通知</div><div class="kpi-value" id="kpi-next-send" style="font-size:1rem;padding-top:4px">—</div><div class="kpi-sub">排程時間</div></div>
         </div>
 
         <!-- Per-product cards -->
@@ -624,23 +624,43 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
             <button class="btn btn-ghost btn-sm" onclick="exportReport()">↓ 匯出成本報表</button>
           </div>
         </div>
+
+        <!-- 消耗統計 & 建議叫貨 -->
+        <div class="card" id="consumption-card" style="display:none">
+          <div class="card-title" style="margin-bottom:14px">📊 消耗趨勢 &amp; 建議叫貨量</div>
+          <div class="tbl-wrap">
+            <table class="dt">
+              <thead><tr>
+                <th>品項</th>
+                <th>本週消耗</th>
+                <th>上週消耗</th>
+                <th>本月消耗</th>
+                <th>目前庫存</th>
+                <th>建議叫貨</th>
+              </tr></thead>
+              <tbody id="consumption-tbody">
+                <tr><td colspan="6" class="empty-cell">載入中…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       <!-- ════ PAGE: Inventory ════ -->
       <div class="page" id="pg-inventory">
         <div class="page-eyebrow">庫存登錄</div>
-        <h1 class="pg-title">效期庫存登錄</h1>
-        <p class="pg-sub">選擇品項後填報各效期批次數量，同步至雲端資料庫。每次填報一個品項。</p>
+        <h1 class="pg-title">今日盤點</h1>
+        <p class="pg-sub">選擇品項，填入各效期的現有數量與今日消耗量，按儲存即完成。</p>
 
         <div class="card">
-          <div class="card-title" style="margin-bottom:16px">📦 選擇品項</div>
+          <div class="card-title" style="margin-bottom:16px">選擇品項</div>
           <div class="form-row">
             <div class="fg">
               <label>品項</label>
               <select class="fc" id="inv-product" onchange="onProductChange()"></select>
             </div>
             <div class="fg">
-              <label>單價（參考）</label>
+              <label>單價</label>
               <input type="text" class="fc mono" id="inv-unit-price" readonly style="background:var(--bg);color:var(--ink-3)">
             </div>
           </div>
@@ -665,10 +685,10 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
         </div>
 
         <div class="card">
-          <div class="card-title" style="margin-bottom:16px">⚙️ 盤點參數</div>
+          <div class="card-title" style="margin-bottom:16px">其他資訊</div>
           <div class="form-row" style="margin-bottom:16px">
             <div class="fg">
-              <label>最低需求數量</label>
+              <label>最低安全庫存量</label>
               <input type="number" class="fc mono" id="inv-thresh" value="0" min="0">
             </div>
             <div class="fg">
@@ -684,18 +704,35 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
               <input type="date" class="fc" id="inv-recorded">
             </div>
           </div>
-          <button class="btn btn-dark btn-full" onclick="saveInventory()">☁️ 儲存並同步至資料庫</button>
+          <button class="btn btn-dark btn-full" onclick="saveInventory()">💾 儲存今日盤點</button>
+        </div>
+
+        <!-- 消耗量登錄 -->
+        <div class="card">
+          <div class="card-title" style="margin-bottom:10px">📉 今日消耗量</div>
+          <p style="font-size:.78rem;color:var(--ink-3);margin-bottom:14px">填入今天實際用掉了多少，系統會自動統計本週、本月消耗趨勢。</p>
+          <div class="form-row" style="margin-bottom:14px">
+            <div class="fg">
+              <label>消耗數量</label>
+              <input type="number" class="fc mono" id="inv-consumption" value="0" min="0">
+            </div>
+            <div class="fg">
+              <label>備註（選填）</label>
+              <input type="text" class="fc" id="inv-consumption-note" placeholder="例：週末促銷、損耗">
+            </div>
+          </div>
+          <button class="btn btn-ghost" onclick="saveConsumption()">📉 儲存消耗記錄</button>
         </div>
       </div>
 
       <!-- ════ PAGE: Products (admin only) ════ -->
       <div class="page" id="pg-products">
         <div class="page-eyebrow">品項管理</div>
-        <h1 class="pg-title">品項管理</h1>
-        <p class="pg-sub">新增、編輯或停用需要控管的品項。單價用於成本報表計算。</p>
+        <h1 class="pg-title">品項設定</h1>
+        <p class="pg-sub">新增要控管的品項，設定單位與單價，用於計算庫存成本。</p>
 
         <div class="card">
-          <div class="card-title" style="margin-bottom:14px">🏷️ 目前品項清單</div>
+          <div class="card-title" style="margin-bottom:14px">目前品項</div>
           <div class="tbl-wrap">
             <table class="dt">
               <thead><tr><th>品項名稱</th><th>單位</th><th>單價（元）</th><th>狀態</th><th style="width:160px">操作</th></tr></thead>
@@ -705,7 +742,7 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
         </div>
 
         <div class="card">
-          <div class="card-title" style="margin-bottom:16px">➕ 新增品項</div>
+          <div class="card-title" style="margin-bottom:16px">新增品項</div>
           <div class="form-row-3" style="margin-bottom:16px">
             <div class="fg"><label>品項名稱</label><input type="text" class="fc" id="new-product-name" placeholder="例：鮮奶、優格、起司"></div>
             <div class="fg"><label>單位</label><input type="text" class="fc" id="new-product-unit" placeholder="例：瓶、盒、片" value="瓶"></div>
@@ -718,11 +755,11 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
       <!-- ════ PAGE: Staff ════ -->
       <div class="page" id="pg-staff">
         <div class="page-eyebrow">人員管理</div>
-        <h1 class="pg-title">訂貨人員名單</h1>
-        <p class="pg-sub admin-only" style="display:none">新增或移除盤點下拉選單中的訂貨人員。</p>
-        <p class="pg-sub staff-only">目前登記的訂貨人員清單（僅供查看）。</p>
+        <h1 class="pg-title">人員名單</h1>
+        <p class="pg-sub admin-only" style="display:none">管理可以執行盤點的人員。</p>
+        <p class="pg-sub staff-only">目前的盤點人員清單。</p>
         <div class="card">
-          <div class="card-title" style="margin-bottom:14px">👥 目前人員清單</div>
+          <div class="card-title" style="margin-bottom:14px">人員清單</div>
           <ul class="person-list" id="staff-ul"></ul>
           <div class="divider admin-only" style="display:none"></div>
           <div class="admin-only" style="display:none;gap:10px;align-items:flex-end">
@@ -735,26 +772,33 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
       <!-- ════ PAGE: Schedule (admin only) ════ -->
       <div class="page" id="pg-schedule">
         <div class="page-eyebrow">通知設定</div>
-        <h1 class="pg-title">自動通知設定</h1>
-        <p class="pg-sub">設定每日庫存日報的發送時間。時間到時同時發送 Email 與 LINE 推播。</p>
+        <h1 class="pg-title">自動通知</h1>
+        <p class="pg-sub">設定每天幾點發送通知，同時發 Email 和 LINE。</p>
 
         <!-- 時間與收件人 -->
         <div class="card">
           <div class="card-title" style="margin-bottom:16px">⏰ 發送時間</div>
           <div class="form-row" style="margin-bottom:16px">
             <div class="fg">
-              <label>每日固定發送時間（台灣時間）</label>
+              <label>每天幾點發通知</label>
               <input type="time" class="fc mono" id="sch-time" value="21:00" oninput="updateSchedPreview()">
-              <span class="hint">後端每分鐘讀取此設定，時間到自動發送。</span>
+              
             </div>
             <div class="fg">
-              <label>Email 收件人</label>
+              <label>收件人</label>
               <select class="fc mono" id="sch-receiver"></select>
             </div>
           </div>
           <div class="sched-preview"><span class="pulse"></span><span id="sched-text">排程運作中，下次發送：—</span></div>
         </div>
 
+        <!-- LINE 設定 -->
+        <div class="card">
+          <div class="card-title" style="margin-bottom:4px">🟢 LINE 推播通知</div>
+          <p style="font-size:.78rem;color:var(--ink-3);margin-bottom:0">
+            將 Bot 加入 LINE 群組後，群組會自動出現在下方「LINE 群組通知管理」清單，無需手動填寫 ID。
+          </p>
+        </div>
 
         <button class="btn btn-dark" onclick="saveSchedule()" style="margin-bottom:20px">💾 儲存通知設定</button>
 
@@ -766,11 +810,11 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
 
         <!-- 收件人清單 -->
         <div class="card">
-          <div class="card-title" style="margin-bottom:14px">📬 Email 收件人清單</div>
+          <div class="card-title" style="margin-bottom:14px">📬 Email 收件人</div>
           <ul class="person-list" id="receiver-ul"></ul>
           <div class="divider"></div>
           <div style="display:flex;gap:10px;align-items:flex-end">
-            <div class="fg" style="flex:1"><label>新增收件信箱</label><input type="email" class="fc mono" id="new-receiver" placeholder="email@example.com"></div>
+            <div class="fg" style="flex:1"><label>新增信箱</label><input type="email" class="fc mono" id="new-receiver" placeholder="email@example.com"></div>
             <button class="btn btn-sky" onclick="addReceiver()">＋ 加入</button>
           </div>
         </div>
@@ -808,10 +852,10 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
       <!-- ════ PAGE: Users (admin only) ════ -->
       <div class="page" id="pg-users">
         <div class="page-eyebrow">系統管理</div>
-        <h1 class="pg-title">使用者管理</h1>
-        <p class="pg-sub">新增或刪除系統帳號。admin 有完整權限；staff 只能填報庫存。</p>
+        <h1 class="pg-title">帳號管理</h1>
+        <p class="pg-sub">管理登入帳號。管理員可使用全部功能；一般人員只能盤點。</p>
         <div class="card">
-          <div class="card-title" style="margin-bottom:14px">👥 目前帳號清單</div>
+          <div class="card-title" style="margin-bottom:14px">帳號清單</div>
           <div class="tbl-wrap">
             <table class="dt">
               <thead><tr><th>帳號</th><th>角色</th><th>建立時間</th><th style="width:80px"></th></tr></thead>
@@ -820,10 +864,10 @@ input[type="time"].fc { font-family: 'DM Mono', monospace; }
           </div>
         </div>
         <div class="card">
-          <div class="card-title" style="margin-bottom:16px">➕ 新增帳號</div>
+          <div class="card-title" style="margin-bottom:16px">新增帳號</div>
           <div class="form-row" style="margin-bottom:16px">
             <div class="fg"><label>帳號名稱</label><input type="text" class="fc" id="new-username" placeholder="英數字，不可重複"></div>
-            <div class="fg"><label>角色</label><select class="fc" id="new-role"><option value="staff">staff — 一般人員</option><option value="admin">admin — 管理員</option></select></div>
+            <div class="fg"><label>角色</label><select class="fc" id="new-role"><option value="staff">一般人員（只能盤點）</option><option value="admin">管理員（完整權限）</option></select></div>
             <div class="fg"><label>密碼</label><div class="pw-wrap"><input type="password" class="fc" id="new-pw" placeholder="至少 6 個字元"><button class="pw-toggle" onclick="togglePw('new-pw',this)" type="button">👁</button></div></div>
             <div class="fg"><label>確認密碼</label><div class="pw-wrap"><input type="password" class="fc" id="new-pw2" placeholder="再輸入一次"><button class="pw-toggle" onclick="togglePw('new-pw2',this)" type="button">👁</button></div></div>
           </div>
@@ -928,9 +972,9 @@ function enterApp() {
 
 /* ── Navigation ── */
 const PAGE_TITLES = {
-  'pg-dashboard':'儀表板','pg-inventory':'效期庫存登錄',
-  'pg-products':'品項管理','pg-staff':'訂貨人員',
-  'pg-schedule':'自動通知設定','pg-users':'使用者管理',
+  'pg-dashboard':'庫存總覽','pg-inventory':'今日盤點',
+  'pg-products':'品項設定','pg-staff':'人員名單',
+  'pg-schedule':'通知設定','pg-users':'帳號管理',
 };
 document.querySelectorAll('.sb-item').forEach(el => {
   el.addEventListener('click', () => {
@@ -951,7 +995,7 @@ async function initApp() {
   document.getElementById('inv-order').value    = today;
   document.getElementById('inv-recorded').value = today;
   if (!document.getElementById('batch-body').rows.length) addBatchRow();
-  const tasks = [loadProducts(), loadStaff(), loadReceivers(), loadSchedule(), loadInventory()];
+  const tasks = [loadProducts(), loadStaff(), loadReceivers(), loadSchedule(), loadInventory(), loadConsumptionStats()];
   if (currentRole === 'admin') tasks.push(loadUsers(), loadLineGroups());
   await Promise.all(tasks);
   updateSchedPreview();
@@ -1319,6 +1363,55 @@ function updateSchedPreview() {
   const mm = parseInt(t.split(':')[1]), hh = parseInt(t.split(':')[0]);
   const cp = document.getElementById('cron-preview');
   if (cp) cp.innerHTML = `<span class="cm"># 每天 ${t} 自動執行</span><br><span class="cv">${mm} ${hh} * * *</span>  python scheduler.py`;
+}
+
+/* ── Consumption ── */
+async function saveConsumption() {
+  const pid   = parseInt(document.getElementById('inv-product')?.value);
+  const qty   = parseInt(document.getElementById('inv-consumption')?.value) || 0;
+  const note  = document.getElementById('inv-consumption-note')?.value.trim() || '';
+  const date  = document.getElementById('inv-recorded')?.value || todayStr();
+  const staff = document.getElementById('inv-staff')?.value || '';
+  if (!pid) { toast('請先選擇品項','warn'); return; }
+  showLoading(true);
+  const res = await api('POST', '/consumption/save', {
+    product_id: pid, recorded_date: date,
+    quantity: qty, staff_name: staff, note: note || null,
+  });
+  showLoading(false);
+  if (!res) return;
+  toast('✅ 消耗記錄已儲存','ok');
+  loadConsumptionStats();
+}
+
+async function loadConsumptionStats() {
+  const data = await api('GET', '/consumption/stats');
+  if (!data?.stats) return;
+  renderConsumptionTable(data.stats);
+}
+
+function renderConsumptionTable(stats) {
+  const card  = document.getElementById('consumption-card');
+  const tbody = document.getElementById('consumption-tbody');
+  if (!stats.length) { card.style.display='none'; return; }
+  card.style.display = 'block';
+  tbody.innerHTML = stats.map(s => {
+    const suggest = s.suggest_order;
+    const suggestCell = suggest > 0
+      ? `<span style="color:var(--red);font-weight:700">${suggest} ${s.unit}</span>`
+      : `<span style="color:var(--green)">足夠</span>`;
+    const trend = s.this_week >= s.last_week
+      ? `<span style="color:var(--red);font-size:.7rem">↑</span>`
+      : `<span style="color:var(--green);font-size:.7rem">↓</span>`;
+    return `<tr>
+      <td><strong>${s.product_name}</strong></td>
+      <td class="mono">${s.this_week} ${s.unit} ${trend}</td>
+      <td class="mono" style="color:var(--ink-3)">${s.last_week} ${s.unit}</td>
+      <td class="mono" style="color:var(--ink-3)">${s.this_month} ${s.unit}</td>
+      <td class="mono">${s.current_qty} ${s.unit}</td>
+      <td>${suggestCell}</td>
+    </tr>`;
+  }).join('');
 }
 
 /* ── LINE Groups ── */
