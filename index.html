@@ -3,884 +3,521 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MilkFlow — 鮮奶庫存控管</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<title>StockFlow — 庫存控管</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,600&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-:root {
-  --navy:      #0A0F1E;
-  --navy-2:    #131929;
-  --navy-3:    #1E2A40;
-  --sky:       #38BDF8;
-  --sky-dk:    #0284C7;
-  --sky-lt:    #E0F2FE;
-  --white:     #FFFFFF;
-  --bg:        #F1F5F9;
-  --surface:   #FFFFFF;
-  --border:    #E2E8F0;
-  --ink:       #0F172A;
-  --ink-2:     #334155;
-  --ink-3:     #64748B;
-  --ink-4:     #94A3B8;
-  --green:     #10B981;
-  --green-lt:  #D1FAE5;
-  --red:       #EF4444;
-  --red-lt:    #FEE2E2;
-  --amber:     #F59E0B;
-  --amber-lt:  #FEF3C7;
-  --violet:    #8B5CF6;
-  --violet-lt: #EDE9FE;
-  --sidebar-w: 240px;
-  --nav-h:     58px;
-  --radius:    10px;
-  --shadow:    0 1px 3px rgba(0,0,0,.07), 0 6px 20px rgba(0,0,0,.05);
+/* ═══════════════ TOKENS ═══════════════ */
+:root{
+  --paper:#F7F6F2; --card:#FFFFFF;
+  --pine:#12352B; --pine-2:#0D2A22;
+  --leaf:#1F6B4E; --leaf-dk:#17513B;
+  --lime:#C8F04B; --lime-soft:rgba(200,240,75,.14);
+  --ink:#1B2B26; --ink-2:#47554F; --ink-3:#75837C; --ink-4:#A9B3AC;
+  --line:#E5E3DB;
+  --amber:#B45309; --amber-bg:#FBF0E1;
+  --red:#B3261E;   --red-bg:#FBEAE8;
+  --green-bg:#E7F3EC;
+  --sb-w:232px;
+  --r:16px;
+  --shadow:0 1px 2px rgba(27,43,38,.05),0 8px 24px rgba(27,43,38,.06);
+  --font-ui:'Noto Sans TC',sans-serif;
+  --font-display:'Fraunces',serif;
+  --font-mono:'IBM Plex Mono',monospace;
 }
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
-body {
-  font-family: 'Inter', 'Noto Sans TC', sans-serif;
-  background: var(--bg);
-  color: var(--ink);
-  font-size: 14px;
-  line-height: 1.6;
-  min-height: 100vh;
-}
-#screen-login { display: flex; min-height: 100vh; }
-#screen-app   { display: none; min-height: 100vh; }
-.login-left {
-  width: 420px; flex-shrink: 0;
-  background: var(--navy);
-  display: flex; flex-direction: column;
-  justify-content: center; align-items: center;
-  padding: 48px;
-  position: relative; overflow: hidden;
-}
-.login-left::before {
-  content: '';
-  position: absolute; top: -80px; left: -80px;
-  width: 320px; height: 320px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(56,189,248,.18) 0%, transparent 70%);
-  pointer-events: none;
-}
-.login-left::after {
-  content: '';
-  position: absolute; bottom: -60px; right: -60px;
-  width: 260px; height: 260px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(56,189,248,.10) 0%, transparent 70%);
-  pointer-events: none;
-}
-.login-brand {
-  display: flex; flex-direction: column; align-items: flex-start;
-  gap: 14px; position: relative; z-index: 1; width: 100%;
-}
-.login-icon {
-  font-size: 2.8rem;
-  background: rgba(56,189,248,.15);
-  width: 64px; height: 64px; border-radius: 16px;
-  display: flex; align-items: center; justify-content: center;
-}
-.login-name {
-  font-family: 'DM Serif Display', serif;
-  font-size: 2rem; color: var(--white);
-  line-height: 1.1;
-}
-.login-tagline {
-  font-size: .82rem; color: rgba(255,255,255,.45);
-  letter-spacing: .02em;
-}
-.login-features { margin-top: 40px; position: relative; z-index: 1; width: 100%; }
-.login-feat {
-  display: flex; align-items: flex-start; gap: 12px;
-  padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.07);
-  font-size: .79rem; color: rgba(255,255,255,.55); line-height: 1.5;
-}
-.login-feat:last-child { border-bottom: none; }
-.feat-icon {
-  width: 28px; height: 28px; border-radius: 7px;
-  background: rgba(56,189,248,.12); color: var(--sky);
-  display: flex; align-items: center; justify-content: center;
-  font-size: .85rem; flex-shrink: 0; margin-top: 1px;
-}
-.login-right {
-  flex: 1;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--bg); padding: 40px;
-}
-.login-box {
-  width: 100%; max-width: 360px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 36px 32px;
-  box-shadow: var(--shadow);
-}
-.login-box-title {
-  font-size: 1.2rem; font-weight: 700; margin-bottom: 4px; color: var(--ink);
-}
-.login-box-sub { font-size: .8rem; color: var(--ink-3); margin-bottom: 28px; }
-.login-err {
-  display: none;
-  background: var(--red-lt); color: var(--red);
-  border-radius: 7px; padding: 9px 13px;
-  font-size: .79rem; font-weight: 500; margin-bottom: 16px;
-}
-.app-shell { display: flex; min-height: 100vh; }
-.sidebar {
-  width: var(--sidebar-w); flex-shrink: 0;
-  background: var(--navy);
-  display: flex; flex-direction: column;
-  position: fixed; top: 0; left: 0;
-  height: 100vh; z-index: 100;
-  transition: transform .28s cubic-bezier(.4,0,.2,1);
-}
-.sb-top {
-  padding: 22px 18px 16px;
-  border-bottom: 1px solid rgba(255,255,255,.07);
-  display: flex; align-items: center; gap: 10px;
-}
-.sb-logo {
-  width: 36px; height: 36px; border-radius: 9px;
-  background: rgba(56,189,248,.15);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.2rem; flex-shrink: 0;
-}
-.sb-brand-text { line-height: 1.2; }
-.sb-brand-name {
-  font-family: 'DM Serif Display', serif;
-  font-size: 1rem; color: var(--white);
-}
-.sb-brand-ver {
-  font-size: .63rem; color: rgba(255,255,255,.3);
-  font-family: 'DM Mono', monospace;
-}
-.sb-nav { flex: 1; padding: 12px 10px; overflow-y: auto; }
-.sb-section-label {
-  font-size: .6rem; font-weight: 700; letter-spacing: .14em;
-  text-transform: uppercase; color: rgba(255,255,255,.25);
-  padding: 10px 10px 5px; margin-top: 8px;
-}
-.sb-item {
-  display: flex; align-items: center; gap: 9px;
-  padding: 9px 12px; border-radius: 8px;
-  cursor: pointer; user-select: none;
-  font-size: .82rem; font-weight: 500;
-  color: rgba(255,255,255,.5);
-  transition: background .15s, color .15s;
-  margin-bottom: 2px;
-}
-.sb-item:hover { background: rgba(255,255,255,.07); color: rgba(255,255,255,.85); }
-.sb-item.active { background: rgba(56,189,248,.15); color: var(--sky); }
-.sb-item .si { font-size: .95rem; flex-shrink: 0; }
-.sb-bottom {
-  padding: 14px 16px;
-  border-top: 1px solid rgba(255,255,255,.06);
-}
-.sb-user {
-  display: flex; align-items: center; gap: 9px;
-  padding: 8px 0; cursor: pointer;
-}
-.sb-avatar {
-  width: 30px; height: 30px; border-radius: 50%;
-  background: rgba(56,189,248,.2); color: var(--sky);
-  display: flex; align-items: center; justify-content: center;
-  font-size: .8rem; font-weight: 700; flex-shrink: 0;
-}
-.sb-user-info { line-height: 1.3; min-width: 0; }
-.sb-user-name { font-size: .8rem; font-weight: 600; color: rgba(255,255,255,.8); }
-.sb-user-role { font-size: .68rem; color: rgba(255,255,255,.3); }
-.sb-logout-btn {
-  font-size: .73rem; color: rgba(255,255,255,.3);
-  background: none; border: none; cursor: pointer;
-  margin-left: auto; padding: 4px 7px; border-radius: 5px;
-  transition: background .13s, color .13s;
-}
-.sb-logout-btn:hover { background: rgba(255,255,255,.07); color: var(--red); }
-.main-content {
-  margin-left: var(--sidebar-w);
-  flex: 1; display: flex; flex-direction: column; min-height: 100vh;
-}
-.topbar {
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  height: var(--nav-h);
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 28px; position: sticky; top: 0; z-index: 50;
-  gap: 12px;
-}
-.topbar-title { font-size: .97rem; font-weight: 700; }
-.topbar-meta  { font-size: .72rem; color: var(--ink-3); font-family: 'DM Mono', monospace; }
-.api-pill {
-  display: inline-flex; align-items: center; gap: 5px;
-  font-size: .68rem; font-weight: 600; font-family: 'DM Mono', monospace;
-  padding: 3px 9px; border-radius: 99px;
-  background: var(--green-lt); color: var(--green);
-}
-.api-pill.err { background: var(--red-lt); color: var(--red); }
-.api-pill.loading { background: var(--amber-lt); color: var(--amber); }
-.api-pill-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
-#hamburger {
-  display: none; background: none; border: none;
-  font-size: 1.2rem; cursor: pointer; color: var(--ink);
-}
-.page { display: none; padding: 28px; }
-.page.active { display: block; }
-.page-eyebrow {
-  font-size: .65rem; font-weight: 700; letter-spacing: .14em;
-  text-transform: uppercase; color: var(--sky-dk); margin-bottom: 5px;
-}
-h1.pg-title {
-  font-family: 'DM Serif Display', serif;
-  font-size: 1.65rem; margin-bottom: 4px;
-}
-.pg-sub { font-size: .8rem; color: var(--ink-3); margin-bottom: 26px; }
-.dash-hero {
-  background: var(--navy);
-  border-radius: 14px;
-  padding: 28px 30px;
-  margin-bottom: 20px;
-  display: flex; align-items: flex-end;
-  justify-content: space-between; flex-wrap: wrap; gap: 20px;
-  position: relative; overflow: hidden;
-}
-.dash-hero::before {
-  content: '';
-  position: absolute; top: -60px; right: -60px;
-  width: 280px; height: 280px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(56,189,248,.14) 0%, transparent 70%);
-  pointer-events: none;
-}
-.hero-left { position: relative; z-index: 1; }
-.hero-eyebrow {
-  font-size: .67rem; font-weight: 600; letter-spacing: .1em;
-  text-transform: uppercase; color: rgba(255,255,255,.4); margin-bottom: 6px;
-}
-.hero-num {
-  font-family: 'DM Serif Display', serif;
-  font-size: 5rem; line-height: 1; color: var(--white);
-  transition: color .4s;
-}
-.hero-num.ok   { color: #34D399; }
-.hero-num.warn { color: #FCD34D; }
-.hero-num.bad  { color: #F87171; }
-.hero-unit { font-size: .8rem; color: rgba(255,255,255,.4); margin-top: 5px; }
-.hero-right {
-  position: relative; z-index: 1;
-  display: flex; flex-direction: column;
-  align-items: flex-end; gap: 10px;
-}
-.hero-tag {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-size: .77rem; font-weight: 700;
-  padding: 5px 13px; border-radius: 99px;
-}
-.ht-ok   { background: rgba(52,211,153,.15); color: #34D399; border: 1px solid rgba(52,211,153,.3); }
-.ht-warn { background: rgba(252,211,77,.15);  color: #FCD34D; border: 1px solid rgba(252,211,77,.3); }
-.ht-bad  { background: rgba(248,113,113,.15); color: #F87171; border: 1px solid rgba(248,113,113,.3); }
-.ht-nil  { background: rgba(255,255,255,.07); color: rgba(255,255,255,.4); border: 1px solid rgba(255,255,255,.1); }
-.hero-stats {
-  display: flex; gap: 18px; align-items: center;
-  font-size: .77rem; color: rgba(255,255,255,.45);
-}
-.hero-stats strong { color: rgba(255,255,255,.8); }
-.stock-bar-wrap { margin-bottom: 20px; }
-.stock-bar-label {
-  display: flex; justify-content: space-between;
-  font-size: .72rem; color: var(--ink-3); margin-bottom: 6px;
-}
-.stock-bar-track {
-  height: 8px; background: var(--border);
-  border-radius: 99px; overflow: hidden;
-}
-.stock-bar-fill {
-  height: 100%; border-radius: 99px;
-  background: var(--green);
-  transition: width .6s cubic-bezier(.4,0,.2,1), background .4s;
-  min-width: 3px;
-}
-.stock-bar-fill.warn { background: var(--amber); }
-.stock-bar-fill.bad  { background: var(--red); }
-.kpi-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 20px; }
-.kpi-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 18px 20px;
-  box-shadow: var(--shadow);
-}
-.kpi-label { font-size: .67rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--ink-4); margin-bottom: 8px; }
-.kpi-value { font-family: 'DM Mono', monospace; font-size: 1.5rem; font-weight: 500; color: var(--ink); }
-.kpi-sub   { font-size: .71rem; color: var(--ink-3); margin-top: 3px; }
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 20px 22px;
-  margin-bottom: 16px;
-  box-shadow: var(--shadow);
-}
-.card-head {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 16px;
-}
-.card-title {
-  font-size: .72rem; font-weight: 700;
-  letter-spacing: .07em; text-transform: uppercase;
-  color: var(--ink-3);
-  display: flex; align-items: center; gap: 6px;
-}
-.tbl-wrap { overflow-x: auto; }
-table.dt { width: 100%; border-collapse: collapse; font-size: .82rem; }
-.dt thead tr { border-bottom: 2px solid var(--border); }
-.dt th {
-  text-align: left; padding: 8px 12px;
-  font-size: .67rem; font-weight: 700;
-  letter-spacing: .07em; text-transform: uppercase; color: var(--ink-4);
-}
-.dt tbody tr { border-bottom: 1px solid var(--border); transition: background .12s; }
-.dt tbody tr:last-child { border-bottom: none; }
-.dt tbody tr:hover { background: var(--bg); }
-.dt td { padding: 10px 12px; vertical-align: middle; }
-.dt td.mono { font-family: 'DM Mono', monospace; font-size: .79rem; }
-.empty-cell { text-align: center; color: var(--ink-4); padding: 32px 12px !important; font-size: .81rem; }
-.badge {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 2px 9px; border-radius: 99px;
-  font-size: .68rem; font-weight: 700;
-}
-.b-ok   { background: var(--green-lt);  color: var(--green); }
-.b-warn { background: var(--amber-lt);  color: var(--amber); }
-.b-bad  { background: var(--red-lt);    color: var(--red);   }
-.b-sky  { background: var(--sky-lt);    color: var(--sky-dk);}
-.form-row   { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
-.fg { display: flex; flex-direction: column; gap: 5px; }
-.fg label { font-size: .72rem; font-weight: 600; color: var(--ink-2); }
-.fg .hint  { font-size: .68rem; color: var(--ink-4); margin-top: 2px; }
-.fc {
-  height: 40px; padding: 0 12px;
-  border: 1.5px solid var(--border); border-radius: 8px;
-  font-family: 'Inter', sans-serif; font-size: .83rem;
-  color: var(--ink); background: var(--surface);
-  outline: none; transition: border-color .15s, box-shadow .15s;
-}
-.fc:focus { border-color: var(--sky-dk); box-shadow: 0 0 0 3px var(--sky-lt); }
-.fc.mono  { font-family: 'DM Mono', monospace; }
-input[type="date"].fc,
-input[type="time"].fc { font-family: 'DM Mono', monospace; }
-.bi {
-  height: 35px; padding: 0 9px; width: 100%;
-  border: 1.5px solid var(--border); border-radius: 7px;
-  font-family: 'DM Mono', monospace; font-size: .79rem;
-  color: var(--ink); background: var(--surface); outline: none;
-  transition: border-color .15s;
-}
-.bi:focus { border-color: var(--sky-dk); }
-.btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 0 16px; height: 38px; border-radius: 8px; border: none;
-  font-family: 'Inter', sans-serif;
-  font-size: .81rem; font-weight: 600;
-  cursor: pointer; user-select: none; white-space: nowrap;
-  transition: filter .13s, transform .09s;
-}
-.btn:active { transform: scale(.97); }
-.btn-dark    { background: var(--navy); color: #fff; }
-.btn-dark:hover { filter: brightness(1.4); }
-.btn-sky     { background: var(--sky); color: var(--navy); }
-.btn-sky:hover { filter: brightness(1.05); }
-.btn-ghost   { background: var(--surface); color: var(--ink-2); border: 1.5px solid var(--border); }
-.btn-ghost:hover { background: var(--bg); }
-.btn-danger  { background: var(--red-lt); color: var(--red); border: 1.5px solid #FCA5A5; }
-.btn-danger:hover { background: #FCA5A5; }
-.btn-sm      { height: 32px; padding: 0 11px; font-size: .76rem; }
-.btn-xs      { height: 27px; padding: 0 9px;  font-size: .72rem; border-radius: 6px; }
-.btn-full    { width: 100%; justify-content: center; }
-.icon-btn {
-  width: 28px; height: 28px; border-radius: 6px; border: none;
-  display: inline-flex; align-items: center; justify-content: center;
-  font-size: .82rem; cursor: pointer; flex-shrink: 0;
-  transition: background .12s;
-}
-.ib-del { background: var(--red-lt); color: var(--red); }
-.ib-del:hover { background: #FCA5A5; }
-.divider { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
-.person-list { list-style: none; margin-bottom: 14px; }
-.person-li {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 9px 10px; border-radius: 7px; font-size: .83rem;
-  transition: background .12s;
-}
-.person-li:hover { background: var(--bg); }
-.person-avatar {
-  width: 28px; height: 28px; border-radius: 50%;
-  background: var(--sky-lt); color: var(--sky-dk);
-  display: inline-flex; align-items: center; justify-content: center;
-  font-size: .72rem; font-weight: 700; flex-shrink: 0; margin-right: 8px;
-}
-.sched-preview {
-  display: flex; align-items: center; gap: 7px;
-  margin-top: 10px;
-  font-size: .77rem; font-family: 'DM Mono', monospace; color: var(--ink-3);
-}
-.pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--green); flex-shrink: 0; animation: blink 2s infinite; }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
-.cron-box {
-  background: var(--bg); border: 1px solid var(--border);
-  border-radius: 8px; padding: 13px 16px;
-  font-family: 'DM Mono', monospace; font-size: .79rem; color: var(--ink-2);
-  line-height: 1.7; margin-top: 12px;
-}
-.cron-box .cm { color: var(--ink-4); font-style: italic; }
-.cron-box .cv { color: var(--sky-dk); font-weight: 500; }
-/* role badge in sidebar */
-.role-badge {
-  display: inline-flex; align-items: center;
-  font-size: .6rem; font-weight: 700; letter-spacing: .06em;
-  padding: 2px 7px; border-radius: 99px; margin-left: 6px;
-}
-.role-admin { background: rgba(56,189,248,.2); color: var(--sky); }
-.role-staff { background: rgba(255,255,255,.08); color: rgba(255,255,255,.4); }
-/* password input toggle */
-.pw-wrap { position: relative; }
-.pw-wrap .fc { width: 100%; padding-right: 40px; }
-.pw-toggle {
-  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
-  background: none; border: none; cursor: pointer;
-  color: var(--ink-3); font-size: .85rem;
-}
-.loading-overlay {
-  position: fixed; inset: 0; z-index: 9000;
-  background: rgba(10,15,30,.72);
-  display: none; align-items: center; justify-content: center;
-}
-.loading-overlay.show { display: flex; }
-.spinner {
-  width: 40px; height: 40px; border-radius: 50%;
-  border: 3px solid rgba(56,189,248,.2);
-  border-top-color: var(--sky);
-  animation: spin .7s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-#toast {
-  position: fixed; bottom: 22px; right: 22px;
-  background: var(--navy); color: #fff;
-  padding: 10px 17px; border-radius: 8px;
-  font-size: .8rem; font-weight: 500;
-  box-shadow: 0 8px 26px rgba(0,0,0,.22);
-  display: none; z-index: 9999; max-width: 300px;
-  animation: tup .22s ease;
-}
-#toast.ok   { background: #065F46; }
-#toast.warn { background: #92400E; }
-#toast.err  { background: #7F1D1D; }
-@keyframes tup { from{transform:translateY(8px);opacity:0} to{transform:translateY(0);opacity:1} }
-@media (max-width: 860px) {
-  .kpi-row { grid-template-columns: 1fr 1fr; }
-  .form-row-3 { grid-template-columns: 1fr 1fr; }
-}
-@media (max-width: 640px) {
-  .sidebar { transform: translateX(-100%); }
-  .sidebar.open { transform: translateX(0); }
-  .main-content { margin-left: 0; }
-  .kpi-row { grid-template-columns: 1fr; }
-  .form-row, .form-row-3 { grid-template-columns: 1fr; }
-  .topbar { padding: 0 14px; }
-  .page { padding: 16px 14px 50px; }
-  #hamburger { display: block; }
-  .hero-num { font-size: 3.5rem; }
-  .login-left { display: none; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-ui);background:var(--paper);color:var(--ink);font-size:14px;line-height:1.65;min-height:100vh;-webkit-font-smoothing:antialiased}
+::selection{background:var(--lime);color:var(--pine)}
+:focus-visible{outline:2px solid var(--leaf);outline-offset:2px;border-radius:4px}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* ═══════════════ SCREENS ═══════════════ */
+#screen-login{display:flex;min-height:100vh}
+#screen-app{display:none;min-height:100vh}
+
+/* ═══════════════ LOGIN ═══════════════ */
+.lg-left{width:44%;min-width:380px;background:var(--pine);color:#fff;display:flex;flex-direction:column;justify-content:center;padding:64px;position:relative;overflow:hidden}
+.lg-left::after{content:'';position:absolute;right:-140px;bottom:-140px;width:420px;height:420px;border-radius:50%;border:1.5px dashed rgba(200,240,75,.25);pointer-events:none}
+.lg-brand{font-family:var(--font-display);font-weight:700;font-size:3.2rem;line-height:1.05;letter-spacing:-.01em}
+.lg-brand .dot{color:var(--lime)}
+.lg-tag{margin-top:14px;font-size:.95rem;color:rgba(255,255,255,.55);letter-spacing:.04em}
+.lg-feats{margin-top:56px;display:flex;flex-direction:column;gap:18px;max-width:340px}
+.lg-feat{display:flex;gap:14px;align-items:flex-start;font-size:.86rem;color:rgba(255,255,255,.72);line-height:1.55}
+.lg-tick{width:20px;height:20px;border-radius:50%;background:var(--lime);color:var(--pine);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0;margin-top:2px}
+.lg-right{flex:1;display:flex;align-items:center;justify-content:center;padding:40px}
+.lg-box{width:100%;max-width:360px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:40px 34px;box-shadow:var(--shadow)}
+.lg-box h1{font-family:var(--font-display);font-weight:600;font-size:1.5rem;margin-bottom:6px}
+.lg-sub{font-size:.82rem;color:var(--ink-3);margin-bottom:26px}
+.lg-err{display:none;background:var(--red-bg);color:var(--red);border-radius:10px;padding:10px 14px;font-size:.8rem;font-weight:500;margin-bottom:16px}
+
+/* ═══════════════ APP SHELL ═══════════════ */
+.shell{display:flex;min-height:100vh}
+.sb{width:var(--sb-w);flex-shrink:0;background:var(--pine);display:flex;flex-direction:column;position:fixed;inset:0 auto 0 0;z-index:100;transition:transform .28s cubic-bezier(.4,0,.2,1)}
+.sb-top{padding:26px 22px 20px;display:flex;align-items:baseline;gap:6px}
+.sb-name{font-family:var(--font-display);font-weight:700;font-size:1.3rem;color:#fff;letter-spacing:-.01em}
+.sb-name .dot{color:var(--lime)}
+.sb-ver{font-family:var(--font-mono);font-size:.6rem;color:rgba(255,255,255,.32)}
+.sb-nav{flex:1;padding:8px 12px;overflow-y:auto}
+.sb-label{font-size:.6rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.28);padding:14px 12px 6px}
+.sb-item{display:flex;align-items:center;padding:10px 14px;border-radius:10px;cursor:pointer;user-select:none;font-size:.86rem;font-weight:500;color:rgba(255,255,255,.58);transition:background .15s,color .15s;margin-bottom:2px;position:relative}
+.sb-item:hover{background:rgba(255,255,255,.06);color:rgba(255,255,255,.9)}
+.sb-item.active{background:var(--lime-soft);color:var(--lime)}
+.sb-item.active::before{content:'';position:absolute;left:0;top:22%;bottom:22%;width:3px;border-radius:99px;background:var(--lime)}
+.sb-bottom{padding:16px 18px;border-top:1px solid rgba(255,255,255,.08)}
+.sb-user{display:flex;align-items:center;gap:10px}
+.sb-ava{width:32px;height:32px;border-radius:50%;background:var(--lime);color:var(--pine);display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:700;flex-shrink:0}
+.sb-uinfo{line-height:1.35;min-width:0;flex:1}
+.sb-uname{font-size:.82rem;font-weight:700;color:rgba(255,255,255,.88);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-urole{font-size:.68rem;color:rgba(255,255,255,.38)}
+.sb-ibtn{font-size:.8rem;color:rgba(255,255,255,.4);background:none;border:none;cursor:pointer;padding:5px 7px;border-radius:7px;transition:background .13s,color .13s}
+.sb-ibtn:hover{background:rgba(255,255,255,.08);color:#fff}
+
+.main{margin-left:var(--sb-w);flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{background:rgba(247,246,242,.86);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 30px;position:sticky;top:0;z-index:50;gap:12px}
+.tb-title{font-size:.98rem;font-weight:700}
+.tb-meta{font-size:.7rem;color:var(--ink-3);font-family:var(--font-mono)}
+.pill-api{display:inline-flex;align-items:center;gap:6px;font-size:.66rem;font-weight:600;font-family:var(--font-mono);padding:4px 11px;border-radius:99px;background:var(--green-bg);color:var(--leaf)}
+.pill-api.err{background:var(--red-bg);color:var(--red)}
+.pill-api .d{width:5px;height:5px;border-radius:50%;background:currentColor}
+#hamburger{display:none;background:none;border:none;font-size:1.25rem;cursor:pointer;color:var(--ink)}
+
+/* pages */
+.page{display:none;padding:34px 34px 60px;max-width:1180px}
+.page.active{display:block;animation:pgIn .3s ease}
+@keyframes pgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.eyebrow{font-size:.64rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--leaf);margin-bottom:6px}
+h1.pg-t{font-family:var(--font-display);font-weight:600;font-size:1.8rem;letter-spacing:-.01em;margin-bottom:5px}
+.pg-s{font-size:.84rem;color:var(--ink-3);margin-bottom:30px}
+
+/* ═══════════════ CARDS ═══════════════ */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:24px 26px;margin-bottom:18px;box-shadow:var(--shadow)}
+.card-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:10px;flex-wrap:wrap}
+.card-t{font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+
+/* KPI */
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:26px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px 22px;box-shadow:var(--shadow)}
+.kpi-l{font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-4);margin-bottom:10px}
+.kpi-v{font-family:var(--font-display);font-weight:600;font-size:2rem;line-height:1}
+.kpi-s{font-size:.7rem;color:var(--ink-3);margin-top:6px}
+
+/* ═══ SHELF TAG（簽章元素）═══ */
+.tags{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:18px;margin-bottom:26px}
+.tag{background:var(--card);border:1px solid var(--line);border-radius:14px 14px var(--r) var(--r);padding:20px 22px 22px;box-shadow:var(--shadow);position:relative;transition:transform .18s ease,box-shadow .18s ease}
+.tag:hover{transform:translateY(-3px);box-shadow:0 2px 4px rgba(27,43,38,.06),0 14px 34px rgba(27,43,38,.1)}
+.tag::before{content:'';position:absolute;top:14px;left:20px;width:12px;height:12px;border-radius:50%;background:var(--paper);border:1px solid var(--line);box-shadow:inset 0 1px 2px rgba(27,43,38,.12)}
+.tag-top{display:flex;justify-content:flex-end;margin-bottom:8px}
+.tag-status{font-size:.66rem;font-weight:700;padding:3px 11px;border-radius:99px;letter-spacing:.03em}
+.ts-ok{background:var(--green-bg);color:var(--leaf)}
+.ts-warn{background:var(--amber-bg);color:var(--amber)}
+.ts-bad{background:var(--red-bg);color:var(--red)}
+.tag-name{font-size:.86rem;font-weight:700;color:var(--ink-2);margin-bottom:2px}
+.tag-num{font-family:var(--font-display);font-weight:700;font-size:3.4rem;line-height:1;letter-spacing:-.02em}
+.tag-num .u{font-family:var(--font-ui);font-size:.85rem;font-weight:500;color:var(--ink-3);margin-left:6px}
+.n-ok{color:var(--leaf)} .n-warn{color:var(--amber)} .n-bad{color:var(--red)}
+.tag-cut{border:none;border-top:1.5px dashed var(--line);margin:16px 0 12px}
+.tag-meta{display:flex;justify-content:space-between;font-size:.72rem;color:var(--ink-3);font-family:var(--font-mono);margin-bottom:10px}
+.tag-bar{height:6px;background:var(--paper);border:1px solid var(--line);border-radius:99px;overflow:hidden}
+.tag-fill{height:100%;border-radius:99px;background:var(--leaf);transition:width .6s cubic-bezier(.4,0,.2,1);min-width:3px}
+.tag-fill.warn{background:var(--amber)} .tag-fill.bad{background:var(--red)}
+
+/* ═══════════════ TABLE ═══════════════ */
+.tw{overflow-x:auto}
+table.dt{width:100%;border-collapse:collapse;font-size:.83rem}
+.dt th{text-align:left;padding:9px 12px;font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-4);border-bottom:1.5px solid var(--line)}
+.dt tbody tr{border-bottom:1px solid var(--line);transition:background .12s}
+.dt tbody tr:last-child{border-bottom:none}
+.dt tbody tr:hover{background:var(--paper)}
+.dt td{padding:11px 12px;vertical-align:middle}
+.dt td.mono{font-family:var(--font-mono);font-size:.78rem}
+.empty{text-align:center;color:var(--ink-4);padding:36px 12px!important;font-size:.82rem}
+
+.badge{display:inline-flex;align-items:center;padding:2px 10px;border-radius:99px;font-size:.66rem;font-weight:700}
+.b-ok{background:var(--green-bg);color:var(--leaf)}
+.b-warn{background:var(--amber-bg);color:var(--amber)}
+.b-bad{background:var(--red-bg);color:var(--red)}
+.b-mute{background:var(--paper);color:var(--ink-3);border:1px solid var(--line)}
+
+/* ═══════════════ FORMS ═══════════════ */
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.frow3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.fg{display:flex;flex-direction:column;gap:6px}
+.fg label{font-size:.73rem;font-weight:600;color:var(--ink-2)}
+.fg .hint{font-size:.68rem;color:var(--ink-4)}
+.fc{height:42px;padding:0 14px;border:1.5px solid var(--line);border-radius:11px;font-family:var(--font-ui);font-size:.84rem;color:var(--ink);background:var(--card);outline:none;transition:border-color .15s,box-shadow .15s;width:100%}
+.fc:focus{border-color:var(--leaf);box-shadow:0 0 0 3px rgba(31,107,78,.12)}
+.fc.mono,input[type=date].fc,input[type=time].fc{font-family:var(--font-mono);font-size:.8rem}
+.fc[readonly]{background:var(--paper);color:var(--ink-3)}
+select.fc{cursor:pointer}
+.bi{height:36px;padding:0 10px;width:100%;border:1.5px solid var(--line);border-radius:9px;font-family:var(--font-mono);font-size:.78rem;color:var(--ink);background:var(--card);outline:none;transition:border-color .15s}
+.bi:focus{border-color:var(--leaf)}
+.pw-wrap{position:relative}
+.pw-wrap .fc{padding-right:42px}
+.pw-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--ink-3);font-size:.85rem}
+
+/* ═══════════════ BUTTONS（藥丸）═══════════════ */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:0 20px;height:42px;border-radius:99px;border:none;font-family:var(--font-ui);font-size:.83rem;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap;transition:filter .13s,transform .1s,background .15s}
+.btn:active{transform:scale(.97)}
+.btn-main{background:var(--leaf);color:#fff}
+.btn-main:hover{background:var(--leaf-dk)}
+.btn-lime{background:var(--lime);color:var(--pine)}
+.btn-lime:hover{filter:brightness(.95)}
+.btn-ghost{background:var(--card);color:var(--ink-2);border:1.5px solid var(--line)}
+.btn-ghost:hover{background:var(--paper)}
+.btn-danger{background:var(--red-bg);color:var(--red)}
+.btn-danger:hover{background:#F5D5D2}
+.btn-sm{height:34px;padding:0 14px;font-size:.76rem}
+.btn-xs{height:28px;padding:0 11px;font-size:.7rem}
+.btn-full{width:100%}
+.icon-btn{width:30px;height:30px;border-radius:50%;border:none;display:inline-flex;align-items:center;justify-content:center;font-size:.8rem;cursor:pointer;flex-shrink:0;background:var(--red-bg);color:var(--red);transition:background .12s}
+.icon-btn:hover{background:#F5D5D2}
+.divider{border:none;border-top:1px solid var(--line);margin:18px 0}
+
+/* person list */
+.plist{list-style:none;margin-bottom:14px}
+.pli{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:10px;font-size:.84rem;transition:background .12s}
+.pli:hover{background:var(--paper)}
+.pava{width:30px;height:30px;border-radius:50%;background:var(--green-bg);color:var(--leaf);display:inline-flex;align-items:center;justify-content:center;font-size:.74rem;font-weight:700;flex-shrink:0;margin-right:10px}
+
+/* mono code box */
+.codebox{background:var(--pine);color:rgba(255,255,255,.8);border-radius:12px;padding:16px 18px;font-family:var(--font-mono);font-size:.76rem;line-height:1.8;overflow-x:auto}
+.codebox .cm{color:rgba(255,255,255,.4)}
+.codebox .cv{color:var(--lime)}
+
+/* loading + toast */
+.loading{position:fixed;inset:0;z-index:9000;background:rgba(18,53,43,.55);backdrop-filter:blur(2px);display:none;align-items:center;justify-content:center}
+.loading.show{display:flex}
+.spin{width:42px;height:42px;border-radius:50%;border:3px solid rgba(200,240,75,.25);border-top-color:var(--lime);animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+#toast{position:fixed;bottom:24px;right:24px;background:var(--pine);color:#fff;padding:12px 20px;border-radius:99px;font-size:.8rem;font-weight:600;box-shadow:0 10px 30px rgba(18,53,43,.3);display:none;z-index:9999;max-width:320px;animation:tup .24s ease}
+#toast.ok{background:var(--leaf)}
+#toast.warn{background:var(--amber)}
+#toast.err{background:var(--red)}
+@keyframes tup{from{transform:translateY(10px);opacity:0}to{transform:none;opacity:1}}
+
+/* modal */
+.modal{display:none;position:fixed;inset:0;z-index:9999;background:rgba(18,53,43,.55);backdrop-filter:blur(2px);align-items:center;justify-content:center;padding:16px}
+.modal-box{background:var(--card);border-radius:20px;padding:30px;width:100%;max-width:380px;box-shadow:0 24px 70px rgba(18,53,43,.35)}
+.modal-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.modal-t{font-family:var(--font-display);font-weight:600;font-size:1.1rem}
+.modal-x{background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--ink-3);padding:4px}
+
+/* ═══════════════ RESPONSIVE ═══════════════ */
+@media(max-width:900px){.kpis{grid-template-columns:1fr 1fr}.frow3{grid-template-columns:1fr 1fr}}
+@media(max-width:640px){
+  .sb{transform:translateX(-100%)}
+  .sb.open{transform:none}
+  .main{margin-left:0}
+  .kpis,.frow,.frow3{grid-template-columns:1fr}
+  .topbar{padding:0 16px}
+  .page{padding:20px 16px 60px}
+  #hamburger{display:block}
+  .lg-left{display:none}
+  .tags{grid-template-columns:1fr}
 }
 </style>
-<!-- BODY_START -->
+</head>
 <body>
 
-<div class="loading-overlay" id="loading"><div class="spinner"></div></div>
+<div class="loading" id="loading"><div class="spin"></div></div>
 
-<!-- ════ LOGIN ════ -->
+<!-- ═══════════ LOGIN ═══════════ -->
 <div id="screen-login">
-  <div class="login-left">
-    <div class="login-brand">
-      <div class="login-icon">📦</div>
-      <div class="login-name">StockFlow</div>
-      <div class="login-tagline">庫存控管系統</div>
-    </div>
-    <div class="login-features">
-      <div class="login-feat"><div class="feat-icon">📦</div><div>多品項效期批次追蹤，即期品自動警示</div></div>
-      <div class="login-feat"><div class="feat-icon">💰</div><div>記錄消耗量，自動計算建議叫貨數</div></div>
-      <div class="login-feat"><div class="feat-icon">📧</div><div>每天自動發送 Email 與 LINE 庫存通知</div></div>
-      <div class="login-feat"><div class="feat-icon">☁️</div><div>雲端同步，手機電腦都能操作</div></div>
+  <div class="lg-left">
+    <div class="lg-brand">Stock<br>Flow<span class="dot">.</span></div>
+    <div class="lg-tag">看得見的庫存，算得準的叫貨</div>
+    <div class="lg-feats">
+      <div class="lg-feat"><span class="lg-tick">✓</span><span>每個品項一張貨架牌，庫存狀態一眼看懂</span></div>
+      <div class="lg-feat"><span class="lg-tick">✓</span><span>記錄每日消耗，自動算出建議叫貨量</span></div>
+      <div class="lg-feat"><span class="lg-tick">✓</span><span>時間一到，LINE 群組自動收到庫存日報</span></div>
     </div>
   </div>
-  <div class="login-right">
-    <div class="login-box">
-      <div class="login-box-title">歡迎回來</div>
-      <div class="login-box-sub">請登入您的帳號繼續使用</div>
-      <div class="login-err" id="login-err"></div>
-      <div style="display:flex;flex-direction:column;gap:13px">
+  <div class="lg-right">
+    <div class="lg-box">
+      <h1>歡迎回來</h1>
+      <div class="lg-sub">登入帳號開始今天的盤點</div>
+      <div class="lg-err" id="login-err"></div>
+      <div style="display:flex;flex-direction:column;gap:14px">
         <div class="fg"><label>帳號</label><input type="text" class="fc" id="login-user" placeholder="輸入帳號" autocomplete="username"></div>
         <div class="fg"><label>密碼</label><input type="password" class="fc" id="login-pass" placeholder="輸入密碼" autocomplete="current-password"></div>
-        <button class="btn btn-dark btn-full" style="margin-top:4px;height:42px" onclick="doLogin()">登入</button>
+        <button class="btn btn-main btn-full" style="margin-top:6px;height:44px" onclick="doLogin()">登入</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ════ APP ════ -->
+<!-- ═══════════ APP ═══════════ -->
 <div id="screen-app">
-  <div class="app-shell">
+  <div class="shell">
 
-    <!-- SIDEBAR -->
-    <nav class="sidebar" id="sidebar">
+    <nav class="sb" id="sidebar">
       <div class="sb-top">
-        <div class="sb-logo">📦</div>
-        <div class="sb-brand-text">
-          <div class="sb-brand-name">StockFlow</div>
-          <div class="sb-brand-ver">v2.3</div>
-        </div>
+        <div class="sb-name">StockFlow<span class="dot">.</span></div>
+        <div class="sb-ver">v3.0</div>
       </div>
       <div class="sb-nav">
-        <div class="sb-section-label">主要功能</div>
-        <div class="sb-item active" data-page="pg-dashboard"><span class="si">🏠</span> 儀表板</div>
-        <div class="sb-item" data-page="pg-inventory"><span class="si">📝</span> 今日盤點</div>
-        <div class="sb-section-label">管理設定</div>
-        <div class="sb-item admin-only" data-page="pg-products" style="display:none"><span class="si">🏷️</span> 品項設定</div>
-        <div class="sb-item" data-page="pg-staff"><span class="si">👤</span> 人員名單</div>
-        <div class="sb-item admin-only" data-page="pg-schedule" style="display:none"><span class="si">🔔</span> 通知設定</div>
-        <div class="sb-item admin-only" data-page="pg-users" style="display:none"><span class="si">🔑</span> 帳號管理</div>
+        <div class="sb-label">每天要做的</div>
+        <div class="sb-item active" data-page="pg-dashboard">庫存總覽</div>
+        <div class="sb-item" data-page="pg-inventory">今日盤點</div>
+        <div class="sb-label">管理設定</div>
+        <div class="sb-item admin-only" data-page="pg-products" style="display:none">品項設定</div>
+        <div class="sb-item" data-page="pg-staff">人員名單</div>
+        <div class="sb-item admin-only" data-page="pg-line" style="display:none">LINE 通知</div>
+        <div class="sb-item admin-only" data-page="pg-users" style="display:none">帳號管理</div>
       </div>
       <div class="sb-bottom">
         <div class="sb-user">
-          <div class="sb-avatar" id="sb-ava">A</div>
-          <div class="sb-user-info">
-            <div class="sb-user-name" id="sb-uname">admin</div>
-            <div class="sb-user-role" id="sb-role">管理員</div>
+          <div class="sb-ava" id="sb-ava">A</div>
+          <div class="sb-uinfo">
+            <div class="sb-uname" id="sb-uname">admin</div>
+            <div class="sb-urole" id="sb-role">管理員</div>
           </div>
-          <button class="sb-logout-btn" onclick="openPwModal()" title="修改密碼" style="margin-right:2px">🔒</button>
-          <button class="sb-logout-btn" onclick="doLogout()">登出</button>
+          <button class="sb-ibtn" onclick="openPwModal()" title="修改密碼">🔒</button>
+          <button class="sb-ibtn" onclick="doLogout()" title="登出">↩</button>
         </div>
       </div>
     </nav>
 
     <!-- 修改密碼 Modal -->
-    <div id="pw-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(10,15,30,.72);align-items:center;justify-content:center;">
-      <div style="background:var(--surface);border-radius:14px;padding:28px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.3);margin:0 16px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-          <div style="font-size:1rem;font-weight:700">🔒 修改密碼</div>
-          <button onclick="closePwModal()" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--ink-3)">✕</button>
+    <div id="pw-modal" class="modal">
+      <div class="modal-box">
+        <div class="modal-h">
+          <div class="modal-t">修改密碼</div>
+          <button class="modal-x" onclick="closePwModal()">✕</button>
         </div>
         <div style="display:flex;flex-direction:column;gap:14px">
           <div class="fg"><label>目前密碼</label><div class="pw-wrap"><input type="password" class="fc" id="pw-old" placeholder="輸入目前的密碼"><button class="pw-toggle" onclick="togglePw('pw-old',this)" type="button">👁</button></div></div>
           <div class="fg"><label>新密碼</label><div class="pw-wrap"><input type="password" class="fc" id="pw-new" placeholder="至少 6 個字元"><button class="pw-toggle" onclick="togglePw('pw-new',this)" type="button">👁</button></div></div>
           <div class="fg"><label>確認新密碼</label><div class="pw-wrap"><input type="password" class="fc" id="pw-new2" placeholder="再輸入一次"><button class="pw-toggle" onclick="togglePw('pw-new2',this)" type="button">👁</button></div></div>
-          <div id="pw-modal-err" style="display:none;background:var(--red-lt);color:var(--red);border-radius:7px;padding:9px 13px;font-size:.78rem;font-weight:500;"></div>
-          <button class="btn btn-dark btn-full" style="margin-top:4px" onclick="submitChangePw()">確認修改密碼</button>
+          <div id="pw-modal-err" style="display:none;background:var(--red-bg);color:var(--red);border-radius:10px;padding:10px 14px;font-size:.78rem;font-weight:500"></div>
+          <button class="btn btn-main btn-full" style="margin-top:4px" onclick="submitChangePw()">確認修改密碼</button>
         </div>
       </div>
     </div>
 
-    <!-- MAIN -->
-    <div class="main-content">
+    <div class="main">
       <header class="topbar">
-        <div style="display:flex;align-items:center;gap:10px">
-          <button id="hamburger" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
-          <div class="topbar-title" id="topbar-title">儀表板</div>
-        </div>
         <div style="display:flex;align-items:center;gap:12px">
-          <div class="api-pill" id="api-status-pill"><div class="api-pill-dot"></div><span id="api-status-text">連線中</span></div>
-          <div class="topbar-meta" id="topbar-date"></div>
+          <button id="hamburger" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+          <div class="tb-title" id="tb-title">庫存總覽</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:14px">
+          <div class="pill-api" id="api-pill"><span class="d"></span><span id="api-text">連線中</span></div>
+          <div class="tb-meta" id="tb-date"></div>
         </div>
       </header>
 
-      <!-- ════ PAGE: Dashboard ════ -->
+      <!-- ══ 庫存總覽 ══ -->
       <div class="page active" id="pg-dashboard">
-        <div class="page-eyebrow">總覽</div>
-        <h1 class="pg-title">庫存總覽</h1>
-        <p class="pg-sub">查看各品項目前庫存、消耗趨勢與建議叫貨量。</p>
+        <div class="eyebrow">Overview</div>
+        <h1 class="pg-t">庫存總覽</h1>
+        <p class="pg-s">每個品項一張貨架牌。數字變紅代表該叫貨了。</p>
 
-        <!-- KPI row -->
-        <div class="kpi-row" id="kpi-row">
-          <div class="kpi-card"><div class="kpi-label">管理品項</div><div class="kpi-value" id="kpi-products">—</div><div class="kpi-sub">個品項</div></div>
-          <div class="kpi-card"><div class="kpi-label">即將到期</div><div class="kpi-value" id="kpi-expiring" style="color:var(--amber)">—</div><div class="kpi-sub">3 天內到期（瓶/盒/片）</div></div>
-          <div class="kpi-card"><div class="kpi-label">下次自動通知</div><div class="kpi-value" id="kpi-next-send" style="font-size:1rem;padding-top:4px">—</div><div class="kpi-sub">排程時間</div></div>
+        <div class="kpis">
+          <div class="kpi"><div class="kpi-l">管理品項</div><div class="kpi-v" id="kpi-products">—</div><div class="kpi-s">個品項</div></div>
+          <div class="kpi"><div class="kpi-l">即將到期</div><div class="kpi-v" id="kpi-expiring" style="color:var(--amber)">—</div><div class="kpi-s">3 天內到期的數量</div></div>
+          <div class="kpi"><div class="kpi-l">需要叫貨</div><div class="kpi-v" id="kpi-order" style="color:var(--red)">—</div><div class="kpi-s">低於安全庫存的品項</div></div>
         </div>
 
-        <!-- Per-product cards -->
-        <div id="product-cards">
-          <div style="text-align:center;color:var(--ink-4);padding:48px;font-size:.83rem;">尚無盤點資料，請前往「效期庫存登錄」填報。</div>
+        <div class="tags" id="product-cards">
+          <div style="grid-column:1/-1;text-align:center;color:var(--ink-4);padding:52px;font-size:.84rem">還沒有盤點資料。到「今日盤點」填第一筆吧。</div>
         </div>
 
-        <!-- Detail table -->
-        <div class="card" id="dash-detail-card" style="display:none">
-          <div class="card-head">
-            <span class="card-title">📋 最新盤點明細</span>
-            <span class="topbar-meta" id="d-record-date"></span>
-          </div>
-          <div class="tbl-wrap">
+        <div class="card" id="consumption-card" style="display:none">
+          <div class="card-h"><span class="card-t">消耗趨勢 & 建議叫貨</span></div>
+          <div class="tw">
             <table class="dt">
-              <thead><tr><th>品項</th><th>有效期限</th><th>數量</th><th>單位</th><th>小計成本</th><th>效期狀態</th><th>盤點人員</th><th>訂貨日</th></tr></thead>
+              <thead><tr><th>品項</th><th>本週</th><th>上週</th><th>本月</th><th>目前庫存</th><th>建議叫貨</th></tr></thead>
+              <tbody id="consumption-tbody"><tr><td colspan="6" class="empty">載入中…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card" id="dash-detail-card" style="display:none">
+          <div class="card-h">
+            <span class="card-t">最新盤點明細</span>
+            <span class="tb-meta" id="d-record-date"></span>
+          </div>
+          <div class="tw">
+            <table class="dt">
+              <thead><tr><th>品項</th><th>有效期限</th><th>數量</th><th>小計成本</th><th>效期</th><th>盤點人</th></tr></thead>
               <tbody id="d-tbody"></tbody>
             </table>
           </div>
-          <div class="admin-only" style="display:none;margin-top:14px">
+          <div class="admin-only" style="display:none;margin-top:16px">
             <button class="btn btn-ghost btn-sm" onclick="exportReport()">↓ 匯出成本報表</button>
-          </div>
-        </div>
-
-        <!-- 消耗統計 & 建議叫貨 -->
-        <div class="card" id="consumption-card" style="display:none">
-          <div class="card-title" style="margin-bottom:14px">📊 消耗趨勢 &amp; 建議叫貨量</div>
-          <div class="tbl-wrap">
-            <table class="dt">
-              <thead><tr>
-                <th>品項</th>
-                <th>本週消耗</th>
-                <th>上週消耗</th>
-                <th>本月消耗</th>
-                <th>目前庫存</th>
-                <th>建議叫貨</th>
-              </tr></thead>
-              <tbody id="consumption-tbody">
-                <tr><td colspan="6" class="empty-cell">載入中…</td></tr>
-              </tbody>
-            </table>
           </div>
         </div>
       </div>
 
-      <!-- ════ PAGE: Inventory ════ -->
+      <!-- ══ 今日盤點 ══ -->
       <div class="page" id="pg-inventory">
-        <div class="page-eyebrow">庫存登錄</div>
-        <h1 class="pg-title">今日盤點</h1>
-        <p class="pg-sub">選擇品項，填入各效期的現有數量與今日消耗量，按儲存即完成。</p>
+        <div class="eyebrow">Daily count</div>
+        <h1 class="pg-t">今日盤點</h1>
+        <p class="pg-s">選品項、填數量、按儲存，三步完成。</p>
 
         <div class="card">
-          <div class="card-title" style="margin-bottom:16px">選擇品項</div>
-          <div class="form-row">
-            <div class="fg">
-              <label>品項</label>
-              <select class="fc" id="inv-product" onchange="onProductChange()"></select>
-            </div>
-            <div class="fg">
-              <label>單價</label>
-              <input type="text" class="fc mono" id="inv-unit-price" readonly style="background:var(--bg);color:var(--ink-3)">
-            </div>
+          <div class="card-t" style="margin-bottom:16px">選擇品項</div>
+          <div class="frow">
+            <div class="fg"><label>品項</label><select class="fc" id="inv-product" onchange="onProductChange()"></select></div>
+            <div class="fg"><label>單價</label><input type="text" class="fc mono" id="inv-unit-price" readonly></div>
           </div>
         </div>
 
         <div class="card">
-          <div class="card-head">
-            <span class="card-title">📋 效期批次</span>
+          <div class="card-h">
+            <span class="card-t">各效期數量</span>
             <button class="btn btn-ghost btn-sm" onclick="addBatchRow()">＋ 新增效期</button>
           </div>
-          <div class="tbl-wrap">
+          <div class="tw">
             <table class="dt">
-              <thead><tr>
-                <th style="width:180px">有效期限</th>
-                <th style="width:130px">數量</th>
-                <th>狀態評估</th>
-                <th style="width:36px"></th>
-              </tr></thead>
+              <thead><tr><th style="width:180px">有效期限</th><th style="width:130px">數量</th><th>狀態</th><th style="width:40px"></th></tr></thead>
               <tbody id="batch-body"></tbody>
             </table>
           </div>
         </div>
 
         <div class="card">
-          <div class="card-title" style="margin-bottom:16px">其他資訊</div>
-          <div class="form-row" style="margin-bottom:16px">
-            <div class="fg">
-              <label>最低安全庫存量</label>
-              <input type="number" class="fc mono" id="inv-thresh" value="0" min="0">
-            </div>
-            <div class="fg">
-              <label>盤點／訂貨人員</label>
-              <select class="fc" id="inv-staff"></select>
-            </div>
-            <div class="fg">
-              <label>訂貨日期</label>
-              <input type="date" class="fc" id="inv-order">
-            </div>
-            <div class="fg">
-              <label>盤點執行日期</label>
-              <input type="date" class="fc" id="inv-recorded">
-            </div>
+          <div class="card-t" style="margin-bottom:16px">其他資訊</div>
+          <div class="frow" style="margin-bottom:18px">
+            <div class="fg"><label>最低安全庫存量</label><input type="number" class="fc mono" id="inv-thresh" value="0" min="0"></div>
+            <div class="fg"><label>盤點人員</label><select class="fc" id="inv-staff"></select></div>
+            <div class="fg"><label>訂貨日期</label><input type="date" class="fc" id="inv-order"></div>
+            <div class="fg"><label>盤點日期</label><input type="date" class="fc" id="inv-recorded"></div>
           </div>
-          <button class="btn btn-dark btn-full" onclick="saveInventory()">💾 儲存今日盤點</button>
+          <button class="btn btn-main btn-full" onclick="saveInventory()">儲存今日盤點</button>
         </div>
 
-        <!-- 消耗量登錄 -->
         <div class="card">
-          <div class="card-title" style="margin-bottom:10px">📉 今日消耗量</div>
-          <p style="font-size:.78rem;color:var(--ink-3);margin-bottom:14px">填入今天實際用掉了多少，系統會自動統計本週、本月消耗趨勢。</p>
-          <div class="form-row" style="margin-bottom:14px">
-            <div class="fg">
-              <label>消耗數量</label>
-              <input type="number" class="fc mono" id="inv-consumption" value="0" min="0">
-            </div>
-            <div class="fg">
-              <label>備註（選填）</label>
-              <input type="text" class="fc" id="inv-consumption-note" placeholder="例：週末促銷、損耗">
-            </div>
+          <div class="card-t" style="margin-bottom:8px">今日消耗量</div>
+          <p style="font-size:.78rem;color:var(--ink-3);margin-bottom:16px">今天用掉多少就填多少，系統會幫你算每週趨勢。</p>
+          <div class="frow" style="margin-bottom:16px">
+            <div class="fg"><label>消耗數量</label><input type="number" class="fc mono" id="inv-consumption" value="0" min="0"></div>
+            <div class="fg"><label>備註（選填）</label><input type="text" class="fc" id="inv-consumption-note" placeholder="例：週末促銷、損耗"></div>
           </div>
-          <button class="btn btn-ghost" onclick="saveConsumption()">📉 儲存消耗記錄</button>
+          <button class="btn btn-lime" onclick="saveConsumption()">儲存消耗記錄</button>
         </div>
       </div>
 
-      <!-- ════ PAGE: Products (admin only) ════ -->
+      <!-- ══ 品項設定 ══ -->
       <div class="page" id="pg-products">
-        <div class="page-eyebrow">品項管理</div>
-        <h1 class="pg-title">品項設定</h1>
-        <p class="pg-sub">新增要控管的品項，設定單位與單價，用於計算庫存成本。</p>
+        <div class="eyebrow">Products</div>
+        <h1 class="pg-t">品項設定</h1>
+        <p class="pg-s">要控管什麼就加什麼。單價用來算庫存成本。</p>
 
         <div class="card">
-          <div class="card-title" style="margin-bottom:14px">目前品項</div>
-          <div class="tbl-wrap">
+          <div class="card-t" style="margin-bottom:16px">目前品項</div>
+          <div class="tw">
             <table class="dt">
-              <thead><tr><th>品項名稱</th><th>單位</th><th>單價（元）</th><th>狀態</th><th style="width:160px">操作</th></tr></thead>
-              <tbody id="products-tbody"><tr><td colspan="5" class="empty-cell">載入中…</td></tr></tbody>
+              <thead><tr><th>品項</th><th>單位</th><th>單價</th><th>狀態</th><th style="width:180px">操作</th></tr></thead>
+              <tbody id="products-tbody"><tr><td colspan="5" class="empty">載入中…</td></tr></tbody>
             </table>
           </div>
         </div>
 
         <div class="card">
-          <div class="card-title" style="margin-bottom:16px">新增品項</div>
-          <div class="form-row-3" style="margin-bottom:16px">
-            <div class="fg"><label>品項名稱</label><input type="text" class="fc" id="new-product-name" placeholder="例：鮮奶、優格、起司"></div>
-            <div class="fg"><label>單位</label><input type="text" class="fc" id="new-product-unit" placeholder="例：瓶、盒、片" value="瓶"></div>
+          <div class="card-t" style="margin-bottom:16px">新增品項</div>
+          <div class="frow3" style="margin-bottom:18px">
+            <div class="fg"><label>品項名稱</label><input type="text" class="fc" id="new-product-name" placeholder="例：鮮奶、優格"></div>
+            <div class="fg"><label>單位</label><input type="text" class="fc" id="new-product-unit" placeholder="例：瓶、盒" value="瓶"></div>
             <div class="fg"><label>單價（元）</label><input type="number" class="fc mono" id="new-product-price" placeholder="0" min="0" step="0.01"></div>
           </div>
-          <button class="btn btn-dark" onclick="createProduct()">➕ 新增品項</button>
+          <button class="btn btn-main" onclick="createProduct()">新增品項</button>
         </div>
       </div>
 
-      <!-- ════ PAGE: Staff ════ -->
+      <!-- ══ 人員名單 ══ -->
       <div class="page" id="pg-staff">
-        <div class="page-eyebrow">人員管理</div>
-        <h1 class="pg-title">人員名單</h1>
-        <p class="pg-sub admin-only" style="display:none">管理可以執行盤點的人員。</p>
-        <p class="pg-sub staff-only">目前的盤點人員清單。</p>
+        <div class="eyebrow">People</div>
+        <h1 class="pg-t">人員名單</h1>
+        <p class="pg-s admin-only" style="display:none">管理可以執行盤點的人員。</p>
+        <p class="pg-s staff-only">目前的盤點人員清單。</p>
         <div class="card">
-          <div class="card-title" style="margin-bottom:14px">人員清單</div>
-          <ul class="person-list" id="staff-ul"></ul>
-          <div class="divider admin-only" style="display:none"></div>
-          <div class="admin-only" style="display:none;gap:10px;align-items:flex-end">
-            <div class="fg" style="flex:1"><label>新增人員姓名</label><input type="text" class="fc" id="new-staff" placeholder="輸入姓名後按新增"></div>
-            <button class="btn btn-sky" onclick="addStaff()">＋ 新增</button>
+          <div class="card-t" style="margin-bottom:14px">人員清單</div>
+          <ul class="plist" id="staff-ul"></ul>
+          <hr class="divider admin-only" style="display:none">
+          <div class="admin-only" style="display:none;gap:12px;align-items:flex-end">
+            <div class="fg" style="flex:1"><label>新增人員姓名</label><input type="text" class="fc" id="new-staff" placeholder="輸入姓名"></div>
+            <button class="btn btn-main" onclick="addStaff()">新增</button>
           </div>
         </div>
       </div>
 
-      <!-- ════ PAGE: Schedule (admin only) ════ -->
-      <div class="page" id="pg-schedule">
-        <div class="page-eyebrow">通知設定</div>
-        <h1 class="pg-title">自動通知</h1>
-        <p class="pg-sub">設定每天幾點發送通知，同時發 Email 和 LINE。</p>
+      <!-- ══ LINE 通知 ══ -->
+      <div class="page" id="pg-line">
+        <div class="eyebrow">Notifications</div>
+        <h1 class="pg-t">LINE 通知</h1>
+        <p class="pg-s">把 Bot 拉進群組，群組就會出現在下面，各自設定幾點收日報。</p>
 
-        <!-- 時間與收件人 -->
         <div class="card">
-          <div class="card-title" style="margin-bottom:16px">⏰ 發送時間</div>
-          <div class="form-row" style="margin-bottom:16px">
-            <div class="fg">
-              <label>每天幾點發通知</label>
-              <input type="time" class="fc mono" id="sch-time" value="21:00" oninput="updateSchedPreview()">
-              
-            </div>
-            <div class="fg">
-              <label>收件人</label>
-              <select class="fc mono" id="sch-receiver"></select>
-            </div>
-          </div>
-          <div class="sched-preview"><span class="pulse"></span><span id="sched-text">排程運作中，下次發送：—</span></div>
-        </div>
-
-        <!-- LINE 設定 -->
-        <div class="card">
-          <div class="card-title" style="margin-bottom:4px">🟢 LINE 推播通知</div>
-          <p style="font-size:.78rem;color:var(--ink-3);margin-bottom:0">
-            將 Bot 加入 LINE 群組後，群組會自動出現在下方「LINE 群組通知管理」清單，無需手動填寫 ID。
-          </p>
-        </div>
-
-        <button class="btn btn-dark" onclick="saveSchedule()" style="margin-bottom:20px">💾 儲存通知設定</button>
-
-        <!-- Cron 參考 -->
-        <div class="card">
-          <div class="card-title" style="margin-bottom:12px">🔧 後端 Cron 參考設定</div>
-          <div class="cron-box" id="cron-preview"><span class="cm"># 每天 21:00 自動執行</span><br><span class="cv">0 21 * * *</span>  python scheduler.py</div>
-        </div>
-
-        <!-- 收件人清單 -->
-        <div class="card">
-          <div class="card-title" style="margin-bottom:14px">📬 Email 收件人</div>
-          <ul class="person-list" id="receiver-ul"></ul>
-          <div class="divider"></div>
-          <div style="display:flex;gap:10px;align-items:flex-end">
-            <div class="fg" style="flex:1"><label>新增信箱</label><input type="email" class="fc mono" id="new-receiver" placeholder="email@example.com"></div>
-            <button class="btn btn-sky" onclick="addReceiver()">＋ 加入</button>
-          </div>
-        </div>
-
-        <!-- LINE 群組管理 -->
-        <div class="card">
-          <div class="card-title" style="margin-bottom:6px">🟢 LINE 群組通知管理</div>
-          <p style="font-size:.78rem;color:var(--ink-3);margin-bottom:14px">
-            將 Bot 加入 LINE 群組後，群組會自動出現在下方清單。每個群組可獨立設定發送時間。
-          </p>
-          <div class="tbl-wrap">
+          <div class="card-t" style="margin-bottom:16px">已綁定的群組</div>
+          <div class="tw">
             <table class="dt">
-              <thead><tr>
-                <th>群組 ID</th><th>排程時間</th><th>狀態</th><th>上次發送</th><th style="width:140px">操作</th>
-              </tr></thead>
-              <tbody id="line-groups-tbody">
-                <tr><td colspan="5" class="empty-cell">尚無綁定群組。將 Bot 加入 LINE 群組後自動出現。</td></tr>
+              <thead><tr><th>群組 ID</th><th>每天幾點發</th><th>狀態</th><th>上次發送</th><th style="width:150px">操作</th></tr></thead>
+              <tbody id="line-groups-tbody"><tr><td colspan="5" class="empty">還沒有群組。把 Bot 加入 LINE 群組就會自動出現。</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-t" style="margin-bottom:14px">Webhook 設定</div>
+          <div class="codebox">
+            <span class="cm"># LINE Developers Console → Messaging API → Webhook URL</span><br>
+            <span class="cv" id="webhook-url-display">https://your-space.hf.space/webhook/line</span><br>
+            <span class="cm"># 開啟 Use webhook，關閉自動回應訊息</span>
+          </div>
+          <button class="btn btn-ghost btn-sm" style="margin-top:14px" onclick="copyWebhookUrl()">複製 Webhook URL</button>
+        </div>
+
+        <div class="card">
+          <div class="card-t" style="margin-bottom:14px">群組內可用指令</div>
+          <div class="tw">
+            <table class="dt">
+              <thead><tr><th style="width:200px">在群組輸入</th><th>效果</th></tr></thead>
+              <tbody>
+                <tr><td class="mono">設定時間 09:00</td><td>改成每天 09:00 發日報</td></tr>
+                <tr><td class="mono">狀態</td><td>查看目前設定</td></tr>
+                <tr><td class="mono">停止</td><td>暫停通知</td></tr>
+                <tr><td class="mono">啟動</td><td>恢復通知</td></tr>
               </tbody>
             </table>
           </div>
         </div>
-
-        <!-- Webhook 設定說明 -->
-        <div class="card">
-          <div class="card-title" style="margin-bottom:10px">⚙️ LINE Webhook 設定參考</div>
-          <div class="cron-box">
-            <span class="cm"># LINE Developers Console → Messaging API → Webhook URL</span><br>
-            <span class="cv" id="webhook-url-display">https://your-space.hf.space/webhook/line</span><br>
-            <span class="cm"># 記得開啟 Use webhook ✓ 並關閉自動回應訊息</span>
-          </div>
-          <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="copyWebhookUrl()">複製 Webhook URL</button>
-        </div>
       </div>
 
-      <!-- ════ PAGE: Users (admin only) ════ -->
+      <!-- ══ 帳號管理 ══ -->
       <div class="page" id="pg-users">
-        <div class="page-eyebrow">系統管理</div>
-        <h1 class="pg-title">帳號管理</h1>
-        <p class="pg-sub">管理登入帳號。管理員可使用全部功能；一般人員只能盤點。</p>
+        <div class="eyebrow">Accounts</div>
+        <h1 class="pg-t">帳號管理</h1>
+        <p class="pg-s">管理員可以用全部功能；一般人員只能盤點和看總覽。</p>
         <div class="card">
-          <div class="card-title" style="margin-bottom:14px">帳號清單</div>
-          <div class="tbl-wrap">
+          <div class="card-t" style="margin-bottom:16px">帳號清單</div>
+          <div class="tw">
             <table class="dt">
-              <thead><tr><th>帳號</th><th>角色</th><th>建立時間</th><th style="width:80px"></th></tr></thead>
-              <tbody id="users-tbody"><tr><td colspan="4" class="empty-cell">載入中…</td></tr></tbody>
+              <thead><tr><th>帳號</th><th>角色</th><th>建立時間</th><th style="width:90px"></th></tr></thead>
+              <tbody id="users-tbody"><tr><td colspan="4" class="empty">載入中…</td></tr></tbody>
             </table>
           </div>
         </div>
         <div class="card">
-          <div class="card-title" style="margin-bottom:16px">新增帳號</div>
-          <div class="form-row" style="margin-bottom:16px">
+          <div class="card-t" style="margin-bottom:16px">新增帳號</div>
+          <div class="frow" style="margin-bottom:18px">
             <div class="fg"><label>帳號名稱</label><input type="text" class="fc" id="new-username" placeholder="英數字，不可重複"></div>
             <div class="fg"><label>角色</label><select class="fc" id="new-role"><option value="staff">一般人員（只能盤點）</option><option value="admin">管理員（完整權限）</option></select></div>
             <div class="fg"><label>密碼</label><div class="pw-wrap"><input type="password" class="fc" id="new-pw" placeholder="至少 6 個字元"><button class="pw-toggle" onclick="togglePw('new-pw',this)" type="button">👁</button></div></div>
             <div class="fg"><label>確認密碼</label><div class="pw-wrap"><input type="password" class="fc" id="new-pw2" placeholder="再輸入一次"><button class="pw-toggle" onclick="togglePw('new-pw2',this)" type="button">👁</button></div></div>
           </div>
-          <button class="btn btn-dark" onclick="createUser()">➕ 建立帳號</button>
+          <button class="btn btn-main" onclick="createUser()">建立帳號</button>
         </div>
       </div>
 
-    </div><!-- /main-content -->
-  </div><!-- /app-shell -->
+    </div><!-- /main -->
+  </div><!-- /shell -->
 </div><!-- /screen-app -->
 
 <div id="toast"></div>
-
 <script>
 const API_BASE = 'https://adrianli33-milkfloat.hf.space';
 
@@ -888,9 +525,8 @@ let token       = localStorage.getItem('mf_token') || '';
 let currentUser = localStorage.getItem('mf_user')  || '';
 let currentRole = localStorage.getItem('mf_role')  || 'staff';
 const S = {
-  staff: [], receivers: [], schedTime: '21:00', activeRec: '',
-  users: [], products: [],
-  latestDate: null, items: [],   // multi-product inventory cache
+  staff: [], users: [], products: [],
+  latestDate: null, items: [],
 };
 
 /* ── API helper ── */
@@ -904,15 +540,14 @@ async function api(method, path, body) {
     const res  = await fetch(API_BASE + path, opts);
     if (res.status === 401) { doLogout(); return null; }
     const data = await res.json().catch(() => ({}));
-    setPill(res.ok ? 'ok' : 'err', res.ok ? 'API 正常' : `錯誤 ${res.status}`);
+    setPill(res.ok ? 'ok' : 'err', res.ok ? '連線正常' : `錯誤 ${res.status}`);
     return res.ok ? data : null;
-  } catch(e) { setPill('err','API 無法連線'); return null; }
+  } catch(e) { setPill('err','無法連線'); return null; }
 }
 function setPill(state, text) {
-  const pill = document.getElementById('api-status-pill');
-  const txt  = document.getElementById('api-status-text');
-  pill.className = 'api-pill' + (state==='err'?' err': state==='loading'?' loading':'');
-  txt.textContent = text;
+  const pill = document.getElementById('api-pill');
+  document.getElementById('api-text').textContent = text;
+  pill.className = 'pill-api' + (state === 'err' ? ' err' : '');
 }
 
 /* ── Auth ── */
@@ -931,7 +566,7 @@ async function doLogin() {
     localStorage.setItem('mf_role',  currentRole);
     enterApp();
   } else {
-    errEl.textContent = '帳號或密碼錯誤，或 API 無法連線。';
+    errEl.textContent = '帳號或密碼不對，再試一次。';
     errEl.style.display = 'block';
   }
 }
@@ -940,7 +575,7 @@ document.getElementById('login-pass').addEventListener('keydown', e => { if(e.ke
 function doLogout() {
   token = ''; currentUser = ''; currentRole = 'staff';
   ['mf_token','mf_user','mf_role'].forEach(k => localStorage.removeItem(k));
-  document.getElementById('screen-app').style.display  = 'none';
+  document.getElementById('screen-app').style.display   = 'none';
   document.getElementById('screen-login').style.display = 'flex';
 }
 
@@ -950,7 +585,7 @@ function enterApp() {
   document.getElementById('sb-uname').textContent = currentUser;
   document.getElementById('sb-ava').textContent   = currentUser[0]?.toUpperCase() || 'U';
   document.getElementById('sb-role').textContent  = currentRole === 'admin' ? '管理員' : '一般人員';
-  document.getElementById('topbar-date').textContent =
+  document.getElementById('tb-date').textContent =
     new Date().toLocaleDateString('zh-TW',{year:'numeric',month:'2-digit',day:'2-digit',weekday:'short'});
   const isAdmin = currentRole === 'admin';
   document.querySelectorAll('.admin-only').forEach(el => {
@@ -974,7 +609,7 @@ function enterApp() {
 const PAGE_TITLES = {
   'pg-dashboard':'庫存總覽','pg-inventory':'今日盤點',
   'pg-products':'品項設定','pg-staff':'人員名單',
-  'pg-schedule':'通知設定','pg-users':'帳號管理',
+  'pg-line':'LINE 通知','pg-users':'帳號管理',
 };
 document.querySelectorAll('.sb-item').forEach(el => {
   el.addEventListener('click', () => {
@@ -983,7 +618,7 @@ document.querySelectorAll('.sb-item').forEach(el => {
     el.classList.add('active');
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById(target).classList.add('active');
-    document.getElementById('topbar-title').textContent = PAGE_TITLES[target] || '';
+    document.getElementById('tb-title').textContent = PAGE_TITLES[target] || '';
     document.getElementById('sidebar').classList.remove('open');
     if (target === 'pg-dashboard') renderDashboard();
   });
@@ -995,24 +630,18 @@ async function initApp() {
   document.getElementById('inv-order').value    = today;
   document.getElementById('inv-recorded').value = today;
   if (!document.getElementById('batch-body').rows.length) addBatchRow();
-  const tasks = [loadProducts(), loadStaff(), loadReceivers(), loadSchedule(), loadInventory(), loadConsumptionStats()];
+  const tasks = [loadProducts(), loadStaff(), loadInventory(), loadConsumptionStats()];
   if (currentRole === 'admin') tasks.push(loadUsers(), loadLineGroups());
   await Promise.all(tasks);
-  updateSchedPreview();
 }
 
 /* ── Products ── */
 async function loadProducts() {
-  if (API_BASE.includes('your-space')) {
-    S.products = [{id:1,name:'鮮奶',unit:'瓶',unit_price:35,active:true}];
-  } else {
-    const data = await api('GET', '/products');
-    if (data?.products) S.products = data.products.filter(p => p.active);
-  }
+  const data = await api('GET', '/products');
+  if (data?.products) S.products = data.products.filter(p => p.active);
   renderProductSelect();
-  renderProductsTable();
+  renderProductsTable(data?.products || []);
 }
-
 function renderProductSelect() {
   const sel = document.getElementById('inv-product');
   if (!sel) return;
@@ -1021,38 +650,34 @@ function renderProductSelect() {
   if (S.products.find(p => p.id === prev)) sel.value = prev;
   onProductChange();
 }
-
 function onProductChange() {
   const pid  = parseInt(document.getElementById('inv-product')?.value);
   const prod = S.products.find(p => p.id === pid);
-  const priceEl = document.getElementById('inv-unit-price');
-  if (priceEl && prod) priceEl.value = `NT$ ${prod.unit_price} / ${prod.unit}`;
+  const el   = document.getElementById('inv-unit-price');
+  if (el && prod) el.value = `NT$ ${prod.unit_price} / ${prod.unit}`;
 }
-
-function renderProductsTable() {
+function renderProductsTable(all) {
   const tbody = document.getElementById('products-tbody');
   if (!tbody) return;
-  const all = [...S.products];
-  if (!all.length) { tbody.innerHTML='<tr><td colspan="5" class="empty-cell">尚無品項，請新增。</td></tr>'; return; }
+  if (!all.length) { tbody.innerHTML='<tr><td colspan="5" class="empty">還沒有品項，先新增一個。</td></tr>'; return; }
   tbody.innerHTML = all.map(p => `
     <tr>
       <td><strong>${p.name}</strong></td>
       <td>${p.unit}</td>
       <td class="mono">NT$ ${Number(p.unit_price).toFixed(2)}</td>
-      <td>${p.active ? '<span class="badge b-ok">啟用</span>' : '<span class="badge b-bad">停用</span>'}</td>
+      <td>${p.active ? '<span class="badge b-ok">啟用</span>' : '<span class="badge b-mute">停用</span>'}</td>
       <td style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn btn-ghost btn-xs" onclick="editProduct(${p.id})">編輯</button>
-        <button class="btn btn-danger btn-xs" onclick="toggleProduct(${p.id},${!p.active})">${p.active?'停用':'啟用'}</button>
+        <button class="btn btn-ghost btn-xs" onclick="toggleProduct(${p.id},${!p.active})">${p.active?'停用':'啟用'}</button>
         <button class="btn btn-danger btn-xs" onclick="deleteProduct(${p.id})">刪除</button>
       </td>
     </tr>`).join('');
 }
-
 async function createProduct() {
   const name  = document.getElementById('new-product-name').value.trim();
   const unit  = document.getElementById('new-product-unit').value.trim() || '瓶';
   const price = parseFloat(document.getElementById('new-product-price').value) || 0;
-  if (!name) { toast('請填寫品項名稱','warn'); return; }
+  if (!name) { toast('先填品項名稱','warn'); return; }
   showLoading(true);
   const res = await api('POST', '/products', {name, unit, unit_price: price});
   showLoading(false);
@@ -1060,21 +685,19 @@ async function createProduct() {
   document.getElementById('new-product-name').value  = '';
   document.getElementById('new-product-price').value = '';
   await loadProducts();
-  toast(`✅ 已新增品項：${name}`, 'ok');
+  toast(`已新增：${name}`, 'ok');
 }
-
 function editProduct(id) {
   const prod = S.products.find(p => p.id === id);
   if (!prod) return;
-  const unit  = prompt(`修改「${prod.name}」的單位（目前：${prod.unit}）：`, prod.unit);
+  const unit  = prompt(`「${prod.name}」的單位（目前：${prod.unit}）：`, prod.unit);
   if (unit === null) return;
-  const price = prompt(`修改「${prod.name}」的單價（目前：${prod.unit_price}）：`, prod.unit_price);
+  const price = prompt(`「${prod.name}」的單價（目前：${prod.unit_price}）：`, prod.unit_price);
   if (price === null) return;
   showLoading(true);
   api('PUT', `/products/${id}`, {unit: unit.trim(), unit_price: parseFloat(price)||0})
     .then(() => { showLoading(false); loadProducts(); toast('品項已更新','ok'); });
 }
-
 async function toggleProduct(id, active) {
   showLoading(true);
   await api('PUT', `/products/${id}`, {active});
@@ -1082,10 +705,9 @@ async function toggleProduct(id, active) {
   await loadProducts();
   toast(active ? '品項已啟用' : '品項已停用');
 }
-
 async function deleteProduct(id) {
   const prod = S.products.find(p => p.id === id);
-  if (!confirm(`確定要刪除品項「${prod?.name}」？此操作無法復原。`)) return;
+  if (!confirm(`確定刪除「${prod?.name || '此品項'}」？刪了就救不回來。`)) return;
   showLoading(true);
   const res = await api('DELETE', `/products/${id}`);
   showLoading(false);
@@ -1096,31 +718,20 @@ async function deleteProduct(id) {
 
 /* ── Inventory ── */
 async function loadInventory() {
-  if (API_BASE.includes('your-space')) {
-    S.latestDate = todayStr();
-    S.items = S.products.map(p => ({
-      product_id: p.id, product_name: p.name, unit: p.unit, unit_price: p.unit_price,
-      min_threshold: 10, order_date: todayStr(), staff_name: '林世杰', total_qty: 20,
-      batches: [{expiry_date: futureDate(5), quantity: 20}],
-    }));
-  } else {
-    const data = await api('GET', '/inventory/latest');
-    S.latestDate = data?.recorded_date || null;
-    S.items      = data?.items || [];
-  }
+  const data = await api('GET', '/inventory/latest');
+  S.latestDate = data?.recorded_date || null;
+  S.items      = data?.items || [];
   renderDashboard();
 }
-
 async function saveInventory() {
   const batches = getBatches();
-  if (!batches.length) { toast('請填寫至少一筆效期資料','warn'); return; }
+  if (!batches.length) { toast('至少填一筆效期','warn'); return; }
   const pid      = parseInt(document.getElementById('inv-product').value);
   const thresh   = parseInt(document.getElementById('inv-thresh').value)  || 0;
   const staffVal = document.getElementById('inv-staff').value;
   const order    = document.getElementById('inv-order').value;
   const recorded = document.getElementById('inv-recorded').value;
-  if (!pid) { toast('請選擇品項','warn'); return; }
-
+  if (!pid) { toast('先選品項','warn'); return; }
   showLoading(true);
   const res = await api('POST', '/inventory/save', {
     product_id: pid, recorded_date: recorded, min_threshold: thresh,
@@ -1129,9 +740,9 @@ async function saveInventory() {
   });
   showLoading(false);
   if (!res) return;
-
   await loadInventory();
-  toast('盤點資料已同步儲存 ☁️','ok');
+  await loadConsumptionStats();
+  toast('盤點已儲存','ok');
 }
 
 /* ── Batch rows ── */
@@ -1144,7 +755,7 @@ function addBatchRow(exp='', qty=0) {
     <td><input type="date" class="bi" value="${exp||def}"></td>
     <td><input type="number" class="bi" value="${qty}" min="0" style="width:100px"></td>
     <td class="bst"></td>
-    <td><button class="icon-btn ib-del" onclick="delRow('${id}')">✕</button></td>`;
+    <td><button class="icon-btn" onclick="delRow('${id}')">✕</button></td>`;
   document.getElementById('batch-body').appendChild(tr);
   tr.querySelector('input[type=date]').addEventListener('change', () => evalRow(tr));
   evalRow(tr);
@@ -1158,9 +769,9 @@ function evalRow(tr) {
   const c = tr.querySelector('.bst');
   if (!v) { c.innerHTML=''; return; }
   const d = daysDiff(v);
-  c.innerHTML = d<0  ? '<span class="badge b-bad">❌ 已過期</span>'
-              : d<=3 ? '<span class="badge b-warn">⏳ 即期品</span>'
-                     : '<span class="badge b-ok">🟢 安全期</span>';
+  c.innerHTML = d<0  ? '<span class="badge b-bad">已過期</span>'
+              : d<=3 ? '<span class="badge b-warn">即期品</span>'
+                     : '<span class="badge b-ok">安全期</span>';
 }
 function getBatches() {
   return [...document.getElementById('batch-body').rows].map(r => ({
@@ -1169,7 +780,7 @@ function getBatches() {
   })).filter(b => b.exp);
 }
 
-/* ── Dashboard ── */
+/* ── Dashboard（貨架牌）── */
 function renderDashboard() {
   const kpiProds    = document.getElementById('kpi-products');
   const kpiExpiring = document.getElementById('kpi-expiring');
@@ -1181,89 +792,127 @@ function renderDashboard() {
   if (!S.items.length) {
     kpiProds.textContent    = '—';
     kpiExpiring.textContent = '—';
-    container.innerHTML = '<div style="text-align:center;color:var(--ink-4);padding:48px;font-size:.83rem;">尚無盤點資料，請前往「效期庫存登錄」填報。</div>';
+    container.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--ink-4);padding:52px;font-size:.84rem">還沒有盤點資料。到「今日盤點」填第一筆吧。</div>';
     detailCard.style.display = 'none';
     return;
   }
 
   kpiProds.textContent = S.items.length;
   let totalExpiring = 0;
-  S.items.forEach(item => {
-    item.batches.forEach(b => {
-      const d = daysDiff(b.expiry_date);
-      if (d >= 0 && d <= 3) totalExpiring += b.quantity;
-    });
-  });
+  S.items.forEach(item => item.batches.forEach(b => {
+    const d = daysDiff(b.expiry_date);
+    if (d >= 0 && d <= 3) totalExpiring += b.quantity;
+  }));
   kpiExpiring.textContent = totalExpiring;
 
-  // Per-product hero cards
   container.innerHTML = S.items.map(item => {
     const total = item.total_qty;
     const diff  = total - item.min_threshold;
     const pct   = item.min_threshold > 0 ? Math.min(Math.round(total/item.min_threshold*100),100) : 100;
-    const statusCls = diff<=0 ? 'bad' : diff<=5 ? 'warn' : 'ok';
-    const tagMap = {ok:'✅ 庫存充足', warn:'⏳ 即將見底', bad:'⚠️ 需要叫貨'};
-    const barCls = {ok:'', warn:'warn', bad:'bad'};
-    const cost   = (total * item.unit_price).toFixed(0);
+    const st    = diff<=0 ? 'bad' : diff<=5 ? 'warn' : 'ok';
+    const tagTxt= {ok:'庫存充足', warn:'快見底了', bad:'該叫貨了'}[st];
+    const cost  = Math.round(total * item.unit_price);
     return `
-    <div class="card" style="margin-bottom:14px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
-        <div>
-          <div style="font-size:.67rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px">${item.product_name}</div>
-          <div style="font-family:'DM Serif Display',serif;font-size:2.8rem;line-height:1;color:${statusCls==='ok'?'var(--green)':statusCls==='warn'?'var(--amber)':'var(--red)'}">${total}</div>
-          <div style="font-size:.75rem;color:var(--ink-3);margin-top:4px">${item.unit}　最低需求：${item.min_threshold} ${item.unit}</div>
-        </div>
-        <div style="text-align:right">
-          <div class="hero-tag ht-${statusCls}" style="margin-bottom:8px">${tagMap[statusCls]}</div>
-          <div style="font-size:.75rem;color:var(--ink-3)">與安全線差：<strong>${diff>=0?'+':''}${diff}</strong></div>
-          <div style="font-size:.75rem;color:var(--ink-3)">庫存成本：<strong>NT$ ${Number(cost).toLocaleString()}</strong></div>
-        </div>
+    <div class="tag">
+      <div class="tag-top"><span class="tag-status ts-${st}">${tagTxt}</span></div>
+      <div class="tag-name">${item.product_name}</div>
+      <div class="tag-num n-${st}">${total}<span class="u">${item.unit}</span></div>
+      <hr class="tag-cut">
+      <div class="tag-meta">
+        <span>最低 ${item.min_threshold}</span>
+        <span>成本 NT$ ${cost.toLocaleString()}</span>
       </div>
-      <div class="stock-bar-label"><span>庫存水位</span><span>${pct}%</span></div>
-      <div class="stock-bar-track"><div class="stock-bar-fill ${barCls[statusCls]}" style="width:${pct}%"></div></div>
+      <div class="tag-bar"><div class="tag-fill ${st==='ok'?'':st}" style="width:${pct}%"></div></div>
     </div>`;
   }).join('');
 
-  // Detail table
   detailCard.style.display = 'block';
   if (S.latestDate) dateLabel.textContent = `盤點日：${S.latestDate}`;
   const rows = [];
   S.items.forEach(item => {
     item.batches.forEach(b => {
-      const d    = daysDiff(b.expiry_date);
-      const badge = d<0 ? '<span class="badge b-bad">❌ 已過期</span>'
-                  : d<=3 ? '<span class="badge b-warn">⏳ 即期品</span>'
-                         : '<span class="badge b-ok">🟢 安全期</span>';
-      const cost  = (b.quantity * item.unit_price).toFixed(2);
+      const d = daysDiff(b.expiry_date);
+      const badge = d<0 ? '<span class="badge b-bad">已過期</span>'
+                  : d<=3 ? '<span class="badge b-warn">即期品</span>'
+                         : '<span class="badge b-ok">安全期</span>';
+      const cost = (b.quantity * item.unit_price).toFixed(0);
       rows.push(`<tr>
         <td><strong>${item.product_name}</strong></td>
         <td class="mono">${b.expiry_date}</td>
-        <td class="mono">${b.quantity}</td>
-        <td>${item.unit}</td>
+        <td class="mono">${b.quantity} ${item.unit}</td>
         <td class="mono">NT$ ${Number(cost).toLocaleString()}</td>
         <td>${badge}</td>
-        <td>${item.staff_name}</td>
-        <td class="mono">${item.order_date||'—'}</td>
+        <td>${item.staff_name || '—'}</td>
       </tr>`);
     });
   });
   tbody.innerHTML = rows.join('');
 }
 
+/* ── Consumption ── */
+async function saveConsumption() {
+  const pid   = parseInt(document.getElementById('inv-product')?.value);
+  const qty   = parseInt(document.getElementById('inv-consumption')?.value) || 0;
+  const note  = document.getElementById('inv-consumption-note')?.value.trim() || '';
+  const date  = document.getElementById('inv-recorded')?.value || todayStr();
+  const staff = document.getElementById('inv-staff')?.value || '';
+  if (!pid) { toast('先選品項','warn'); return; }
+  showLoading(true);
+  const res = await api('POST', '/consumption/save', {
+    product_id: pid, recorded_date: date,
+    quantity: qty, staff_name: staff, note: note || null,
+  });
+  showLoading(false);
+  if (!res) return;
+  toast('消耗記錄已儲存','ok');
+  loadConsumptionStats();
+}
+async function loadConsumptionStats() {
+  const data = await api('GET', '/consumption/stats');
+  if (!data?.stats) return;
+  renderConsumptionTable(data.stats);
+  // KPI：需要叫貨的品項數
+  const needCount = data.stats.filter(s => s.suggest_order > 0).length;
+  const el = document.getElementById('kpi-order');
+  if (el) {
+    el.textContent = needCount;
+    el.style.color = needCount > 0 ? 'var(--red)' : 'var(--leaf)';
+  }
+}
+function renderConsumptionTable(stats) {
+  const card  = document.getElementById('consumption-card');
+  const tbody = document.getElementById('consumption-tbody');
+  if (!stats.length) { card.style.display='none'; return; }
+  card.style.display = 'block';
+  tbody.innerHTML = stats.map(s => {
+    const suggestCell = s.suggest_order > 0
+      ? `<span style="color:var(--red);font-weight:700">${s.suggest_order} ${s.unit}</span>`
+      : `<span style="color:var(--leaf)">足夠</span>`;
+    const trend = s.this_week >= s.last_week
+      ? `<span style="color:var(--red)">↑</span>`
+      : `<span style="color:var(--leaf)">↓</span>`;
+    return `<tr>
+      <td><strong>${s.product_name}</strong></td>
+      <td class="mono">${s.this_week} ${trend}</td>
+      <td class="mono" style="color:var(--ink-3)">${s.last_week}</td>
+      <td class="mono" style="color:var(--ink-3)">${s.this_month}</td>
+      <td class="mono">${s.current_qty} ${s.unit}</td>
+      <td>${suggestCell}</td>
+    </tr>`;
+  }).join('');
+}
+
 /* ── Staff ── */
 async function loadStaff() {
-  if (API_BASE.includes('your-space')) { S.staff = ['林世杰','張店長','陳組長']; }
-  else {
-    const data = await api('GET', '/staff');
-    if (data?.staff) S.staff = data.staff.map(s => s.name);
-  }
+  const data = await api('GET', '/staff');
+  if (data?.staff) S.staff = data.staff.map(s => s.name);
   renderStaffList(); renderStaffSelect();
 }
 function renderStaffList() {
   const isAdmin = currentRole === 'admin';
   document.getElementById('staff-ul').innerHTML = S.staff.length
-    ? S.staff.map(n => `<li class="person-li"><span><span class="person-avatar">${n[0]}</span>${n}</span>${isAdmin?`<button class="btn btn-danger btn-xs" onclick="removeStaff('${n}')">移除</button>`:''}</li>`).join('')
-    : '<li style="color:var(--ink-4);font-size:.8rem;padding:8px 10px">尚無人員。</li>';
+    ? S.staff.map(n => `<li class="pli"><span><span class="pava">${n[0]}</span>${n}</span>${isAdmin?`<button class="btn btn-danger btn-xs" onclick="removeStaff('${n}')">移除</button>`:''}</li>`).join('')
+    : '<li style="color:var(--ink-4);font-size:.82rem;padding:10px 12px">還沒有人員。</li>';
 }
 function renderStaffSelect() {
   const sel = document.getElementById('inv-staff');
@@ -1273,7 +922,7 @@ function renderStaffSelect() {
 }
 async function addStaff() {
   const name = document.getElementById('new-staff').value.trim();
-  if (!name) { toast('請填寫姓名','warn'); return; }
+  if (!name) { toast('先填姓名','warn'); return; }
   showLoading(true);
   const res = await api('POST', '/staff', {name});
   showLoading(false);
@@ -1293,134 +942,13 @@ async function removeStaff(name) {
   toast('已移除：'+name);
 }
 
-/* ── Receivers ── */
-async function loadReceivers() {
-  if (API_BASE.includes('your-space')) { S.receivers=['applin804@gmail.com']; S.activeRec='applin804@gmail.com'; return; }
-  const data = await api('GET', '/schedule');
-  if (data) { S.receivers = data.receivers||[]; S.activeRec = data.active_receiver||''; }
-  renderReceiverList(); renderReceiverDropdown();
-}
-function renderReceiverList() {
-  document.getElementById('receiver-ul').innerHTML = S.receivers.length
-    ? S.receivers.map(e => `<li class="person-li"><span style="font-family:'DM Mono',monospace;font-size:.79rem">${e}</span><button class="btn btn-danger btn-xs" onclick="removeReceiver('${e}')">移除</button></li>`).join('')
-    : '<li style="color:var(--ink-4);font-size:.8rem;padding:8px 10px">尚無收件人。</li>';
-}
-function renderReceiverDropdown() {
-  const sel = document.getElementById('sch-receiver');
-  sel.innerHTML = S.receivers.map(e => `<option value="${e}"${e===S.activeRec?' selected':''}>${e}</option>`).join('');
-}
-async function addReceiver() {
-  const val = document.getElementById('new-receiver').value.trim();
-  if (!val||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) { toast('請輸入有效信箱','warn'); return; }
-  if (S.receivers.includes(val)) { toast('此信箱已存在','warn'); return; }
-  S.receivers.push(val); document.getElementById('new-receiver').value='';
-  renderReceiverList(); renderReceiverDropdown();
-  toast('已新增：'+val,'ok');
-}
-async function removeReceiver(e) {
-  S.receivers = S.receivers.filter(x => x!==e);
-  if (S.activeRec===e) S.activeRec = S.receivers[0]||'';
-  renderReceiverList(); renderReceiverDropdown(); toast('已移除：'+e);
-}
-
-/* ── Schedule ── */
-async function loadSchedule() {
-  if (API_BASE.includes('your-space')) return;
-  const data = await api('GET', '/schedule');
-  if (data?.schedule_time) {
-    S.schedTime = data.schedule_time.slice(0,5);
-    document.getElementById('sch-time').value = S.schedTime;
-    S.receivers  = data.receivers||[];
-    S.activeRec  = data.active_receiver||'';
-    renderReceiverList(); renderReceiverDropdown();
-  }
-  updateSchedPreview();
-}
-async function saveSchedule() {
-  const t   = document.getElementById('sch-time').value.slice(0,5);
-  const rec = document.getElementById('sch-receiver').value;
-  S.schedTime = t; S.activeRec = rec;
-  showLoading(true);
-  const res = await api('PUT', '/schedule', {
-    schedule_time: t, active_receiver: rec,
-    receivers: S.receivers,
-  });
-  showLoading(false);
-  if (!res) return;
-  updateSchedPreview();
-  toast('通知設定已儲存 ✔','ok');
-}
-function updateSchedPreview() {
-  const t = document.getElementById('sch-time')?.value || S.schedTime;
-  const [h,m] = t.split(':').map(Number);
-  const now = new Date(), next = new Date();
-  next.setHours(h,m,0,0);
-  if (next<=now) next.setDate(next.getDate()+1);
-  const label = next.toLocaleDateString('zh-TW',{month:'2-digit',day:'2-digit'});
-  const el = document.getElementById('sched-text');
-  if (el) el.textContent = `排程運作中，下次發信：${label} ${t}`;
-  document.getElementById('kpi-next-send').textContent = `${label} ${t}`;
-  const mm = parseInt(t.split(':')[1]), hh = parseInt(t.split(':')[0]);
-  const cp = document.getElementById('cron-preview');
-  if (cp) cp.innerHTML = `<span class="cm"># 每天 ${t} 自動執行</span><br><span class="cv">${mm} ${hh} * * *</span>  python scheduler.py`;
-}
-
-/* ── Consumption ── */
-async function saveConsumption() {
-  const pid   = parseInt(document.getElementById('inv-product')?.value);
-  const qty   = parseInt(document.getElementById('inv-consumption')?.value) || 0;
-  const note  = document.getElementById('inv-consumption-note')?.value.trim() || '';
-  const date  = document.getElementById('inv-recorded')?.value || todayStr();
-  const staff = document.getElementById('inv-staff')?.value || '';
-  if (!pid) { toast('請先選擇品項','warn'); return; }
-  showLoading(true);
-  const res = await api('POST', '/consumption/save', {
-    product_id: pid, recorded_date: date,
-    quantity: qty, staff_name: staff, note: note || null,
-  });
-  showLoading(false);
-  if (!res) return;
-  toast('✅ 消耗記錄已儲存','ok');
-  loadConsumptionStats();
-}
-
-async function loadConsumptionStats() {
-  const data = await api('GET', '/consumption/stats');
-  if (!data?.stats) return;
-  renderConsumptionTable(data.stats);
-}
-
-function renderConsumptionTable(stats) {
-  const card  = document.getElementById('consumption-card');
-  const tbody = document.getElementById('consumption-tbody');
-  if (!stats.length) { card.style.display='none'; return; }
-  card.style.display = 'block';
-  tbody.innerHTML = stats.map(s => {
-    const suggest = s.suggest_order;
-    const suggestCell = suggest > 0
-      ? `<span style="color:var(--red);font-weight:700">${suggest} ${s.unit}</span>`
-      : `<span style="color:var(--green)">足夠</span>`;
-    const trend = s.this_week >= s.last_week
-      ? `<span style="color:var(--red);font-size:.7rem">↑</span>`
-      : `<span style="color:var(--green);font-size:.7rem">↓</span>`;
-    return `<tr>
-      <td><strong>${s.product_name}</strong></td>
-      <td class="mono">${s.this_week} ${s.unit} ${trend}</td>
-      <td class="mono" style="color:var(--ink-3)">${s.last_week} ${s.unit}</td>
-      <td class="mono" style="color:var(--ink-3)">${s.this_month} ${s.unit}</td>
-      <td class="mono">${s.current_qty} ${s.unit}</td>
-      <td>${suggestCell}</td>
-    </tr>`;
-  }).join('');
-}
-
 /* ── LINE Groups ── */
 async function loadLineGroups() {
   const el = document.getElementById('line-groups-tbody');
   if (!el) return;
   const data = await api('GET', '/line/groups');
   if (!data?.groups?.length) {
-    el.innerHTML = '<tr><td colspan="5" class="empty-cell">尚無綁定群組。將 Bot 加入 LINE 群組後自動出現。</td></tr>';
+    el.innerHTML = '<tr><td colspan="5" class="empty">還沒有群組。把 Bot 加入 LINE 群組就會自動出現。</td></tr>';
     return;
   }
   el.innerHTML = data.groups.map(g => {
@@ -1428,60 +956,51 @@ async function loadLineGroups() {
     const stime   = (g.schedule_time || '21:00').slice(0, 5);
     const active  = g.active
       ? '<span class="badge b-ok">啟用</span>'
-      : '<span class="badge b-bad">停用</span>';
+      : '<span class="badge b-mute">停用</span>';
     const last    = g.last_sent_date || '—';
     return `<tr>
       <td class="mono" style="font-size:.72rem" title="${g.group_id}">${shortId}</td>
-      <td>
-        <input type="time" class="fc mono" style="height:30px;font-size:.75rem;width:100px"
-          value="${stime}"
-          onchange="updateGroupTime('${g.group_id}', this.value)">
-      </td>
+      <td><input type="time" class="fc mono" style="height:32px;font-size:.75rem;width:104px;padding:0 8px"
+        value="${stime}" onchange="updateGroupTime('${g.group_id}', this.value)"></td>
       <td>${active}</td>
       <td class="mono" style="color:var(--ink-3)">${last}</td>
       <td style="display:flex;gap:6px">
-        <button class="btn btn-ghost btn-xs" onclick="toggleGroup('${g.group_id}', ${!g.active})">
-          ${g.active ? '停用' : '啟用'}
-        </button>
+        <button class="btn btn-ghost btn-xs" onclick="toggleGroup('${g.group_id}', ${!g.active})">${g.active ? '停用' : '啟用'}</button>
         <button class="btn btn-danger btn-xs" onclick="deleteGroup('${g.group_id}')">移除</button>
       </td>
     </tr>`;
   }).join('');
 }
-
 async function updateGroupTime(groupId, time) {
   await api('PUT', `/line/groups/${encodeURIComponent(groupId)}`, {schedule_time: time.slice(0,5)});
-  toast('已更新群組發送時間','ok');
+  toast('發送時間已更新','ok');
 }
-
 async function toggleGroup(groupId, active) {
   await api('PUT', `/line/groups/${encodeURIComponent(groupId)}`, {active});
   await loadLineGroups();
-  toast(active ? '已啟用群組通知' : '已停用群組通知');
+  toast(active ? '已啟用通知' : '已停用通知');
 }
-
 async function deleteGroup(groupId) {
-  if (!confirm('確定要移除此群組綁定？Bot 不會自動離開群組，只是停止發送通知。')) return;
+  if (!confirm('確定移除這個群組？Bot 不會自動離開群組，只是不再發通知。')) return;
   await api('DELETE', `/line/groups/${encodeURIComponent(groupId)}`);
   await loadLineGroups();
-  toast('已移除群組');
+  toast('群組已移除');
 }
-
 function copyWebhookUrl() {
   const url = `${API_BASE}/webhook/line`;
-  navigator.clipboard.writeText(url).then(() => toast('已複製 Webhook URL','ok'));
   document.getElementById('webhook-url-display').textContent = url;
+  navigator.clipboard.writeText(url).then(() => toast('已複製','ok'));
 }
 
 /* ── Export ── */
 async function exportReport() {
-  if (!S.items.length) { toast('尚無資料可匯出','warn'); return; }
+  if (!S.items.length) { toast('還沒有資料可匯出','warn'); return; }
   showLoading(true);
   try {
     const res = await fetch(API_BASE+'/export/report', {headers:{'Authorization':`Bearer ${token}`}});
     showLoading(false);
     if (res.status===401) { doLogout(); return; }
-    if (!res.ok) { toast('匯出失敗','warn'); return; }
+    if (!res.ok) { toast('匯出失敗，稍後再試','warn'); return; }
     const blob = await res.blob();
     const disp = res.headers.get('Content-Disposition')||'';
     const match = disp.match(/filename=([^;]+)/);
@@ -1503,14 +1022,14 @@ async function loadUsers() {
 function renderUsersTable() {
   const tbody = document.getElementById('users-tbody');
   if (!tbody) return;
-  if (!S.users.length) { tbody.innerHTML='<tr><td colspan="4" class="empty-cell">尚無帳號。</td></tr>'; return; }
+  if (!S.users.length) { tbody.innerHTML='<tr><td colspan="4" class="empty">還沒有帳號。</td></tr>'; return; }
   tbody.innerHTML = S.users.map(u => {
     const roleLabel = u.role==='admin'
-      ? '<span class="badge b-sky">admin</span>'
-      : '<span class="badge" style="background:var(--border);color:var(--ink-3)">staff</span>';
+      ? '<span class="badge b-ok">管理員</span>'
+      : '<span class="badge b-mute">一般人員</span>';
     const isSelf = u.username === currentUser;
     const delBtn = isSelf
-      ? '<span style="font-size:.72rem;color:var(--ink-4)">（目前登入）</span>'
+      ? '<span style="font-size:.7rem;color:var(--ink-4)">目前登入</span>'
       : `<button class="btn btn-danger btn-xs" onclick="deleteUser('${u.username}')">刪除</button>`;
     return `<tr><td><strong>${u.username}</strong></td><td>${roleLabel}</td><td class="mono" style="color:var(--ink-3)">${(u.created_at||'').slice(0,10)}</td><td>${delBtn}</td></tr>`;
   }).join('');
@@ -1520,22 +1039,24 @@ async function createUser() {
   const role     = document.getElementById('new-role').value;
   const pw       = document.getElementById('new-pw').value;
   const pw2      = document.getElementById('new-pw2').value;
-  if (!username)     { toast('請填寫帳號','warn'); return; }
+  if (!username)     { toast('先填帳號名稱','warn'); return; }
   if (pw.length < 6) { toast('密碼至少 6 個字元','warn'); return; }
-  if (pw !== pw2)    { toast('兩次密碼不一致','warn'); return; }
+  if (pw !== pw2)    { toast('兩次密碼不一樣','warn'); return; }
   showLoading(true);
   const res = await api('POST','/users',{username,password:pw,role});
   showLoading(false);
   if (!res) return;
   ['new-username','new-pw','new-pw2'].forEach(id => document.getElementById(id).value='');
-  await loadUsers(); toast(`✅ 已建立帳號：${username}（${role}）`,'ok');
+  await loadUsers();
+  toast(`已建立帳號：${username}`,'ok');
 }
 async function deleteUser(username) {
   showLoading(true);
   const res = await api('DELETE',`/users/${encodeURIComponent(username)}`);
   showLoading(false);
   if (!res) return;
-  await loadUsers(); toast('已刪除帳號：'+username);
+  await loadUsers();
+  toast('已刪除：'+username);
 }
 
 /* ── Password modal ── */
@@ -1551,22 +1072,22 @@ async function submitChangePw() {
   const oldPw = document.getElementById('pw-old').value;
   const newPw = document.getElementById('pw-new').value;
   const newPw2= document.getElementById('pw-new2').value;
-  if (!oldPw)           { showPwErr('請輸入目前密碼'); return; }
+  if (!oldPw)           { showPwErr('先輸入目前密碼'); return; }
   if (newPw.length < 6) { showPwErr('新密碼至少 6 個字元'); return; }
-  if (newPw !== newPw2)  { showPwErr('兩次新密碼不一致'); return; }
-  if (oldPw === newPw)   { showPwErr('新密碼不能與目前密碼相同'); return; }
+  if (newPw !== newPw2)  { showPwErr('兩次新密碼不一樣'); return; }
+  if (oldPw === newPw)   { showPwErr('新密碼不能跟目前的一樣'); return; }
   showLoading(true);
   const res = await api('PUT','/users/me/password',{old_password:oldPw,new_password:newPw});
   showLoading(false);
-  if (res?.ok) { closePwModal(); toast('✅ 密碼已更新','ok'); }
-  else showPwErr('目前密碼輸入錯誤，請再試一次');
+  if (res?.ok) { closePwModal(); toast('密碼已更新','ok'); }
+  else showPwErr('目前密碼不對，再試一次');
 }
 function showPwErr(msg) {
   const el=document.getElementById('pw-modal-err');
   el.textContent=msg; el.style.display='block';
 }
 
-/* ── Toggle PW visibility ── */
+/* ── Toggle PW ── */
 function togglePw(inputId, btn) {
   const input = document.getElementById(inputId);
   if (input.type==='password') { input.type='text'; btn.textContent='🙈'; }
@@ -1575,7 +1096,6 @@ function togglePw(inputId, btn) {
 
 /* ── Utilities ── */
 function todayStr()  { return new Date().toISOString().split('T')[0]; }
-function futureDate(n) { const d=new Date(); d.setDate(d.getDate()+n); return d.toISOString().split('T')[0]; }
 function daysDiff(dateStr) { return Math.ceil((new Date(dateStr)-new Date(todayStr()))/864e5); }
 function showLoading(on) { document.getElementById('loading').classList[on?'add':'remove']('show'); }
 let _tt;
