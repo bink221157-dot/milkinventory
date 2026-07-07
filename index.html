@@ -17,6 +17,7 @@
   --ink:#1B2B26; --ink-2:#47554F; --ink-3:#75837C; --ink-4:#A9B3AC;
   --line:#E5E3DB;
   --amber:#B45309; --amber-bg:#FBF0E1;
+  --blue:#1D6FA4; --blue-bg:#E8F3FB;
   --red:#B3261E;   --red-bg:#FBEAE8;
   --green-bg:#E7F3EC;
   --sb-w:232px;
@@ -111,17 +112,17 @@ h1.pg-t{font-family:var(--font-display);font-weight:600;font-size:1.8rem;letter-
 .tag-top{display:flex;justify-content:flex-end;margin-bottom:8px}
 .tag-status{font-size:.66rem;font-weight:700;padding:3px 11px;border-radius:99px;letter-spacing:.03em}
 .ts-ok{background:var(--green-bg);color:var(--leaf)}
-.ts-warn{background:var(--amber-bg);color:var(--amber)}
+.ts-warn{background:var(--blue-bg);color:var(--blue)}
 .ts-bad{background:var(--red-bg);color:var(--red)}
 .tag-name{font-size:.86rem;font-weight:700;color:var(--ink-2);margin-bottom:2px}
 .tag-num{font-family:var(--font-display);font-weight:700;font-size:3.4rem;line-height:1;letter-spacing:-.02em}
 .tag-num .u{font-family:var(--font-ui);font-size:.85rem;font-weight:500;color:var(--ink-3);margin-left:6px}
-.n-ok{color:var(--leaf)} .n-warn{color:var(--amber)} .n-bad{color:var(--red)}
+.n-ok{color:var(--leaf)} .n-warn{color:var(--blue)} .n-bad{color:var(--red)}
 .tag-cut{border:none;border-top:1.5px dashed var(--line);margin:16px 0 12px}
 .tag-meta{display:flex;justify-content:space-between;font-size:.72rem;color:var(--ink-3);font-family:var(--font-mono);margin-bottom:10px}
 .tag-bar{height:6px;background:var(--paper);border:1px solid var(--line);border-radius:99px;overflow:hidden}
 .tag-fill{height:100%;border-radius:99px;background:var(--leaf);transition:width .6s cubic-bezier(.4,0,.2,1);min-width:3px}
-.tag-fill.warn{background:var(--amber)} .tag-fill.bad{background:var(--red)}
+.tag-fill.warn{background:var(--blue)} .tag-fill.bad{background:var(--red)}
 
 /* ═══════════════ TABLE ═══════════════ */
 .tw{overflow-x:auto}
@@ -315,9 +316,27 @@ select.fc{cursor:pointer}
         <h1 class="pg-t">庫存總覽</h1>
         <p class="pg-s">每個品項一張貨架牌。數字變紅代表該叫貨了。</p>
 
+        <div class="kpis" id="last-order-card" style="display:none;margin-bottom:0">
+          <div class="kpi" style="grid-column:1/-1;background:var(--pine);border-color:transparent;position:relative;overflow:hidden">
+            <div style="position:absolute;right:-40px;top:-40px;width:180px;height:180px;border-radius:50%;background:rgba(200,240,75,.07);pointer-events:none"></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;position:relative">
+              <div>
+                <div class="kpi-l" style="color:rgba(255,255,255,.45)">最近一次叫貨</div>
+                <div id="lo-items" style="font-family:var(--font-display);font-size:1.45rem;font-weight:600;color:#fff;margin:6px 0 4px;line-height:1.3">—</div>
+                <div id="lo-meta" style="font-size:.75rem;color:rgba(255,255,255,.5);font-family:var(--font-mono)">—</div>
+              </div>
+              <div style="text-align:right">
+                <div class="kpi-l" style="color:rgba(255,255,255,.45)">叫貨日期</div>
+                <div id="lo-date" style="font-family:var(--font-mono);font-size:1.1rem;color:var(--lime);margin-top:6px">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-bottom:26px"></div>
+
         <div class="kpis">
           <div class="kpi"><div class="kpi-l">管理品項</div><div class="kpi-v" id="kpi-products">—</div><div class="kpi-s">個品項</div></div>
-          <div class="kpi"><div class="kpi-l">即將到期</div><div class="kpi-v" id="kpi-expiring" style="color:var(--amber)">—</div><div class="kpi-s">3 天內到期的數量</div></div>
+          <div class="kpi"><div class="kpi-l">即將到期</div><div class="kpi-v" id="kpi-expiring" style="color:var(--blue)">—</div><div class="kpi-s">3 天內到期的數量</div></div>
           <div class="kpi"><div class="kpi-l">需要叫貨</div><div class="kpi-v" id="kpi-order" style="color:var(--red)">—</div><div class="kpi-s">低於安全庫存的品項</div></div>
         </div>
 
@@ -461,6 +480,15 @@ select.fc{cursor:pointer}
           </div>
         </div>
 
+        <div class="card">
+          <div class="card-t" style="margin-bottom:14px">Webhook 設定</div>
+          <div class="codebox">
+            <span class="cm"># LINE Developers Console → Messaging API → Webhook URL</span><br>
+            <span class="cv" id="webhook-url-display">https://your-space.hf.space/webhook/line</span><br>
+            <span class="cm"># 開啟 Use webhook，關閉自動回應訊息</span>
+          </div>
+          <button class="btn btn-ghost btn-sm" style="margin-top:14px" onclick="copyWebhookUrl()">複製 Webhook URL</button>
+        </div>
 
         <div class="card">
           <div class="card-t" style="margin-bottom:14px">群組內可用指令</div>
@@ -681,12 +709,18 @@ async function createProduct() {
 function editProduct(id) {
   const prod = S.products.find(p => p.id === id);
   if (!prod) return;
-  const unit  = prompt(`「${prod.name}」的單位（目前：${prod.unit}）：`, prod.unit);
+  const name  = prompt(`品項名稱（目前：${prod.name}）：`, prod.name);
+  if (name === null) return;
+  const unit  = prompt(`單位（目前：${prod.unit}）：`, prod.unit);
   if (unit === null) return;
-  const price = prompt(`「${prod.name}」的單價（目前：${prod.unit_price}）：`, prod.unit_price);
+  const price = prompt(`單價（目前：${prod.unit_price}）：`, prod.unit_price);
   if (price === null) return;
+  const payload = {};
+  if (name.trim() && name.trim() !== prod.name) payload.name = name.trim();
+  if (unit.trim()) payload.unit = unit.trim();
+  payload.unit_price = parseFloat(price) || 0;
   showLoading(true);
-  api('PUT', `/products/${id}`, {unit: unit.trim(), unit_price: parseFloat(price)||0})
+  api('PUT', `/products/${id}`, payload)
     .then(() => { showLoading(false); loadProducts(); toast('品項已更新','ok'); });
 }
 async function toggleProduct(id, active) {
@@ -795,6 +829,32 @@ function renderDashboard() {
     if (d >= 0 && d <= 3) totalExpiring += b.quantity;
   }));
   kpiExpiring.textContent = totalExpiring;
+
+  // ── 最近一次叫貨卡片 ──────────────────────────────────────────
+  const loCard = document.getElementById('last-order-card');
+  if (S.items.length) {
+    // 收集所有有 order_date 的品項，找最新那批（同一天叫的算同一次）
+    const withOrder = S.items.filter(i => i.order_date);
+    if (withOrder.length) {
+      // 最新叫貨日
+      const latestOrder = withOrder.map(i => i.order_date).sort().at(-1);
+      const sameDay     = withOrder.filter(i => i.order_date === latestOrder);
+      // 品項清單文字
+      const itemsText = sameDay.map(i => {
+        const qty = i.total_qty;
+        return `${i.product_name} ${qty} ${i.unit}`;
+      }).join('　');
+      const staff = sameDay[0]?.staff_name || '未記錄';
+      document.getElementById('lo-items').textContent = itemsText;
+      document.getElementById('lo-date').textContent  = latestOrder;
+      document.getElementById('lo-meta').textContent  = `叫貨人員：${staff}`;
+      loCard.style.display = 'grid';
+    } else {
+      loCard.style.display = 'none';
+    }
+  } else {
+    loCard.style.display = 'none';
+  }
 
   container.innerHTML = S.items.map(item => {
     const total = item.total_qty;
