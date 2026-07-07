@@ -848,7 +848,7 @@ function renderDashboard() {
         </div>`).join('');
       document.getElementById('lo-items').innerHTML = itemsHtml;
       document.getElementById('lo-date').textContent  = latestOrder;
-      document.getElementById('lo-meta').textContent  = `叫貨人員：${staff}`;
+      document.getElementById('lo-meta').textContent  = `叫貨人員：${sameDay[0]?.staff_name || '未記錄'}`;
       loCard.style.display = 'grid';
     } else {
       loCard.style.display = 'none';
