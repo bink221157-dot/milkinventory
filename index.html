@@ -486,15 +486,6 @@ select.fc{cursor:pointer}
           </div>
         </div>
 
-        <div class="card">
-          <div class="card-t" style="margin-bottom:14px">Webhook 設定</div>
-          <div class="codebox">
-            <span class="cm"># LINE Developers Console → Messaging API → Webhook URL</span><br>
-            <span class="cv" id="webhook-url-display">https://your-space.hf.space/webhook/line</span><br>
-            <span class="cm"># 開啟 Use webhook，關閉自動回應訊息</span>
-          </div>
-          <button class="btn btn-ghost btn-sm" style="margin-top:14px" onclick="copyWebhookUrl()">複製 Webhook URL</button>
-        </div>
 
         <div class="card">
           <div class="card-t" style="margin-bottom:14px">群組內可用指令</div>
@@ -856,7 +847,7 @@ function renderDashboard() {
         </div>`).join('');
       document.getElementById('lo-items').innerHTML = itemsHtml;
       document.getElementById('lo-date').textContent  = latestOrder;
-      document.getElementById('lo-meta').textContent  = `叫貨人員：${staff}`;
+      document.getElementById('lo-meta').textContent  = `叫貨人員：${sameDay[0]?.staff_name || '未記錄'}`;
       loCard.style.display = 'grid';
     } else {
       loCard.style.display = 'none';
