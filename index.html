@@ -474,7 +474,13 @@ select.fc{cursor:pointer}
           <div class="card-t" style="margin-bottom:16px">已綁定的群組</div>
           <div class="tw">
             <table class="dt">
-              <thead><tr><th>群組 ID</th><th>每天幾點發</th><th>狀態</th><th>上次發送</th><th style="width:150px">操作</th></tr></thead>
+              <thead><tr>
+                <th>群組 ID</th>
+                <th>每日日報</th>
+                <th>每週二週報</th>
+                <th>狀態</th>
+                <th style="width:180px">操作</th>
+              </tr></thead>
               <tbody id="line-groups-tbody"><tr><td colspan="5" class="empty">還沒有群組。把 Bot 加入 LINE 群組就會自動出現。</td></tr></tbody>
             </table>
           </div>
@@ -496,10 +502,12 @@ select.fc{cursor:pointer}
             <table class="dt">
               <thead><tr><th style="width:200px">在群組輸入</th><th>效果</th></tr></thead>
               <tbody>
-                <tr><td class="mono">設定時間 09:00</td><td>改成每天 09:00 發日報</td></tr>
-                <tr><td class="mono">狀態</td><td>查看目前設定</td></tr>
-                <tr><td class="mono">停止</td><td>暫停通知</td></tr>
-                <tr><td class="mono">啟動</td><td>恢復通知</td></tr>
+                <tr><td class="mono">設定時間 09:00</td><td>每日日報改為 09:00 發送</td></tr>
+                <tr><td class="mono">週報時間 09:00</td><td>每週二週報改為 09:00 發送</td></tr>
+                <tr><td class="mono">狀態</td><td>查看日報與週報的目前設定</td></tr>
+                <tr><td class="mono">停止 / 啟動</td><td>暫停或恢復每日日報</td></tr>
+                <tr><td class="mono">週報關閉 / 週報開啟</td><td>暫停或恢復每週二週報</td></tr>
+                <tr><td class="mono">指令</td><td>顯示所有可用指令</td></tr>
               </tbody>
             </table>
           </div>
@@ -848,7 +856,7 @@ function renderDashboard() {
         </div>`).join('');
       document.getElementById('lo-items').innerHTML = itemsHtml;
       document.getElementById('lo-date').textContent  = latestOrder;
-      document.getElementById('lo-meta').textContent  = `叫貨人員：${sameDay[0]?.staff_name || '未記錄'}`;
+      document.getElementById('lo-meta').textContent  = `叫貨人員：${staff}`;
       loCard.style.display = 'grid';
     } else {
       loCard.style.display = 'none';
@@ -1004,33 +1012,68 @@ async function loadLineGroups() {
     return;
   }
   el.innerHTML = data.groups.map(g => {
-    const shortId = g.group_id.slice(0, 12) + '…';
-    const stime   = (g.schedule_time || '21:00').slice(0, 5);
-    const active  = g.active
-      ? '<span class="badge b-ok">啟用</span>'
-      : '<span class="badge b-mute">停用</span>';
-    const last    = g.last_sent_date || '—';
+    const shortId    = g.group_id.slice(0, 12) + '…';
+    const dailyTime  = (g.schedule_time  || '21:00').slice(0, 5);
+    const weeklyTime = (g.weekly_time    || '09:00').slice(0, 5);
+    const activeLabel = g.active
+      ? '<span class="badge b-ok">日報開啟</span>'
+      : '<span class="badge b-mute">日報停用</span>';
+    const weeklyLabel = g.weekly_active
+      ? '<span class="badge b-ok">週報開啟</span>'
+      : '<span class="badge b-mute">週報停用</span>';
     return `<tr>
       <td class="mono" style="font-size:.72rem" title="${g.group_id}">${shortId}</td>
-      <td><input type="time" class="fc mono" style="height:32px;font-size:.75rem;width:104px;padding:0 8px"
-        value="${stime}" onchange="updateGroupTime('${g.group_id}', this.value)"></td>
-      <td>${active}</td>
-      <td class="mono" style="color:var(--ink-3)">${last}</td>
-      <td style="display:flex;gap:6px">
-        <button class="btn btn-ghost btn-xs" onclick="toggleGroup('${g.group_id}', ${!g.active})">${g.active ? '停用' : '啟用'}</button>
-        <button class="btn btn-danger btn-xs" onclick="deleteGroup('${g.group_id}')">移除</button>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <input type="time" class="fc mono" style="height:30px;font-size:.74rem;width:100px;padding:0 7px"
+            value="${dailyTime}"
+            onchange="updateGroupTime('${g.group_id}', this.value)">
+          <span style="font-size:.7rem;color:var(--ink-3)">${g.last_sent_date || '尚未發送'}</span>
+        </div>
+      </td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <input type="time" class="fc mono" style="height:30px;font-size:.74rem;width:100px;padding:0 7px"
+            value="${weeklyTime}"
+            onchange="updateGroupWeeklyTime('${g.group_id}', this.value)">
+          <span style="font-size:.7rem;color:var(--ink-3)">${g.last_weekly_date || '尚未發送'}</span>
+        </div>
+      </td>
+      <td>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          ${activeLabel}
+          ${weeklyLabel}
+        </div>
+      </td>
+      <td>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <div style="display:flex;gap:5px">
+            <button class="btn btn-ghost btn-xs" onclick="toggleGroup('${g.group_id}',${!g.active})">${g.active?'停用日報':'開啟日報'}</button>
+            <button class="btn btn-ghost btn-xs" onclick="toggleGroupWeekly('${g.group_id}',${!g.weekly_active})">${g.weekly_active?'停用週報':'開啟週報'}</button>
+          </div>
+          <button class="btn btn-danger btn-xs" onclick="deleteGroup('${g.group_id}')">移除群組</button>
+        </div>
       </td>
     </tr>`;
   }).join('');
 }
 async function updateGroupTime(groupId, time) {
   await api('PUT', `/line/groups/${encodeURIComponent(groupId)}`, {schedule_time: time.slice(0,5)});
-  toast('發送時間已更新','ok');
+  toast('每日日報時間已更新','ok');
+}
+async function updateGroupWeeklyTime(groupId, time) {
+  await api('PUT', `/line/groups/${encodeURIComponent(groupId)}`, {weekly_time: time.slice(0,5)});
+  toast('週報時間已更新','ok');
 }
 async function toggleGroup(groupId, active) {
   await api('PUT', `/line/groups/${encodeURIComponent(groupId)}`, {active});
   await loadLineGroups();
-  toast(active ? '已啟用通知' : '已停用通知');
+  toast(active ? '每日日報已開啟' : '每日日報已停用');
+}
+async function toggleGroupWeekly(groupId, weekly_active) {
+  await api('PUT', `/line/groups/${encodeURIComponent(groupId)}`, {weekly_active});
+  await loadLineGroups();
+  toast(weekly_active ? '每週週報已開啟' : '每週週報已停用');
 }
 async function deleteGroup(groupId) {
   if (!confirm('確定移除這個群組？Bot 不會自動離開群組，只是不再發通知。')) return;
