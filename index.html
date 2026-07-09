@@ -39,17 +39,17 @@ body{font-family:var(--font-ui);background:var(--paper);color:var(--ink);font-si
 #screen-app{display:none;min-height:100vh}
 
 /* ═══════════════ LOGIN ═══════════════ */
-.lg-left{width:44%;min-width:380px;background:var(--pine);color:#fff;display:flex;flex-direction:column;justify-content:center;padding:64px;position:relative;overflow:hidden}
+.lg-left{width:36%;min-width:300px;max-width:380px;background:var(--pine);color:#fff;display:flex;flex-direction:column;justify-content:center;padding:48px 44px;position:relative;overflow:hidden}
 .lg-left::after{content:'';position:absolute;right:-140px;bottom:-140px;width:420px;height:420px;border-radius:50%;border:1.5px dashed rgba(200,240,75,.25);pointer-events:none}
-.lg-brand{font-family:var(--font-display);font-weight:700;font-size:3.2rem;line-height:1.05;letter-spacing:-.01em}
+.lg-brand{font-family:var(--font-display);font-weight:700;font-size:2.6rem;line-height:1.05;letter-spacing:-.01em}
 .lg-brand .dot{color:var(--lime)}
-.lg-tag{margin-top:14px;font-size:.95rem;color:rgba(255,255,255,.55);letter-spacing:.04em}
-.lg-feats{margin-top:56px;display:flex;flex-direction:column;gap:18px;max-width:340px}
-.lg-feat{display:flex;gap:14px;align-items:flex-start;font-size:.86rem;color:rgba(255,255,255,.72);line-height:1.55}
-.lg-tick{width:20px;height:20px;border-radius:50%;background:var(--lime);color:var(--pine);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0;margin-top:2px}
+.lg-tag{margin-top:12px;font-size:.88rem;color:rgba(255,255,255,.55);letter-spacing:.04em}
+.lg-feats{margin-top:40px;display:flex;flex-direction:column;gap:14px;max-width:300px}
+.lg-feat{display:flex;gap:12px;align-items:flex-start;font-size:.82rem;color:rgba(255,255,255,.72);line-height:1.55}
+.lg-tick{width:18px;height:18px;border-radius:50%;background:var(--lime);color:var(--pine);display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;flex-shrink:0;margin-top:2px}
 .lg-right{flex:1;display:flex;align-items:center;justify-content:center;padding:40px}
-.lg-box{width:100%;max-width:360px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:40px 34px;box-shadow:var(--shadow)}
-.lg-box h1{font-family:var(--font-display);font-weight:600;font-size:1.5rem;margin-bottom:6px}
+.lg-box{width:100%;max-width:340px;background:rgba(255,255,255,.88);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.5);border-radius:20px;padding:36px 30px;box-shadow:0 20px 60px rgba(0,0,0,.18)}
+.lg-box h1{font-family:var(--font-display);font-weight:600;font-size:1.4rem;margin-bottom:6px}
 .lg-sub{font-size:.82rem;color:var(--ink-3);margin-bottom:26px}
 .lg-err{display:none;background:var(--red-bg);color:var(--red);border-radius:10px;padding:10px 14px;font-size:.8rem;font-weight:500;margin-bottom:16px}
 
@@ -283,14 +283,28 @@ select.fc{cursor:pointer}
   padding:34px 34px 60px;max-width:1180px;
 }
 
-/* ═══ 首頁文字確保可見（深色背景）═══ */
-.home-checklist .hcheck{
-  background:rgba(255,255,255,.1);
-  border:1px solid rgba(255,255,255,.15);
-  color:#fff;
-}
-.hstat-l{color:rgba(255,255,255,.7)!important}
-.home-date,.home-sub{color:rgba(255,255,255,.75)!important}
+/* ═══ 操作頁文字強制深色（磨砂卡片上清晰可讀）═══ */
+#screen-app .tb-title,
+#screen-app h1.pg-t{color:var(--ink)!important}
+#screen-app .eyebrow{color:var(--leaf)!important}
+#screen-app .pg-s{color:var(--ink-2)!important}
+#screen-app .card-t{color:var(--ink-2)!important}
+#screen-app .tb-meta{color:var(--ink-3)!important}
+#screen-app label,
+#screen-app .fg label{color:var(--ink-2)!important;font-weight:600}
+#screen-app .card{color:var(--ink)!important}
+#screen-app .dtable td{color:var(--ink)!important}
+#screen-app .dtable th{color:var(--ink-3)!important}
+#screen-app .ep-label{color:var(--ink-3)!important}
+/* topbar 文字 */
+#screen-app .topbar{background:rgba(250,249,245,.92)!important}
+#screen-app .tb-title{color:var(--ink)!important}
+/* 盤點頁 date/staff label */
+#screen-app .page label{color:var(--ink-2)!important}
+/* home-hero 數字標籤保持亮色 */
+.hstat-l{color:rgba(255,255,255,.75)!important}
+.home-date{color:rgba(255,255,255,.7)!important}
+.home-sub{color:rgba(255,255,255,.75)!important}
 
 /* ═══ 首頁摘要卡片 ═══ */
 .home-hero{
@@ -521,7 +535,7 @@ select.fc{cursor:pointer}
       <div class="page active" id="pg-dashboard">
         <div class="home-hero">
           <div class="home-date" id="home-date">—</div>
-          <div class="home-title" id="home-greeting">今天要做的事</div>
+          <div class="home-title" id="home-greeting">今日概況</div>
           <div class="home-sub">登入後系統自動整理今日庫存狀況</div>
           <div class="home-stats">
             <div class="hstat"><div class="hstat-n" id="hs-total">—</div><div class="hstat-l">管理品項</div></div>
@@ -549,6 +563,19 @@ select.fc{cursor:pointer}
             <span class="yo-arrow" id="yo-arrow">▼</span>
           </div>
           <div class="yo-body" id="yo-body"></div>
+        </div>
+
+        <!-- 各品項最近叫貨 -->
+        <div class="card" id="last-order-card" style="display:none;margin-top:16px">
+          <div class="card-h" style="margin-bottom:14px">
+            <span class="card-t">各品項最近叫貨</span>
+          </div>
+          <div class="tw">
+            <table class="dt">
+              <thead><tr><th>品項</th><th>叫貨數量</th><th>叫貨人員</th><th>叫貨日期</th></tr></thead>
+              <tbody id="last-order-tbody"></tbody>
+            </table>
+          </div>
         </div>
 
         <!-- 消耗趨勢 -->
@@ -855,6 +882,7 @@ async function initApp() {
   if (currentRole === 'admin') tasks.push(loadUsers(), loadLineGroups());
   await Promise.all(tasks);
   renderYesterdayOrders();
+  renderLastOrderCard();
 }
 
 /* ── Products ── */
@@ -1012,6 +1040,44 @@ function renderHomePage() {
   }
 
   checklist.innerHTML = lines.join('');
+  renderLastOrderCard();
+}
+
+function renderLastOrderCard() {
+  const card  = document.getElementById('last-order-card');
+  const tbody = document.getElementById('last-order-tbody');
+  if (!card || !tbody) return;
+
+  // 從 localStorage 讀取所有叫貨紀錄，每個品項取最新那筆
+  const log = JSON.parse(localStorage.getItem('sf_ordered_log') || '{}');
+  const byProduct = {};
+  Object.values(log).forEach(r => {
+    const existing = byProduct[r.pid];
+    if (!existing || r.date > existing.date) byProduct[r.pid] = r;
+  });
+
+  const rows = Object.values(byProduct);
+  if (!rows.length) { card.style.display='none'; return; }
+
+  card.style.display = 'block';
+  // 按日期排序（最新在前）
+  rows.sort((a, b) => b.date.localeCompare(a.date));
+
+  const today = todayStr();
+  const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
+  const yStr = yesterday.toISOString().split('T')[0];
+
+  tbody.innerHTML = rows.map(r => {
+    const label = r.date === today ? '<span style="color:var(--leaf);font-weight:700">今天</span>'
+                : r.date === yStr  ? '<span style="color:var(--amber);font-weight:700">昨天</span>'
+                : `<span class="mono" style="color:var(--ink-3)">${r.date}</span>`;
+    return `<tr>
+      <td><strong>${r.name}</strong></td>
+      <td class="mono">${r.qty} ${r.unit}</td>
+      <td style="color:var(--ink-2)">${r.who}</td>
+      <td>${label}</td>
+    </tr>`;
+  }).join('');
 }
 
 /* ── Data Table ── */
@@ -1293,6 +1359,7 @@ function saveOrderedRecord(pid) {
   toast(`叫貨紀錄已儲存：${item?.product_name} ${qty} ${item?.unit}`, 'ok');
   renderHomePage();
   renderYesterdayOrders();
+  renderLastOrderCard();
 }
 
 function cancelOrdered(pid) {
@@ -1333,6 +1400,7 @@ function renderYesterdayOrders() {
       <span style="color:var(--ink-3);font-size:.78rem">叫貨人：${r.who}</span>
       <span class="mono" style="color:var(--ink-4);font-size:.72rem;margin-left:auto">${r.date}</span>
     </div>`).join('');
+  renderLastOrderCard();
 }
 
 /* ── Consumption ── */
