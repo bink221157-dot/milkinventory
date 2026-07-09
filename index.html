@@ -205,7 +205,95 @@ select.fc{cursor:pointer}
 .modal-t{font-family:var(--font-display);font-weight:600;font-size:1.1rem}
 .modal-x{background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--ink-3);padding:4px}
 
-/* ═══════════════ RESPONSIVE ═══════════════ */
+/* ═══ 背景圖片（暫用 CSS 漸層，使用者提供 URL 後替換）═══ */
+/* 登入頁背景：先用松綠漸層，待 URL 提供後改為：
+   background: linear-gradient(rgba(18,53,43,.55), rgba(18,53,43,.55)), url('YOUR_URL') center/cover no-repeat; */
+#screen-login .lg-left{
+  background: linear-gradient(135deg,rgba(18,53,43,.92),rgba(13,42,34,.96)),
+              var(--pine);
+}
+/* 操作頁背景：同上待 URL 替換 */
+#screen-app .shell .main{
+  background: var(--paper);
+}
+
+/* ═══ 首頁摘要卡片 ═══ */
+.home-hero{
+  background:var(--pine);border-radius:var(--r);padding:28px 30px;
+  margin-bottom:20px;color:#fff;position:relative;overflow:hidden;
+}
+.home-hero::after{
+  content:'';position:absolute;right:-60px;top:-60px;
+  width:240px;height:240px;border-radius:50%;
+  border:1px dashed rgba(200,240,75,.2);pointer-events:none;
+}
+.home-date{font-family:var(--font-mono);font-size:.78rem;color:rgba(255,255,255,.4);margin-bottom:10px}
+.home-title{font-family:var(--font-display);font-size:1.9rem;font-weight:600;line-height:1.1;margin-bottom:6px}
+.home-sub{font-size:.84rem;color:rgba(255,255,255,.55)}
+.home-stats{display:flex;gap:24px;flex-wrap:wrap;margin-top:20px;padding-top:18px;border-top:1px solid rgba(255,255,255,.1)}
+.hstat{display:flex;flex-direction:column;gap:4px}
+.hstat-n{font-family:var(--font-display);font-size:1.8rem;font-weight:700;line-height:1}
+.hstat-l{font-size:.72rem;color:rgba(255,255,255,.5);letter-spacing:.04em;text-transform:uppercase}
+.hstat-n.red{color:#F87171} .hstat-n.amber{color:#FCD34D} .hstat-n.lime{color:var(--lime)} .hstat-n.mute{color:rgba(255,255,255,.35)}
+.home-checklist{display:flex;flex-direction:column;gap:10px}
+.hcheck{display:flex;align-items:center;gap:10px;font-size:.86rem;color:rgba(255,255,255,.75);padding:9px 14px;border-radius:10px;background:rgba(255,255,255,.06)}
+.hcheck .tick{color:var(--lime);font-weight:700;flex-shrink:0}
+.hcheck .cross{color:#F87171;font-weight:700;flex-shrink:0}
+
+/* ═══ Data Table ═══ */
+.dt-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--line)}
+.dtable{width:100%;border-collapse:collapse;font-size:.83rem;background:var(--card)}
+.dtable thead th{
+  position:sticky;top:0;z-index:2;
+  background:var(--paper);
+  padding:10px 14px;text-align:left;
+  font-size:.64rem;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink-4);
+  border-bottom:1.5px solid var(--line);white-space:nowrap;
+}
+.dtable tbody tr.dt-row{border-bottom:1px solid var(--line);cursor:pointer;transition:background .12s}
+.dtable tbody tr.dt-row:last-child{border-bottom:none}
+.dtable tbody tr.dt-row:hover{background:var(--paper)}
+.dtable tbody tr.dt-expand{background:#FAFAF8;display:none}
+.dtable tbody tr.dt-expand.open{display:table-row}
+.dtable td{padding:11px 14px;vertical-align:middle}
+.dtable td.mono{font-family:var(--font-mono);font-size:.79rem}
+.dt-toggle{color:var(--ink-4);font-size:.7rem;transition:transform .2s;display:inline-block;margin-right:6px}
+.dt-toggle.open{transform:rotate(90deg)}
+
+/* 燈號 */
+.dot-status{width:10px;height:10px;border-radius:50%;flex-shrink:0;display:inline-block}
+.dot-red{background:#EF4444;box-shadow:0 0 6px rgba(239,68,68,.5)}
+.dot-blue{background:#3B82F6;box-shadow:0 0 6px rgba(59,130,246,.4)}
+.dot-green{background:#22C55E;box-shadow:0 0 6px rgba(34,197,94,.4)}
+
+/* 已叫貨：紫色勾選框 */
+.cb-ordered{
+  appearance:none;-webkit-appearance:none;
+  width:18px;height:18px;border-radius:5px;
+  border:2px solid #A855F7;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;
+  position:relative;transition:background .15s;flex-shrink:0;
+}
+.cb-ordered:checked{background:#A855F7;border-color:#A855F7}
+.cb-ordered:checked::after{
+  content:'✓';position:absolute;color:#fff;
+  font-size:11px;font-weight:700;line-height:1;
+}
+.cb-ordered:hover{border-color:#9333EA}
+
+/* 展開面板 */
+.expand-panel{padding:14px 18px 14px 40px;background:#FAFAF8}
+.ep-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+.ep-field{display:flex;flex-direction:column;gap:5px}
+.ep-label{font-size:.64rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-4)}
+.ep-input{height:36px;padding:0 10px;border:1.5px solid var(--line);border-radius:9px;font-family:var(--font-mono);font-size:.79rem;color:var(--ink);background:var(--card);outline:none;transition:border-color .15s;width:100%}
+.ep-input:focus{border-color:var(--leaf)}
+.ep-batch{display:flex;flex-direction:column;gap:4px;margin-top:6px}
+.ep-batch-row{display:flex;align-items:center;gap:8px;font-size:.78rem;font-family:var(--font-mono)}
+.ep-badge-ok{background:var(--green-bg);color:var(--leaf);padding:2px 8px;border-radius:99px;font-size:.66rem;font-weight:700}
+.ep-badge-exp{background:var(--red-bg);color:var(--red);padding:2px 8px;border-radius:99px;font-size:.66rem;font-weight:700}
+.ep-save{margin-top:14px}
 @media(max-width:900px){.kpis{grid-template-columns:1fr 1fr}.frow3{grid-template-columns:1fr 1fr}}
 @media(max-width:640px){
   .sb{transform:translateX(-100%)}
@@ -260,7 +348,7 @@ select.fc{cursor:pointer}
       </div>
       <div class="sb-nav">
         <div class="sb-label">每天要做的</div>
-        <div class="sb-item active" data-page="pg-dashboard">庫存總覽</div>
+        <div class="sb-item active" data-page="pg-dashboard">首頁</div>
         <div class="sb-item" data-page="pg-inventory">今日盤點</div>
         <div class="sb-label">管理設定</div>
         <div class="sb-item admin-only" data-page="pg-products" style="display:none">品項設定</div>
@@ -310,40 +398,32 @@ select.fc{cursor:pointer}
         </div>
       </header>
 
-      <!-- ══ 庫存總覽 ══ -->
+      <!-- ══ 首頁 ══ -->
       <div class="page active" id="pg-dashboard">
-        <div class="eyebrow">Overview</div>
-        <h1 class="pg-t">庫存總覽</h1>
-        <p class="pg-s">每個品項一張貨架牌。數字變紅代表該叫貨了。</p>
-
-        <div class="kpis" id="last-order-card" style="display:none;margin-bottom:0">
-          <div class="kpi" style="grid-column:1/-1;background:var(--pine);border-color:transparent;position:relative;overflow:hidden">
-            <div style="position:absolute;right:-40px;top:-40px;width:180px;height:180px;border-radius:50%;background:rgba(200,240,75,.07);pointer-events:none"></div>
-            <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px;position:relative">
-              <div style="flex:1;min-width:0">
-                <div class="kpi-l" style="color:rgba(255,255,255,.45);margin-bottom:10px">最近一次叫貨</div>
-                <div id="lo-items" style="display:flex;flex-direction:column;gap:6px"></div>
-                <div id="lo-meta" style="font-size:.75rem;color:rgba(255,255,255,.4);font-family:var(--font-mono);margin-top:12px">—</div>
-              </div>
-              <div style="text-align:right;flex-shrink:0">
-                <div class="kpi-l" style="color:rgba(255,255,255,.45)">叫貨日期</div>
-                <div id="lo-date" style="font-family:var(--font-mono);font-size:1.1rem;color:var(--lime);margin-top:6px">—</div>
-              </div>
-            </div>
+        <div class="home-hero">
+          <div class="home-date" id="home-date">—</div>
+          <div class="home-title" id="home-greeting">今天要做的事</div>
+          <div class="home-sub">登入後系統自動整理今日庫存狀況</div>
+          <div class="home-stats">
+            <div class="hstat"><div class="hstat-n" id="hs-total">—</div><div class="hstat-l">管理品項</div></div>
+            <div class="hstat"><div class="hstat-n red" id="hs-need">—</div><div class="hstat-l">需要叫貨</div></div>
+            <div class="hstat"><div class="hstat-n amber" id="hs-expiring">—</div><div class="hstat-l">即將過期</div></div>
+            <div class="hstat"><div class="hstat-n lime" id="hs-ok">—</div><div class="hstat-l">庫存充足</div></div>
           </div>
         </div>
-        <div style="margin-bottom:26px"></div>
 
-        <div class="kpis">
-          <div class="kpi"><div class="kpi-l">管理品項</div><div class="kpi-v" id="kpi-products">—</div><div class="kpi-s">個品項</div></div>
-          <div class="kpi"><div class="kpi-l">即將到期</div><div class="kpi-v" id="kpi-expiring" style="color:var(--blue)">—</div><div class="kpi-s">3 天內到期的數量</div></div>
-          <div class="kpi"><div class="kpi-l">需要叫貨</div><div class="kpi-v" id="kpi-order" style="color:var(--red)">—</div><div class="kpi-s">低於安全庫存的品項</div></div>
+        <!-- 今日清單 -->
+        <div class="card">
+          <div class="card-h" style="margin-bottom:14px">
+            <span class="card-t">今日狀況</span>
+            <span class="tb-meta" id="home-last-update"></span>
+          </div>
+          <div class="home-checklist" id="home-checklist">
+            <div style="color:var(--ink-4);font-size:.82rem;text-align:center;padding:16px">載入中…</div>
+          </div>
         </div>
 
-        <div class="tags" id="product-cards">
-          <div style="grid-column:1/-1;text-align:center;color:var(--ink-4);padding:52px;font-size:.84rem">還沒有盤點資料。到「今日盤點」填第一筆吧。</div>
-        </div>
-
+        <!-- 消耗趨勢 -->
         <div class="card" id="consumption-card" style="display:none">
           <div class="card-h"><span class="card-t">消耗趨勢 & 建議叫貨</span></div>
           <div class="tw">
@@ -354,70 +434,50 @@ select.fc{cursor:pointer}
           </div>
         </div>
 
-        <div class="card" id="dash-detail-card" style="display:none">
-          <div class="card-h">
-            <span class="card-t">最新盤點明細</span>
-            <span class="tb-meta" id="d-record-date"></span>
-          </div>
-          <div class="tw">
-            <table class="dt">
-              <thead><tr><th>品項</th><th>有效期限</th><th>數量</th><th>小計成本</th><th>效期</th><th>盤點人</th></tr></thead>
-              <tbody id="d-tbody"></tbody>
-            </table>
-          </div>
-          <div class="admin-only" style="display:none;margin-top:16px">
-            <button class="btn btn-ghost btn-sm" onclick="exportReport()">↓ 匯出成本報表</button>
-          </div>
+        <div class="admin-only" style="display:none;margin-top:4px">
+          <button class="btn btn-ghost btn-sm" onclick="exportReport()">↓ 匯出成本報表</button>
         </div>
       </div>
 
-      <!-- ══ 今日盤點 ══ -->
+      <!-- ══ 今日盤點（Data Table）══ -->
       <div class="page" id="pg-inventory">
         <div class="eyebrow">Daily count</div>
         <h1 class="pg-t">今日盤點</h1>
-        <p class="pg-s">選品項、填數量、按儲存，三步完成。</p>
+        <p class="pg-s">點列展開可填進貨與消耗。勾選「已叫貨」標記叫貨狀態。</p>
 
-        <div class="card">
-          <div class="card-t" style="margin-bottom:16px">選擇品項</div>
-          <div class="frow">
-            <div class="fg"><label>品項</label><select class="fc" id="inv-product" onchange="onProductChange()"></select></div>
-            <div class="fg"><label>單價</label><input type="text" class="fc mono" id="inv-unit-price" readonly></div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+          <div class="fg" style="flex:0 0 auto">
+            <label style="font-size:.72rem;font-weight:600;color:var(--ink-2)">盤點日期</label>
+            <input type="date" class="fc" id="inv-recorded" style="width:160px">
+          </div>
+          <div class="fg" style="flex:0 0 auto">
+            <label style="font-size:.72rem;font-weight:600;color:var(--ink-2)">盤點人員</label>
+            <select class="fc" id="inv-staff" style="width:130px"></select>
           </div>
         </div>
 
-        <div class="card">
-          <div class="card-h">
-            <span class="card-t">各效期數量</span>
-            <button class="btn btn-ghost btn-sm" onclick="addBatchRow()">＋ 新增效期</button>
-          </div>
-          <div class="tw">
-            <table class="dt">
-              <thead><tr><th style="width:180px">有效期限</th><th style="width:130px">數量</th><th>狀態</th><th style="width:40px"></th></tr></thead>
-              <tbody id="batch-body"></tbody>
+        <div class="card" style="padding:0;overflow:hidden">
+          <div class="dt-wrap" style="border:none;border-radius:0">
+            <table class="dtable" id="main-table">
+              <thead>
+                <tr>
+                  <th style="width:36px"></th>
+                  <th>原料</th>
+                  <th>現有庫存</th>
+                  <th>今日盤點</th>
+                  <th style="width:60px">狀態</th>
+                  <th>建議叫貨</th>
+                  <th style="width:70px">已叫貨</th>
+                </tr>
+              </thead>
+              <tbody id="dt-body">
+                <tr><td colspan="7" class="empty" style="padding:40px">載入中…</td></tr>
+              </tbody>
             </table>
           </div>
         </div>
 
-        <div class="card">
-          <div class="card-t" style="margin-bottom:16px">其他資訊</div>
-          <div class="frow" style="margin-bottom:18px">
-            <div class="fg"><label>最低安全庫存量</label><input type="number" class="fc mono" id="inv-thresh" value="0" min="0"></div>
-            <div class="fg"><label>盤點人員</label><select class="fc" id="inv-staff"></select></div>
-            <div class="fg"><label>訂貨日期</label><input type="date" class="fc" id="inv-order"></div>
-            <div class="fg"><label>盤點日期</label><input type="date" class="fc" id="inv-recorded"></div>
-          </div>
-          <button class="btn btn-main btn-full" onclick="saveInventory()">儲存今日盤點</button>
-        </div>
-
-        <div class="card">
-          <div class="card-t" style="margin-bottom:8px">今日消耗量</div>
-          <p style="font-size:.78rem;color:var(--ink-3);margin-bottom:16px">今天用掉多少就填多少，系統會幫你算每週趨勢。</p>
-          <div class="frow" style="margin-bottom:16px">
-            <div class="fg"><label>消耗數量</label><input type="number" class="fc mono" id="inv-consumption" value="0" min="0"></div>
-            <div class="fg"><label>備註（選填）</label><input type="text" class="fc" id="inv-consumption-note" placeholder="例：週末促銷、損耗"></div>
-          </div>
-          <button class="btn btn-lime" onclick="saveConsumption()">儲存消耗記錄</button>
-        </div>
+        <div id="consumption-input-card" style="display:none"></div>
       </div>
 
       <!-- ══ 品項設定 ══ -->
@@ -486,6 +546,15 @@ select.fc{cursor:pointer}
           </div>
         </div>
 
+        <div class="card">
+          <div class="card-t" style="margin-bottom:14px">Webhook 設定</div>
+          <div class="codebox">
+            <span class="cm"># LINE Developers Console → Messaging API → Webhook URL</span><br>
+            <span class="cv" id="webhook-url-display">https://your-space.hf.space/webhook/line</span><br>
+            <span class="cm"># 開啟 Use webhook，關閉自動回應訊息</span>
+          </div>
+          <button class="btn btn-ghost btn-sm" style="margin-top:14px" onclick="copyWebhookUrl()">複製 Webhook URL</button>
+        </div>
 
         <div class="card">
           <div class="card-t" style="margin-bottom:14px">群組內可用指令</div>
@@ -625,7 +694,7 @@ function enterApp() {
 
 /* ── Navigation ── */
 const PAGE_TITLES = {
-  'pg-dashboard':'庫存總覽','pg-inventory':'今日盤點',
+  'pg-dashboard':'首頁','pg-inventory':'今日盤點',
   'pg-products':'品項設定','pg-staff':'人員名單',
   'pg-line':'LINE 通知','pg-users':'帳號管理',
 };
@@ -645,9 +714,8 @@ document.querySelectorAll('.sb-item').forEach(el => {
 /* ── Init ── */
 async function initApp() {
   const today = todayStr();
-  document.getElementById('inv-order').value    = today;
-  document.getElementById('inv-recorded').value = today;
-  if (!document.getElementById('batch-body').rows.length) addBatchRow();
+  const recEl = document.getElementById('inv-recorded');
+  if (recEl) recEl.value = today;
   const tasks = [loadProducts(), loadStaff(), loadInventory(), loadConsumptionStats()];
   if (currentRole === 'admin') tasks.push(loadUsers(), loadLineGroups());
   await Promise.all(tasks);
@@ -745,203 +813,254 @@ async function loadInventory() {
   const data = await api('GET', '/inventory/latest');
   S.latestDate = data?.recorded_date || null;
   S.items      = data?.items || [];
-  renderDashboard();
+  renderHomePage();
+  renderDataTable();
 }
-async function saveInventory() {
-  const batches = getBatches();
-  if (!batches.length) { toast('至少填一筆效期','warn'); return; }
-  const pid      = parseInt(document.getElementById('inv-product').value);
-  const thresh   = parseInt(document.getElementById('inv-thresh').value)  || 0;
-  const staffVal = document.getElementById('inv-staff').value;
-  const order    = document.getElementById('inv-order').value;
-  const recorded = document.getElementById('inv-recorded').value;
-  if (!pid) { toast('先選品項','warn'); return; }
+
+async function saveInventory() { /* 保留舊名稱，由 Data Table 的 saveRowInventory 取代 */ }
+
+/* ── 首頁渲染 ── */
+function renderHomePage() {
+  const today = new Date();
+  const dateEl = document.getElementById('home-date');
+  if (dateEl) dateEl.textContent = today.toLocaleDateString('zh-TW',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+  const lastUpd = document.getElementById('home-last-update');
+  if (lastUpd && S.latestDate) lastUpd.textContent = `最新盤點：${S.latestDate}`;
+
+  const items = S.items;
+  let needCount = 0, expiringCount = 0, okCount = 0;
+
+  items.forEach(item => {
+    const diff = item.total_qty - item.min_threshold;
+    if (diff <= 0) needCount++;
+    else if (diff >= 3) okCount++;
+    item.batches.forEach(b => {
+      if (daysDiff(b.expiry_date) >= 0 && daysDiff(b.expiry_date) <= 3) expiringCount++;
+    });
+  });
+
+  const el = id => document.getElementById(id);
+  if (el('hs-total'))    el('hs-total').textContent    = items.length || '—';
+  if (el('hs-need'))     el('hs-need').textContent     = items.length ? needCount     : '—';
+  if (el('hs-expiring')) el('hs-expiring').textContent = items.length ? expiringCount : '—';
+  if (el('hs-ok'))       el('hs-ok').textContent       = items.length ? okCount       : '—';
+
+  // 今日清單
+  const checklist = el('home-checklist');
+  if (!checklist) return;
+  if (!items.length) {
+    checklist.innerHTML = '<div class="hcheck"><span>📋</span>還沒有盤點資料，前往「今日盤點」開始填寫</div>';
+    return;
+  }
+  const lines = [];
+  lines.push(`<div class="hcheck"><span class="tick">✓</span>今天共 ${items.length} 個品項需要盤點</div>`);
+  if (needCount > 0)
+    lines.push(`<div class="hcheck"><span class="cross">!</span>有 ${needCount} 個品項低於安全庫存，需要叫貨</div>`);
+  else
+    lines.push(`<div class="hcheck"><span class="tick">✓</span>所有品項庫存充足</div>`);
+  if (expiringCount > 0)
+    lines.push(`<div class="hcheck"><span class="cross">!</span>有 ${expiringCount} 個批次即將在 3 天內到期</div>`);
+  else
+    lines.push(`<div class="hcheck"><span class="tick">✓</span>近期無即將到期品項</div>`);
+
+  // 最近叫貨
+  const withOrder = items.filter(i => i.order_date);
+  if (withOrder.length) {
+    const latestOrder = withOrder.map(i => i.order_date).sort().at(-1);
+    const yesterday   = new Date(); yesterday.setDate(yesterday.getDate()-1);
+    const yStr        = yesterday.toISOString().split('T')[0];
+    const label       = latestOrder === todayStr() ? '今天' : latestOrder === yStr ? '昨天' : latestOrder;
+    const sameDay     = withOrder.filter(i => i.order_date === latestOrder);
+    const staff       = sameDay[0]?.staff_name || '未記錄';
+    lines.push(`<div class="hcheck"><span class="tick">✓</span>${label}叫貨已記錄（${staff}，共 ${sameDay.length} 個品項）</div>`);
+  }
+
+  checklist.innerHTML = lines.join('');
+}
+
+/* ── Data Table ── */
+function statusDot(diff) {
+  if (diff <= 0) return '<span class="dot-status dot-red"></span>';
+  if (diff <= 2) return '<span class="dot-status dot-blue"></span>';
+  return '<span class="dot-status dot-green"></span>';
+}
+
+function renderDataTable() {
+  const tbody = document.getElementById('dt-body');
+  if (!tbody) return;
+  if (!S.items.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty" style="padding:40px">還沒有盤點資料。先到品項設定新增品項，再回來填寫。</td></tr>';
+    return;
+  }
+  // 讀取已叫貨狀態（localStorage）
+  const orderedMap = JSON.parse(localStorage.getItem('sf_ordered') || '{}');
+  const today = todayStr();
+
+  tbody.innerHTML = S.items.map(item => {
+    const diff    = item.total_qty - item.min_threshold;
+    const suggest = Math.max(0, -diff);
+    const dot     = statusDot(diff);
+    const isOrdered = orderedMap[`${today}_${item.product_id}`] || false;
+    const checkHtml = `<input type="checkbox" class="cb-ordered" data-pid="${item.product_id}"
+      ${isOrdered ? 'checked' : ''} onchange="toggleOrdered(${item.product_id}, this.checked)">`;
+
+    // 今日盤點欄：顯示最新盤點總量（批次合計），加括號顯示盤點日
+    const countedLabel = item.total_qty;
+
+    return `
+    <tr class="dt-row" onclick="toggleExpand(${item.product_id})">
+      <td><span class="dt-toggle" id="tog-${item.product_id}">▶</span></td>
+      <td><strong>${item.product_name}</strong></td>
+      <td class="mono">${item.total_qty} ${item.unit}</td>
+      <td class="mono" style="color:var(--ink-3)">${item.staff_name || '—'}</td>
+      <td style="text-align:center">${dot}</td>
+      <td class="mono">${suggest > 0 ? `<span style="color:var(--red);font-weight:700">${suggest} ${item.unit}</span>` : '<span style="color:var(--leaf)">足夠</span>'}</td>
+      <td style="text-align:center" onclick="event.stopPropagation()">${checkHtml}</td>
+    </tr>
+    <tr class="dt-expand" id="exp-${item.product_id}">
+      <td colspan="7">
+        <div class="expand-panel">
+          <div class="ep-grid">
+            <div class="ep-field">
+              <div class="ep-label">效期批次</div>
+              <div class="ep-batch">
+                ${item.batches.map(b => {
+                  const d = daysDiff(b.expiry_date);
+                  const badge = d < 0 ? `<span class="ep-badge-exp">已過期</span>`
+                              : d <= 3 ? `<span class="ep-badge-exp">即期</span>`
+                                       : `<span class="ep-badge-ok">正常</span>`;
+                  return `<div class="ep-batch-row">${badge} ${b.expiry_date} × ${b.quantity} ${item.unit}</div>`;
+                }).join('')}
+              </div>
+            </div>
+            <div class="ep-field">
+              <div class="ep-label">今日進貨數量</div>
+              <input type="number" class="ep-input" id="ep-in-${item.product_id}" value="0" min="0" placeholder="0">
+            </div>
+            <div class="ep-field">
+              <div class="ep-label">今日消耗數量</div>
+              <input type="number" class="ep-input" id="ep-cons-${item.product_id}" value="0" min="0" placeholder="0">
+            </div>
+            <div class="ep-field">
+              <div class="ep-label">最低安全庫存</div>
+              <input type="number" class="ep-input" id="ep-thresh-${item.product_id}" value="${item.min_threshold}" min="0">
+            </div>
+            <div class="ep-field">
+              <div class="ep-label">訂貨日期</div>
+              <input type="date" class="ep-input" id="ep-order-${item.product_id}" value="${item.order_date || todayStr()}">
+            </div>
+            <div class="ep-field">
+              <div class="ep-label">備註</div>
+              <input type="text" class="ep-input" id="ep-note-${item.product_id}" placeholder="選填">
+            </div>
+          </div>
+          <div class="ep-save">
+            <button class="btn btn-main btn-sm" onclick="saveRowData(${item.product_id}, ${item.total_qty})">儲存此品項</button>
+          </div>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function toggleExpand(pid) {
+  const row = document.getElementById(`exp-${pid}`);
+  const tog = document.getElementById(`tog-${pid}`);
+  if (!row) return;
+  const isOpen = row.classList.contains('open');
+  row.classList.toggle('open', !isOpen);
+  if (tog) tog.classList.toggle('open', !isOpen);
+}
+
+function toggleOrdered(pid, checked) {
+  const map  = JSON.parse(localStorage.getItem('sf_ordered') || '{}');
+  const key  = `${todayStr()}_${pid}`;
+  if (checked) map[key] = true;
+  else delete map[key];
+  localStorage.setItem('sf_ordered', JSON.stringify(map));
+  renderHomePage(); // 更新首頁狀態
+}
+
+async function saveRowData(pid, currentTotal) {
+  const inEl     = document.getElementById(`ep-in-${pid}`);
+  const consEl   = document.getElementById(`ep-cons-${pid}`);
+  const threshEl = document.getElementById(`ep-thresh-${pid}`);
+  const orderEl  = document.getElementById(`ep-order-${pid}`);
+  const noteEl   = document.getElementById(`ep-note-${pid}`);
+  const staffVal = document.getElementById('inv-staff')?.value || '';
+  const recorded = document.getElementById('inv-recorded')?.value || todayStr();
+
+  const inQty   = parseInt(inEl?.value)     || 0;
+  const consQty = parseInt(consEl?.value)   || 0;
+  const thresh  = parseInt(threshEl?.value) || 0;
+  const order   = orderEl?.value || todayStr();
+  const note    = noteEl?.value?.trim() || '';
+
+  // 新總量 = 目前庫存 + 進貨 - 消耗
+  const newTotal = Math.max(0, currentTotal + inQty - consQty);
+  const item     = S.items.find(i => i.product_id === pid);
+  if (!item) return;
+
   showLoading(true);
+
+  // 儲存盤點（新總量，以單一批次方式更新）
+  const batches = inQty > 0
+    ? [...item.batches, {expiry_date: order, quantity: inQty}]  // 進貨加入新批次
+    : item.batches.map(b => ({...b}));  // 無進貨則保持原批次
+
   const res = await api('POST', '/inventory/save', {
     product_id: pid, recorded_date: recorded, min_threshold: thresh,
     order_date: order, staff_name: staffVal,
-    batches: batches.map(b => ({expiry_date: b.exp, quantity: b.qty})),
+    batches: batches.map(b => ({expiry_date: b.expiry_date, quantity: b.quantity})),
   });
+
+  // 儲存消耗記錄
+  if (consQty > 0) {
+    await api('POST', '/consumption/save', {
+      product_id: pid, recorded_date: recorded,
+      quantity: consQty, staff_name: staffVal, note: note || null,
+    });
+  }
+
   showLoading(false);
   if (!res) return;
+
+  // 重置輸入
+  if (inEl)   inEl.value   = '0';
+  if (consEl) consEl.value = '0';
+  if (noteEl) noteEl.value = '';
+
   await loadInventory();
   await loadConsumptionStats();
-  toast('盤點已儲存','ok');
-}
-
-/* ── Batch rows ── */
-function addBatchRow(exp='', qty=0) {
-  const id  = 'r'+Date.now()+Math.random().toString(36).slice(2,5);
-  const def = todayStr();
-  const tr  = document.createElement('tr');
-  tr.id = id;
-  tr.innerHTML = `
-    <td><input type="date" class="bi" value="${exp||def}"></td>
-    <td><input type="number" class="bi" value="${qty}" min="0" style="width:100px"></td>
-    <td class="bst"></td>
-    <td><button class="icon-btn" onclick="delRow('${id}')">✕</button></td>`;
-  document.getElementById('batch-body').appendChild(tr);
-  tr.querySelector('input[type=date]').addEventListener('change', () => evalRow(tr));
-  evalRow(tr);
-}
-function delRow(id) {
-  document.getElementById(id)?.remove();
-  if (!document.getElementById('batch-body').rows.length) addBatchRow();
-}
-function evalRow(tr) {
-  const v = tr.querySelector('input[type=date]').value;
-  const c = tr.querySelector('.bst');
-  if (!v) { c.innerHTML=''; return; }
-  const d = daysDiff(v);
-  c.innerHTML = d<0  ? '<span class="badge b-bad">已過期</span>'
-              : d<=3 ? '<span class="badge b-warn">即期品</span>'
-                     : '<span class="badge b-ok">安全期</span>';
-}
-function getBatches() {
-  return [...document.getElementById('batch-body').rows].map(r => ({
-    exp: r.querySelector('input[type=date]').value,
-    qty: parseInt(r.querySelector('input[type=number]').value)||0,
-  })).filter(b => b.exp);
-}
-
-/* ── Dashboard（貨架牌）── */
-function renderDashboard() {
-  const kpiProds    = document.getElementById('kpi-products');
-  const kpiExpiring = document.getElementById('kpi-expiring');
-  const container   = document.getElementById('product-cards');
-  const detailCard  = document.getElementById('dash-detail-card');
-  const dateLabel   = document.getElementById('d-record-date');
-  const tbody       = document.getElementById('d-tbody');
-
-  if (!S.items.length) {
-    kpiProds.textContent    = '—';
-    kpiExpiring.textContent = '—';
-    container.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--ink-4);padding:52px;font-size:.84rem">還沒有盤點資料。到「今日盤點」填第一筆吧。</div>';
-    detailCard.style.display = 'none';
-    return;
-  }
-
-  kpiProds.textContent = S.items.length;
-  let totalExpiring = 0;
-  S.items.forEach(item => item.batches.forEach(b => {
-    const d = daysDiff(b.expiry_date);
-    if (d >= 0 && d <= 3) totalExpiring += b.quantity;
-  }));
-  kpiExpiring.textContent = totalExpiring;
-
-  // ── 最近一次叫貨卡片 ──────────────────────────────────────────
-  const loCard = document.getElementById('last-order-card');
-  if (S.items.length) {
-    // 收集所有有 order_date 的品項，找最新那批（同一天叫的算同一次）
-    const withOrder = S.items.filter(i => i.order_date);
-    if (withOrder.length) {
-      // 最新叫貨日
-      const latestOrder = withOrder.map(i => i.order_date).sort().at(-1);
-      const sameDay     = withOrder.filter(i => i.order_date === latestOrder);
-      // 品項清單：每行一個品項，左側名稱、右側數量+單位，垂直對齊
-      const itemsHtml = sameDay.map(i => `
-        <div style="display:flex;align-items:baseline;gap:16px">
-          <span style="font-size:.86rem;color:rgba(255,255,255,.65);width:80px;flex-shrink:0">${i.product_name}</span>
-          <span style="font-family:var(--font-display);font-weight:600;font-size:1.35rem;color:#fff;line-height:1">${i.total_qty}</span>
-          <span style="font-size:.78rem;color:rgba(255,255,255,.45)">${i.unit}</span>
-        </div>`).join('');
-      document.getElementById('lo-items').innerHTML = itemsHtml;
-      document.getElementById('lo-date').textContent  = latestOrder;
-      document.getElementById('lo-meta').textContent  = `叫貨人員：${sameDay[0]?.staff_name || '未記錄'}`;
-      loCard.style.display = 'grid';
-    } else {
-      loCard.style.display = 'none';
-    }
-  } else {
-    loCard.style.display = 'none';
-  }
-
-  container.innerHTML = S.items.map(item => {
-    const total = item.total_qty;
-    const diff  = total - item.min_threshold;
-    const pct   = item.min_threshold > 0 ? Math.min(Math.round(total/item.min_threshold*100),100) : 100;
-    const st    = diff<=0 ? 'bad' : diff<=5 ? 'warn' : 'ok';
-    const tagTxt= {ok:'庫存充足', warn:'快見底了', bad:'該叫貨了'}[st];
-    const cost  = Math.round(total * item.unit_price);
-    return `
-    <div class="tag">
-      <div class="tag-top"><span class="tag-status ts-${st}">${tagTxt}</span></div>
-      <div class="tag-name">${item.product_name}</div>
-      <div class="tag-num n-${st}">${total}<span class="u">${item.unit}</span></div>
-      <hr class="tag-cut">
-      <div class="tag-meta">
-        <span>最低 ${item.min_threshold}</span>
-        <span>成本 NT$ ${cost.toLocaleString()}</span>
-      </div>
-      <div class="tag-bar"><div class="tag-fill ${st==='ok'?'':st}" style="width:${pct}%"></div></div>
-    </div>`;
-  }).join('');
-
-  detailCard.style.display = 'block';
-  if (S.latestDate) dateLabel.textContent = `盤點日：${S.latestDate}`;
-  const rows = [];
-  S.items.forEach(item => {
-    item.batches.forEach(b => {
-      const d = daysDiff(b.expiry_date);
-      const badge = d<0 ? '<span class="badge b-bad">已過期</span>'
-                  : d<=3 ? '<span class="badge b-warn">即期品</span>'
-                         : '<span class="badge b-ok">安全期</span>';
-      const cost = (b.quantity * item.unit_price).toFixed(0);
-      rows.push(`<tr>
-        <td><strong>${item.product_name}</strong></td>
-        <td class="mono">${b.expiry_date}</td>
-        <td class="mono">${b.quantity} ${item.unit}</td>
-        <td class="mono">NT$ ${Number(cost).toLocaleString()}</td>
-        <td>${badge}</td>
-        <td>${item.staff_name || '—'}</td>
-      </tr>`);
-    });
-  });
-  tbody.innerHTML = rows.join('');
+  toast(`${item.product_name} 已更新`, 'ok');
 }
 
 /* ── Consumption ── */
-async function saveConsumption() {
-  const pid   = parseInt(document.getElementById('inv-product')?.value);
-  const qty   = parseInt(document.getElementById('inv-consumption')?.value) || 0;
-  const note  = document.getElementById('inv-consumption-note')?.value.trim() || '';
-  const date  = document.getElementById('inv-recorded')?.value || todayStr();
-  const staff = document.getElementById('inv-staff')?.value || '';
-  if (!pid) { toast('先選品項','warn'); return; }
-  showLoading(true);
-  const res = await api('POST', '/consumption/save', {
-    product_id: pid, recorded_date: date,
-    quantity: qty, staff_name: staff, note: note || null,
-  });
-  showLoading(false);
-  if (!res) return;
-  toast('消耗記錄已儲存','ok');
-  loadConsumptionStats();
-}
+async function loadActiveBatches() { /* 已整合進 Data Table，保留空函式避免錯誤 */ }
+
 async function loadConsumptionStats() {
   const data = await api('GET', '/consumption/stats');
   if (!data?.stats) return;
   renderConsumptionTable(data.stats);
-  // KPI：需要叫貨的品項數
+  // 同步「需要叫貨」數量到首頁
   const needCount = data.stats.filter(s => s.suggest_order > 0).length;
-  const el = document.getElementById('kpi-order');
-  if (el) {
-    el.textContent = needCount;
-    el.style.color = needCount > 0 ? 'var(--red)' : 'var(--leaf)';
-  }
+  const el = document.getElementById('hs-need');
+  if (el && S.items.length) el.textContent = needCount;
 }
 function renderConsumptionTable(stats) {
   const card  = document.getElementById('consumption-card');
   const tbody = document.getElementById('consumption-tbody');
-  if (!stats.length) { card.style.display='none'; return; }
-  card.style.display = 'block';
+  if (!stats.length) { if (card) card.style.display='none'; return; }
+  if (card) card.style.display = 'block';
   tbody.innerHTML = stats.map(s => {
     const suggestCell = s.suggest_order > 0
       ? `<span style="color:var(--red);font-weight:700">${s.suggest_order} ${s.unit}</span>`
       : `<span style="color:var(--leaf)">足夠</span>`;
-    const trend = s.this_week >= s.last_week
-      ? `<span style="color:var(--red)">↑</span>`
-      : `<span style="color:var(--leaf)">↓</span>`;
+    const trend = s.this_week > s.last_week
+      ? `<span style="color:var(--red);font-size:.75rem">↑</span>`
+      : s.this_week < s.last_week
+      ? `<span style="color:var(--leaf);font-size:.75rem">↓</span>`
+      : `<span style="color:var(--ink-4);font-size:.75rem">—</span>`;
     return `<tr>
       <td><strong>${s.product_name}</strong></td>
       <td class="mono">${s.this_week} ${trend}</td>
