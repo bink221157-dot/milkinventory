@@ -473,6 +473,36 @@ select.fc{cursor:pointer}
 .yo-row:last-child{border-bottom:none}
 .yo-tag{background:rgba(168,85,247,.12);color:#7E22CE;border-radius:99px;padding:2px 10px;font-size:.68rem;font-weight:700;flex-shrink:0}
 
+/* ═══ 快速新增進貨面板 ═══ */
+.quick-add-panel{
+  display:none;padding:16px 20px;
+  background:rgba(200,240,75,.08);
+  border:1px solid rgba(200,240,75,.3);
+  border-radius:12px;margin-bottom:16px;
+}
+.quick-add-panel.show{display:block}
+.quick-add-panel .qa-title{font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.8);margin-bottom:12px}
+.quick-add-batch{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.quick-add-batch select,.quick-add-batch input{
+  height:36px;padding:0 10px;border:1.5px solid rgba(255,255,255,.25);
+  border-radius:8px;font-family:var(--font-mono);font-size:.79rem;
+  color:var(--ink);background:rgba(255,255,255,.92);outline:none;
+}
+.quick-add-batch select{width:180px;cursor:pointer}
+.quick-add-batch input[type=number]{width:80px}
+.quick-add-batch input[type=date]{width:155px}
+
+/* ═══ 品項分類篩選 ═══ */
+.cat-filter{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.cat-btn{
+  padding:5px 16px;border-radius:99px;border:1.5px solid var(--line);
+  font-size:.76rem;font-weight:600;cursor:pointer;
+  background:var(--card);color:var(--ink-2);
+  transition:background .13s,border-color .13s,color .13s;
+}
+.cat-btn:hover{border-color:var(--leaf);color:var(--leaf)}
+.cat-btn.active{background:var(--leaf);border-color:var(--leaf);color:#fff}
+
 @media(max-width:900px){.kpis{grid-template-columns:1fr 1fr}.frow3{grid-template-columns:1fr 1fr}}
 @media(max-width:640px){
   .sb{transform:translateX(-100%)}
@@ -649,12 +679,32 @@ select.fc{cursor:pointer}
 
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
           <div class="fg" style="flex:0 0 auto">
-            <label style="font-size:.72rem;font-weight:600;color:var(--ink-2)">盤點日期</label>
+            <label style="font-size:.72rem;font-weight:600;color:rgba(255,255,255,.85)">盤點日期</label>
             <input type="date" class="fc" id="inv-recorded" style="width:160px">
           </div>
           <div class="fg" style="flex:0 0 auto">
-            <label style="font-size:.72rem;font-weight:600;color:var(--ink-2)">盤點人員</label>
+            <label style="font-size:.72rem;font-weight:600;color:rgba(255,255,255,.85)">盤點人員</label>
             <select class="fc" id="inv-staff" style="width:130px"></select>
+          </div>
+          <div style="margin-top:18px">
+            <button class="btn btn-lime btn-sm" onclick="toggleQuickAdd()">＋ 新增進貨</button>
+          </div>
+        </div>
+
+        <!-- 快速新增進貨面板 -->
+        <div class="quick-add-panel" id="quick-add-panel">
+          <div class="qa-title">快速新增進貨</div>
+          <div id="qa-batch-list">
+            <div class="quick-add-batch">
+              <select class="fc" id="qa-prod-0"><option value="">選擇品項…</option></select>
+              <input type="number" min="0" placeholder="數量" id="qa-qty-0" style="width:80px;height:36px;padding:0 10px;border:1.5px solid var(--line);border-radius:8px;font-family:var(--font-mono);font-size:.79rem">
+              <input type="date" id="qa-date-0" style="height:36px;padding:0 10px;border:1.5px solid var(--line);border-radius:8px;font-family:var(--font-mono);font-size:.79rem">
+              <button class="btn btn-ghost btn-xs" onclick="addQuickBatchRow()">＋</button>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <button class="btn btn-main btn-sm" onclick="saveQuickAdd()">全部儲存</button>
+            <button class="btn btn-ghost btn-sm" onclick="toggleQuickAdd()">取消</button>
           </div>
         </div>
 
@@ -694,11 +744,15 @@ select.fc{cursor:pointer}
         <div style="margin-bottom:24px"><h1 class="pg-t" style="color:#fff;margin-bottom:6px">品項設定</h1><p style="color:rgba(255,255,255,.65);font-size:.88rem">要控管什麼就加什麼。單價用來算庫存成本。</p></div>
 
         <div class="card">
-          <div class="card-t" style="margin-bottom:16px">目前品項</div>
+          <div class="card-h" style="margin-bottom:12px">
+            <span class="card-t">目前品項</span>
+          </div>
+          <!-- 分類篩選 -->
+          <div class="cat-filter" id="cat-filter"></div>
           <div class="tw">
             <table class="dt">
-              <thead><tr><th>品項</th><th>單位</th><th>單價</th><th>狀態</th><th style="width:180px">操作</th></tr></thead>
-              <tbody id="products-tbody"><tr><td colspan="5" class="empty">載入中…</td></tr></tbody>
+              <thead><tr><th>品項</th><th>分類</th><th>單位</th><th>單價</th><th>狀態</th><th style="width:180px">操作</th></tr></thead>
+              <tbody id="products-tbody"><tr><td colspan="6" class="empty">載入中…</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -707,6 +761,17 @@ select.fc{cursor:pointer}
           <div class="card-t" style="margin-bottom:16px">新增品項</div>
           <div class="frow3" style="margin-bottom:18px">
             <div class="fg"><label>品項名稱</label><input type="text" class="fc" id="new-product-name" placeholder="例：鮮奶、優格"></div>
+            <div class="fg"><label>分類</label>
+              <select class="fc" id="new-product-cat">
+                <option value="">未分類</option>
+                <option value="奶製品">奶製品</option>
+                <option value="咖啡豆及茶葉">咖啡豆及茶葉</option>
+                <option value="麵包">麵包</option>
+                <option value="冷凍食材">冷凍食材</option>
+                <option value="冷藏食材">冷藏食材</option>
+                <option value="乾貨">乾貨</option>
+              </select>
+            </div>
             <div class="fg"><label>單位</label><input type="text" class="fc" id="new-product-unit" placeholder="例：瓶、盒" value="瓶"></div>
             <div class="fg"><label>單價（元）</label><input type="number" class="fc mono" id="new-product-price" placeholder="0" min="0" step="0.01"></div>
           </div>
@@ -926,73 +991,156 @@ async function initApp() {
 }
 
 /* ── Products ── */
-async function loadProducts() {
-  const data = await api('GET', '/products');
-  if (data?.products) S.products = data.products.filter(p => p.active);
-  renderProductSelect();
-  renderProductsTable(data?.products || []);
+/* ── Products + 分類系統 ── */
+const CATEGORIES = ['奶製品','咖啡豆及茶葉','麵包','冷凍食材','冷藏食材','乾貨'];
+const DEFAULT_CATS = {
+  '美生菜':'冷藏食材','紫高麗菜':'冷藏食材','蘿蔓':'冷藏食材',
+  '牛番茄':'冷藏食材','小黃瓜':'冷藏食材','紅蘿蔔':'冷藏食材',
+  '綠火焰':'冷藏食材','陳家新鮮雞蛋':'冷藏食材',
+  '老宅南舒肥雞腿':'冷凍食材','泉洋正原味雞胸肉':'冷凍食材','旺來鄉照燒雞腿排':'冷凍食材',
+  '橙禾安佳無鹽奶油454g':'奶製品','阿秀鮮奶1750ml':'奶製品',
+  '旺來鄉綜合堅果500g':'乾貨',
+};
+function getProductCats(){const s=localStorage.getItem('sf_product_cats');if(s)return JSON.parse(s);localStorage.setItem('sf_product_cats',JSON.stringify(DEFAULT_CATS));return DEFAULT_CATS;}
+function setProductCat(name,cat){const m=getProductCats();m[name]=cat;localStorage.setItem('sf_product_cats',JSON.stringify(m));}
+let activeCatFilter='';
+
+async function loadProducts(){
+  const data=await api('GET','/products');
+  S.products=(data?.products||[]).filter(p=>p.active);
+  renderProductSelect();renderProductsTable(data?.products||[]);
+  renderCatFilter(data?.products||[]);renderQuickAddSelects();
 }
-function renderProductSelect() {
-  const sel = document.getElementById('inv-product');
-  if (!sel) return;
-  const prev = parseInt(sel.value);
-  sel.innerHTML = S.products.map(p => `<option value="${p.id}">${p.name}（${p.unit}）</option>`).join('');
-  if (S.products.find(p => p.id === prev)) sel.value = prev;
-  onProductChange();
+function renderCatFilter(all){
+  const el=document.getElementById('cat-filter');if(!el)return;
+  const cats=getProductCats();
+  const used=[...new Set(all.map(p=>cats[p.name]||'未分類'))].sort();
+  el.innerHTML=`<button class="cat-btn ${!activeCatFilter?'active':''}" onclick="setCatFilter('')">全部</button>`
+    +used.map(c=>`<button class="cat-btn ${activeCatFilter===c?'active':''}" onclick="setCatFilter('${c}')">${c}</button>`).join('');
 }
-function onProductChange() {
-  const pid  = parseInt(document.getElementById('inv-product')?.value);
-  const prod = S.products.find(p => p.id === pid);
-  const el   = document.getElementById('inv-unit-price');
-  if (el && prod) el.value = `NT$ ${prod.unit_price} / ${prod.unit}`;
+function setCatFilter(cat){
+  activeCatFilter=cat;
+  const stored=JSON.parse(sessionStorage.getItem('sf_all_products')||'[]');
+  renderProductsTable(stored);
+  document.querySelectorAll('.cat-btn').forEach(b=>b.classList.toggle('active',b.textContent===(cat||'全部')));
 }
-function renderProductsTable(all) {
-  const tbody = document.getElementById('products-tbody');
-  if (!tbody) return;
-  if (!all.length) { tbody.innerHTML='<tr><td colspan="5" class="empty">還沒有品項，先新增一個。</td></tr>'; return; }
-  tbody.innerHTML = all.map(p => `
-    <tr>
+function renderProductsTable(all){
+  sessionStorage.setItem('sf_all_products',JSON.stringify(all));
+  const tbody=document.getElementById('products-tbody');if(!tbody)return;
+  const cats=getProductCats();
+  const list=activeCatFilter?all.filter(p=>(cats[p.name]||'未分類')===activeCatFilter):all;
+  if(!list.length){tbody.innerHTML=`<tr><td colspan="6" class="empty">此分類下沒有品項。</td></tr>`;return;}
+  tbody.innerHTML=list.map(p=>{
+    const cat=cats[p.name]||'未分類';
+    return `<tr data-pname="${p.name}">
       <td><strong>${p.name}</strong></td>
+      <td><span style="font-size:.7rem;font-weight:600;padding:2px 9px;border-radius:99px;background:rgba(31,107,78,.1);color:var(--leaf)">${cat}</span></td>
       <td>${p.unit}</td>
       <td class="mono">NT$ ${Number(p.unit_price).toFixed(2)}</td>
-      <td>${p.active ? '<span class="badge b-ok">啟用</span>' : '<span class="badge b-mute">停用</span>'}</td>
+      <td>${p.active?'<span class="badge b-ok">啟用</span>':'<span class="badge b-mute">停用</span>'}</td>
       <td style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn btn-ghost btn-xs" onclick="editProduct(${p.id})">編輯</button>
         <button class="btn btn-ghost btn-xs" onclick="toggleProduct(${p.id},${!p.active})">${p.active?'停用':'啟用'}</button>
         <button class="btn btn-danger btn-xs" onclick="deleteProduct(${p.id})">刪除</button>
-      </td>
-    </tr>`).join('');
+      </td></tr>`;
+  }).join('');
 }
-async function createProduct() {
-  const name  = document.getElementById('new-product-name').value.trim();
-  const unit  = document.getElementById('new-product-unit').value.trim() || '瓶';
-  const price = parseFloat(document.getElementById('new-product-price').value) || 0;
-  if (!name) { toast('先填品項名稱','warn'); return; }
+function renderProductSelect(){
+  const sel=document.getElementById('inv-product');if(!sel)return;
+  const prev=parseInt(sel.value);
+  sel.innerHTML=S.products.map(p=>`<option value="${p.id}">${p.name}（${p.unit}）</option>`).join('');
+  if(S.products.find(p=>p.id===prev))sel.value=prev;
+  onProductChange();
+}
+function onProductChange(){
+  const pid=parseInt(document.getElementById('inv-product')?.value);
+  const prod=S.products.find(p=>p.id===pid);
+  const el=document.getElementById('inv-unit-price');
+  if(el&&prod)el.value=`NT$ ${prod.unit_price} / ${prod.unit}`;
+}
+async function createProduct(){
+  const name=document.getElementById('new-product-name').value.trim();
+  const cat=document.getElementById('new-product-cat')?.value||'';
+  const unit=document.getElementById('new-product-unit').value.trim()||'瓶';
+  const price=parseFloat(document.getElementById('new-product-price').value)||0;
+  if(!name){toast('先填品項名稱','warn');return;}
   showLoading(true);
-  const res = await api('POST', '/products', {name, unit, unit_price: price});
+  const res=await api('POST','/products',{name,unit,unit_price:price});
+  showLoading(false);if(!res)return;
+  if(cat)setProductCat(name,cat);
+  document.getElementById('new-product-name').value='';
+  document.getElementById('new-product-price').value='';
+  await loadProducts();toast(`已新增：${name}`,'ok');
+}
+function editProduct(id){
+  const prod=S.products.find(p=>p.id===id);if(!prod)return;
+  const cats=getProductCats();
+  const name=prompt(`品項名稱（目前：${prod.name}）：`,prod.name);if(name===null)return;
+  const unit=prompt(`單位（目前：${prod.unit}）：`,prod.unit);if(unit===null)return;
+  const price=prompt(`單價（目前：${prod.unit_price}）：`,prod.unit_price);if(price===null)return;
+  const catNow=cats[prod.name]||'未分類';
+  const cat=prompt(`分類（目前：${catNow}）\n可選：未分類 / ${CATEGORIES.join(' / ')}`,catNow);if(cat===null)return;
+  const newName=name.trim()||prod.name;
+  if(cat&&cat!=='未分類')setProductCat(newName,cat.trim());
+  const payload={unit:unit.trim()||prod.unit,unit_price:parseFloat(price)||0};
+  if(newName!==prod.name)payload.name=newName;
+  showLoading(true);
+  api('PUT',`/products/${id}`,payload).then(()=>{showLoading(false);loadProducts();toast('品項已更新','ok');});
+}
+
+/* ── 快速新增進貨 ── */
+let qaRowCount=1;
+function toggleQuickAdd(){
+  const p=document.getElementById('quick-add-panel');if(!p)return;
+  p.classList.toggle('show');
+  if(p.classList.contains('show'))renderQuickAddSelects();
+}
+function renderQuickAddSelects(){
+  const opts='<option value="">選擇品項…</option>'+S.products.map(p=>`<option value="${p.id}">${p.name}（${p.unit}）</option>`).join('');
+  document.querySelectorAll('.qa-prod-sel').forEach(s=>{const v=s.value;s.innerHTML=opts;if(v)s.value=v;});
+  const first=document.getElementById('qa-prod-0');
+  if(first){first.innerHTML=opts;first.className='qa-prod-sel fc';first.style.cssText='width:180px;height:36px';}
+}
+function addQuickBatchRow(){
+  const list=document.getElementById('qa-batch-list');if(!list)return;
+  const row=document.createElement('div');row.className='quick-add-batch';
+  const opts='<option value="">選擇品項…</option>'+S.products.map(p=>`<option value="${p.id}">${p.name}（${p.unit}）</option>`).join('');
+  row.innerHTML=`<select class="qa-prod-sel fc" style="width:180px;height:36px">${opts}</select>
+    <input type="number" min="0" placeholder="數量" style="width:80px;height:36px;padding:0 10px;border:1.5px solid var(--line);border-radius:8px;font-family:var(--font-mono);font-size:.79rem">
+    <input type="date" value="${todayStr()}" style="height:36px;padding:0 10px;border:1.5px solid var(--line);border-radius:8px;font-family:var(--font-mono);font-size:.79rem">
+    <button class="btn btn-danger btn-xs" onclick="this.parentElement.remove()">✕</button>`;
+  list.appendChild(row);
+}
+async function saveQuickAdd(){
+  const rows=document.querySelectorAll('#qa-batch-list .quick-add-batch');
+  const staff=document.getElementById('inv-staff')?.value||'';
+  const recorded=document.getElementById('inv-recorded')?.value||todayStr();
+  let saved=0,skipped=0;showLoading(true);
+  for(const row of rows){
+    const sel=row.querySelector('select');
+    const inputs=row.querySelectorAll('input');
+    const qty=parseInt(inputs[0]?.value)||0;
+    const date=inputs[1]?.value||todayStr();
+    const pid=parseInt(sel?.value);
+    if(!pid||!qty){skipped++;continue;}
+    const item=S.items.find(i=>i.product_id===pid);
+    const batches=item?item.batches.map(b=>({...b})):[];
+    const ex=batches.find(b=>b.expiry_date===date);
+    if(ex)ex.quantity+=qty;else batches.push({expiry_date:date,quantity:qty});
+    await api('POST','/inventory/save',{
+      product_id:pid,recorded_date:recorded,min_threshold:item?.min_threshold||0,
+      order_date:date,staff_name:staff,batches,
+    });saved++;
+  }
   showLoading(false);
-  if (!res) return;
-  document.getElementById('new-product-name').value  = '';
-  document.getElementById('new-product-price').value = '';
-  await loadProducts();
-  toast(`已新增：${name}`, 'ok');
-}
-function editProduct(id) {
-  const prod = S.products.find(p => p.id === id);
-  if (!prod) return;
-  const name  = prompt(`品項名稱（目前：${prod.name}）：`, prod.name);
-  if (name === null) return;
-  const unit  = prompt(`單位（目前：${prod.unit}）：`, prod.unit);
-  if (unit === null) return;
-  const price = prompt(`單價（目前：${prod.unit_price}）：`, prod.unit_price);
-  if (price === null) return;
-  const payload = {};
-  if (name.trim() && name.trim() !== prod.name) payload.name = name.trim();
-  if (unit.trim()) payload.unit = unit.trim();
-  payload.unit_price = parseFloat(price) || 0;
-  showLoading(true);
-  api('PUT', `/products/${id}`, payload)
-    .then(() => { showLoading(false); loadProducts(); toast('品項已更新','ok'); });
+  if(saved){
+    await loadInventory();await loadConsumptionStats();
+    toast('已儲存 '+saved+' 筆進貨記錄'+(skipped?'（'+skipped+' 筆略過）':''),'ok');
+    toggleQuickAdd();
+    const list=document.getElementById('qa-batch-list');
+    if(list){list.querySelectorAll('.quick-add-batch').forEach((r,i)=>{if(i>0)r.remove();});
+    const f=list.querySelector('input[type=number]');if(f)f.value='';}
+  }else toast('請至少填寫一筆品項和數量','warn');
 }
 async function toggleProduct(id, active) {
   showLoading(true);
@@ -1493,7 +1641,7 @@ async function loadStaff() {
 function renderStaffList() {
   const isAdmin = currentRole === 'admin';
   document.getElementById('staff-ul').innerHTML = S.staff.length
-    ? S.staff.map(n => `<li class="pli"><span><span class="pava">${n[0]}</span>${n}</span>${isAdmin?`<button class="btn btn-danger btn-xs" onclick="removeStaff('${n}')">移除</button>`:''}</li>`).join('')
+    ? S.staff.map(n => '<li class="pli"><span><span class="pava">'+n[0]+'</span>'+n+'</span>'+(isAdmin?'<button class="btn btn-danger btn-xs" onclick="removeStaff(\''+n+'\')">移除</button>':'')+'</li>').join('')
     : '<li style="color:var(--ink-4);font-size:.82rem;padding:10px 12px">還沒有人員。</li>';
 }
 function renderStaffSelect() {
