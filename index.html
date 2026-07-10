@@ -320,12 +320,13 @@ select.fc{cursor:pointer}
 
 /* home checklist：白底卡片內，文字深色 */
 .hcheck{
-  background:rgba(27,43,38,.05)!important;
-  border:1px solid rgba(27,43,38,.08)!important;
-  color:var(--ink)!important;
+  background:rgba(27,43,38,.06)!important;
+  border:1px solid rgba(27,43,38,.1)!important;
+  color:#1B2B26!important;
+  font-weight:500;
 }
-.hcheck .tick{color:var(--leaf)!important}
-.hcheck .cross{color:var(--red)!important}
+.hcheck .tick{color:#1F6B4E!important;font-size:1rem}
+.hcheck .cross{color:#B3261E!important;font-size:1rem}
 
 /* 昨日叫貨下拉 */
 .yesterday-order{
@@ -517,23 +518,39 @@ select.fc{cursor:pointer}
 .cat-btn:hover{border-color:var(--leaf);color:var(--leaf)}
 .cat-btn.active{background:var(--leaf);border-color:var(--leaf);color:#fff}
 
+/* ═══ 手機版 Sidebar Overlay ═══ */
+.sb-overlay{
+  display:none;position:fixed;inset:0;z-index:99;
+  background:rgba(7,20,16,.55);backdrop-filter:blur(2px);
+}
+.sb-overlay.show{display:block}
+
 @media(max-width:900px){.kpis{grid-template-columns:1fr 1fr}.frow3{grid-template-columns:1fr 1fr}}
 @media(max-width:640px){
-  .sb{transform:translateX(-100%)}
-  .sb.open{transform:none}
+  .sb{transform:translateX(-100%);transition:transform .28s cubic-bezier(.4,0,.2,1)}
+  .sb.open{transform:none;box-shadow:8px 0 40px rgba(0,0,0,.35)}
   .main{margin-left:0}
   .kpis,.frow,.frow3{grid-template-columns:1fr}
   .topbar{padding:0 16px}
   .page{padding:20px 16px 60px}
-  #hamburger{display:block}
+  #hamburger{display:flex;align-items:center;justify-content:center;
+    width:38px;height:38px;border-radius:9px;
+    background:rgba(255,255,255,.12);border:none;
+    font-size:1.1rem;cursor:pointer;color:#fff;
+    transition:background .15s}
+  #hamburger:hover{background:rgba(255,255,255,.2)}
   .lg-left{display:none}
   .tags{grid-template-columns:1fr}
+  /* 手機版卡片全寬 */
+  .dtable{font-size:.76rem}
+  .dtable th,.dtable td{padding:8px 8px}
 }
 </style>
 </head>
 <body>
 
 <div class="loading" id="loading"><div class="spin"></div></div>
+<div class="sb-overlay" id="sb-overlay" onclick="closeSidebar()"></div>
 
 <!-- ═══════════ LOGIN ═══════════ -->
 <div id="screen-login">
@@ -573,9 +590,9 @@ select.fc{cursor:pointer}
         <div class="sb-label">每天要做的</div>
         <div class="sb-item active" data-page="pg-dashboard">首頁</div>
         <div class="sb-item" data-page="pg-inventory">今日盤點</div>
-        <div class="sb-label">管理設定</div>
+        <div class="sb-label admin-only" style="display:none">管理設定</div>
         <div class="sb-item admin-only" data-page="pg-products" style="display:none">品項設定</div>
-        <div class="sb-item" data-page="pg-staff">人員名單</div>
+        <div class="sb-item admin-only" data-page="pg-staff" style="display:none">人員名單</div>
         <div class="sb-item admin-only" data-page="pg-line" style="display:none">LINE 通知</div>
         <div class="sb-item admin-only" data-page="pg-users" style="display:none">帳號管理</div>
       </div>
@@ -612,7 +629,7 @@ select.fc{cursor:pointer}
     <div class="main">
       <header class="topbar">
         <div style="display:flex;align-items:center;gap:12px">
-          <button id="hamburger" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+          <button id="hamburger" onclick="toggleSidebar()" aria-label="選單">☰</button>
           <div class="tb-title" id="tb-title">庫存總覽</div>
         </div>
         <div style="display:flex;align-items:center;gap:14px">
@@ -972,6 +989,17 @@ function enterApp() {
 })();
 
 /* ── Navigation ── */
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sb-overlay');
+  const open = sb.classList.toggle('open');
+  ov?.classList.toggle('show', open);
+}
+function closeSidebar() {
+  document.getElementById('sidebar')?.classList.remove('open');
+  document.getElementById('sb-overlay')?.classList.remove('show');
+}
+
 const PAGE_TITLES = {
   'pg-dashboard':'首頁','pg-inventory':'今日盤點',
   'pg-products':'品項設定','pg-staff':'人員名單',
@@ -985,8 +1013,8 @@ document.querySelectorAll('.sb-item').forEach(el => {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById(target).classList.add('active');
     document.getElementById('tb-title').textContent = PAGE_TITLES[target] || '';
-    document.getElementById('sidebar').classList.remove('open');
-    if (target === 'pg-dashboard') renderDashboard();
+    closeSidebar();
+    if (target === 'pg-dashboard') renderHomePage();
   });
 });
 
