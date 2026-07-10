@@ -240,71 +240,117 @@ select.fc{cursor:pointer}
   backdrop-filter:none;
 }
 
-/* 操作頁：整個 main 區域鋪背景 */
-#screen-app .shell{
-  position:relative;
-}
+/* ═══ 操作頁：咖啡背景 + 深綠 Overlay 60% + 白色文字 ═══ */
+
+/* 層疊結構：背景圖 → 深綠遮罩 60% → 內容 */
+#screen-app .shell{position:relative}
 #screen-app .shell::before{
-  content:'';
-  position:fixed;inset:0;z-index:-2;
+  content:'';position:fixed;inset:0;z-index:-2;
   background:url('https://res.cloudinary.com/e61v9qyh/image/upload/v1783610757/mainpage.jpg') center/cover no-repeat;
 }
 #screen-app .shell::after{
-  content:'';
-  position:fixed;inset:0;z-index:-1;
-  backdrop-filter:blur(4px);
-  -webkit-backdrop-filter:blur(4px);
-  background:rgba(8,18,12,.55);
-}
-/* 側邊欄維持深松綠（蓋過遮罩）*/
-#screen-app .sb{
-  position:relative;z-index:2;
-  background:rgba(12,35,26,.97);
-}
-/* main 內容浮在遮罩上 */
-#screen-app .main{
-  position:relative;z-index:1;
-  background:transparent;
-}
-/* topbar 半透明磨砂 */
-#screen-app .topbar{
-  background:rgba(247,246,242,.82);
-  backdrop-filter:blur(10px);
-  -webkit-backdrop-filter:blur(10px);
-}
-/* 卡片半透明磨砂 */
-.card{
-  background:rgba(255,255,255,.88)!important;
-  backdrop-filter:blur(14px);
-  -webkit-backdrop-filter:blur(14px);
-}
-/* 頁面整體padding */
-.page{
-  padding:34px 34px 60px;max-width:1180px;
+  content:'';position:fixed;inset:0;z-index:-1;
+  background:rgba(7,20,16,.60);   /* #071410 60% */
 }
 
-/* ═══ 操作頁文字強制深色（磨砂卡片上清晰可讀）═══ */
-#screen-app .tb-title,
-#screen-app h1.pg-t{color:var(--ink)!important}
-#screen-app .eyebrow{color:var(--leaf)!important}
-#screen-app .pg-s{color:var(--ink-2)!important}
-#screen-app .card-t{color:var(--ink-2)!important}
-#screen-app .tb-meta{color:var(--ink-3)!important}
-#screen-app label,
-#screen-app .fg label{color:var(--ink-2)!important;font-weight:600}
-#screen-app .card{color:var(--ink)!important}
-#screen-app .dtable td{color:var(--ink)!important}
-#screen-app .dtable th{color:var(--ink-3)!important}
-#screen-app .ep-label{color:var(--ink-3)!important}
-/* topbar 文字 */
-#screen-app .topbar{background:rgba(250,249,245,.92)!important}
-#screen-app .tb-title{color:var(--ink)!important}
-/* 盤點頁 date/staff label */
-#screen-app .page label{color:var(--ink-2)!important}
-/* home-hero 數字標籤保持亮色 */
-.hstat-l{color:rgba(255,255,255,.75)!important}
-.home-date{color:rgba(255,255,255,.7)!important}
-.home-sub{color:rgba(255,255,255,.75)!important}
+/* Sidebar：#0F2D26，固定在遮罩上 */
+#screen-app .sb{
+  position:relative;z-index:100;
+  background:#0F2D26;
+  border-right:1px solid rgba(255,255,255,.07);
+}
+
+/* Main 內容區透明，浮在遮罩上 */
+#screen-app .main{position:relative;z-index:1;background:transparent}
+
+/* Topbar：#0F2D26 80% + Blur */
+#screen-app .topbar{
+  background:rgba(15,45,38,.80)!important;
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(255,255,255,.10);
+}
+#screen-app .topbar .tb-title{color:#fff!important;font-weight:700}
+#screen-app .topbar .tb-meta{color:rgba(255,255,255,.5)!important}
+#screen-app .topbar .pill-api{
+  background:rgba(200,240,75,.15)!important;
+  color:var(--lime)!important;
+}
+#screen-app .topbar .pill-api.err{
+  background:rgba(239,68,68,.2)!important;
+  color:#F87171!important;
+}
+
+/* ── 卡片外（頁面背景區）：全白文字 ── */
+#screen-app .eyebrow{color:rgba(200,240,75,.9)!important}
+#screen-app h1.pg-t{color:#fff!important;text-shadow:0 1px 8px rgba(0,0,0,.3)}
+#screen-app .pg-s{color:rgba(255,255,255,.65)!important}
+#screen-app .page > .card-t{color:rgba(255,255,255,.7)!important}
+
+/* 盤點頁頂部 date/staff 標籤 */
+#screen-app .page label{color:rgba(255,255,255,.85)!important;font-weight:600}
+#screen-app .page .fg label{color:rgba(255,255,255,.85)!important}
+#screen-app .page .fc{
+  background:rgba(255,255,255,.12)!important;
+  border-color:rgba(255,255,255,.2)!important;
+  color:#fff!important;
+}
+#screen-app .page .fc option{background:#0F2D26;color:#fff}
+#screen-app .page select.fc{color:#fff!important}
+
+/* hstat 數字下的標籤 */
+.hstat-l{color:rgba(255,255,255,.7)!important}
+.home-date{color:rgba(255,255,255,.65)!important}
+.home-sub{color:rgba(255,255,255,.65)!important}
+.home-stats{border-top-color:rgba(255,255,255,.15)!important}
+
+/* home checklist 在深色背景上 */
+.hcheck{
+  background:rgba(255,255,255,.08)!important;
+  border:1px solid rgba(255,255,255,.12)!important;
+  color:rgba(255,255,255,.9)!important;
+}
+.hcheck .tick{color:var(--lime)!important}
+.hcheck .cross{color:#F87171!important}
+
+/* 昨日叫貨下拉 */
+.yesterday-order{
+  background:rgba(255,255,255,.08)!important;
+  border-color:rgba(255,255,255,.12)!important;
+  backdrop-filter:blur(8px);
+}
+.yo-header{color:rgba(255,255,255,.9)!important}
+.yo-arrow{color:rgba(255,255,255,.5)!important}
+.yo-body{border-top-color:rgba(255,255,255,.1)!important}
+.yo-row{border-bottom-color:rgba(255,255,255,.08)!important;color:rgba(255,255,255,.85)!important}
+
+/* ── 卡片內：深色文字（白底）── */
+.card{
+  background:rgba(255,255,255,.93)!important;
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  border:1px solid rgba(255,255,255,.7)!important;
+  box-shadow:0 4px 24px rgba(0,0,0,.18)!important;
+}
+.card .card-t{color:var(--ink-2)!important}
+.card .card-h .tb-meta{color:var(--ink-3)!important}
+.card label,.card .fg label{color:var(--ink-2)!important}
+.card .fc{
+  background:var(--card)!important;
+  border-color:var(--line)!important;
+  color:var(--ink)!important;
+}
+.card .fc option{background:#fff;color:var(--ink)}
+.card .ep-label{color:var(--ink-3)!important}
+.card .ep-input{background:#fff!important;color:var(--ink)!important;border-color:var(--line)!important}
+.dtable{background:transparent!important}
+.dtable th{color:var(--ink-4)!important;background:var(--paper)!important}
+.dtable td{color:var(--ink)!important}
+.dtable tbody tr:hover{background:var(--paper)!important}
+.dt-wrap{background:rgba(255,255,255,.93)!important}
+
+/* home-hero 永遠是深松綠底 */
+.home-hero{background:rgba(12,35,26,.75)!important;backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.1)}
 
 /* ═══ 首頁摘要卡片 ═══ */
 .home-hero{
@@ -596,9 +642,10 @@ select.fc{cursor:pointer}
 
       <!-- ══ 今日盤點（Data Table）══ -->
       <div class="page" id="pg-inventory">
-        <div class="eyebrow">Daily count</div>
-        <h1 class="pg-t">今日盤點</h1>
-        <p class="pg-s">點列展開可填進貨與消耗。勾選「已叫貨」標記叫貨狀態。</p>
+        <div style="margin-bottom:28px">
+          <h1 class="pg-t" style="font-size:2rem;color:#fff;margin-bottom:6px">今日盤點</h1>
+          <p style="color:rgba(255,255,255,.65);font-size:.9rem" id="inv-sub-text">點列展開可填進貨與消耗。勾選「已叫貨」標記叫貨狀態。</p>
+        </div>
 
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
           <div class="fg" style="flex:0 0 auto">
@@ -644,9 +691,7 @@ select.fc{cursor:pointer}
 
       <!-- ══ 品項設定 ══ -->
       <div class="page" id="pg-products">
-        <div class="eyebrow">Products</div>
-        <h1 class="pg-t">品項設定</h1>
-        <p class="pg-s">要控管什麼就加什麼。單價用來算庫存成本。</p>
+        <div style="margin-bottom:24px"><h1 class="pg-t" style="color:#fff;margin-bottom:6px">品項設定</h1><p style="color:rgba(255,255,255,.65);font-size:.88rem">要控管什麼就加什麼。單價用來算庫存成本。</p></div>
 
         <div class="card">
           <div class="card-t" style="margin-bottom:16px">目前品項</div>
@@ -671,8 +716,7 @@ select.fc{cursor:pointer}
 
       <!-- ══ 人員名單 ══ -->
       <div class="page" id="pg-staff">
-        <div class="eyebrow">People</div>
-        <h1 class="pg-t">人員名單</h1>
+        <div style="margin-bottom:24px"><h1 class="pg-t" style="color:#fff;margin-bottom:6px">人員名單</h1></div>
         <p class="pg-s admin-only" style="display:none">管理可以執行盤點的人員。</p>
         <p class="pg-s staff-only">目前的盤點人員清單。</p>
         <div class="card">
@@ -688,9 +732,7 @@ select.fc{cursor:pointer}
 
       <!-- ══ LINE 通知 ══ -->
       <div class="page" id="pg-line">
-        <div class="eyebrow">Notifications</div>
-        <h1 class="pg-t">LINE 通知</h1>
-        <p class="pg-s">把 Bot 拉進群組，群組就會出現在下面，各自設定幾點收日報。</p>
+        <div style="margin-bottom:24px"><h1 class="pg-t" style="color:#fff;margin-bottom:6px">LINE 通知</h1><p style="color:rgba(255,255,255,.65);font-size:.88rem">把 Bot 拉進群組，群組就會出現在下面，各自設定幾點收日報。</p></div>
 
         <div class="card">
           <div class="card-t" style="margin-bottom:16px">已綁定的群組</div>
@@ -738,9 +780,7 @@ select.fc{cursor:pointer}
 
       <!-- ══ 帳號管理 ══ -->
       <div class="page" id="pg-users">
-        <div class="eyebrow">Accounts</div>
-        <h1 class="pg-t">帳號管理</h1>
-        <p class="pg-s">管理員可以用全部功能；一般人員只能盤點和看總覽。</p>
+        <div style="margin-bottom:24px"><h1 class="pg-t" style="color:#fff;margin-bottom:6px">帳號管理</h1><p style="color:rgba(255,255,255,.65);font-size:.88rem">管理員可以用全部功能；一般人員只能盤點和看總覽。</p></div>
         <div class="card">
           <div class="card-t" style="margin-bottom:16px">帳號清單</div>
           <div class="tw">
@@ -1002,6 +1042,10 @@ function renderHomePage() {
       if (daysDiff(b.expiry_date) >= 0 && daysDiff(b.expiry_date) <= 3) expiringCount++;
     });
   });
+
+  // 更新盤點頁副標題
+  const subEl = document.getElementById('inv-sub-text');
+  if (subEl && items.length) subEl.textContent = `今天共有 ${items.length} 項需要盤點`;
 
   const el = id => document.getElementById(id);
   if (el('hs-total'))    el('hs-total').textContent    = items.length || '—';
