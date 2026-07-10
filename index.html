@@ -1351,12 +1351,17 @@ function renderDataTable() {
         <div class="expand-panel">
           <div style="font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px">效期批次</div>
           <div class="ep-batch" style="margin-bottom:16px">
-            ${item.batches.map(b => {
+            ${item.batches.map((b, bi) => {
               const d = daysDiff(b.expiry_date);
               const badge = d < 0 ? `<span class="ep-badge-exp">已過期</span>`
                           : d <= 3 ? `<span class="ep-badge-exp">即期 ${d}天</span>`
                                    : `<span class="ep-badge-ok">正常</span>`;
-              return `<div class="ep-batch-row">${badge} ${b.expiry_date} <span style="color:var(--ink-3)">×</span> <strong>${b.quantity}</strong> ${item.unit}</div>`;
+              return `<div class="ep-batch-row" style="justify-content:space-between">
+                <span>${badge} ${b.expiry_date} <span style="color:var(--ink-3)">×</span> <strong>${b.quantity}</strong> ${item.unit}</span>
+                ${currentRole === 'admin' ? `<button class="icon-btn" style="width:24px;height:24px;font-size:.68rem;flex-shrink:0"
+                  title="刪除此批次"
+                  onclick="deleteBatch(${item.product_id}, '${b.expiry_date}')">✕</button>` : ''}
+              </div>`;
             }).join('')}
           </div>
 
@@ -1394,7 +1399,10 @@ function renderDataTable() {
               <div class="ordered-form-row">
                 <input type="number" id="of-qty-${item.product_id}" placeholder="數量" min="0" style="width:80px" value="">
                 <span style="font-size:.75rem;color:var(--ink-3)">${item.unit}</span>
-                <input type="text" id="of-who-${item.product_id}" placeholder="叫貨人員" style="width:110px">
+                <select id="of-who-${item.product_id}" style="height:32px;padding:0 8px;border:1.5px solid rgba(168,85,247,.35);border-radius:8px;font-family:var(--font-ui);font-size:.78rem;color:var(--ink);background:#fff;outline:none;cursor:pointer">
+                  <option value="">選擇人員…</option>
+                  ${S.staff.map(n => `<option value="${n}">${n}</option>`).join('')}
+                </select>
                 <button class="btn-purple" onclick="saveOrderedRecord(${item.product_id})">儲存</button>
                 <button class="btn-cancel" onclick="cancelOrdered(${item.product_id})">取消</button>
               </div>
@@ -1404,6 +1412,45 @@ function renderDataTable() {
       </td>
     </tr>`;
   }).join('');
+}
+
+async function deleteBatch(pid, expiryDate) {
+  if (currentRole !== 'admin') { toast('只有管理員可以刪除批次', 'warn'); return; }
+  const item = S.items.find(i => i.product_id === pid);
+  if (!item) return;
+
+  const batch = item.batches.find(b => b.expiry_date === expiryDate);
+  if (!batch) return;
+
+  if (!confirm(`確定刪除這筆批次？\n效期：${expiryDate}　數量：${batch.quantity} ${item.unit}`)) return;
+
+  // 移除該效期批次，保留其他批次
+  const newBatches = item.batches
+    .filter(b => b.expiry_date !== expiryDate)
+    .map(b => ({expiry_date: b.expiry_date, quantity: b.quantity}));
+
+  if (!newBatches.length) {
+    toast('不能刪除唯一的批次，請先新增其他批次再刪除', 'warn');
+    return;
+  }
+
+  const staff    = document.getElementById('inv-staff')?.value || item.staff_name || '';
+  const recorded = document.getElementById('inv-recorded')?.value || todayStr();
+
+  showLoading(true);
+  const res = await api('POST', '/inventory/save', {
+    product_id:    pid,
+    recorded_date: recorded,
+    min_threshold: item.min_threshold,
+    order_date:    item.order_date || todayStr(),
+    staff_name:    staff,
+    batches:       newBatches,
+  });
+  showLoading(false);
+  if (!res) return;
+
+  await loadInventory();
+  toast(`已刪除 ${item.product_name} 效期 ${expiryDate} 的批次`, 'ok');
 }
 
 function addBatchInputRow(pid, unit) {
@@ -1540,9 +1587,10 @@ function toggleOrdered(pid, checked) {
 
 function saveOrderedRecord(pid) {
   const qty  = parseInt(document.getElementById(`of-qty-${pid}`)?.value) || 0;
-  const who  = document.getElementById(`of-who-${pid}`)?.value.trim() || '未記錄';
+  const who  = document.getElementById(`of-who-${pid}`)?.value || '';
   const item = S.items.find(i => i.product_id === pid);
   if (!qty) { toast('請填入叫貨數量','warn'); return; }
+  if (!who) { toast('請選擇叫貨人員','warn'); return; }
 
   const map = JSON.parse(localStorage.getItem('sf_ordered_log') || '{}');
   const key = `${todayStr()}_${pid}`;
