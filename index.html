@@ -1318,8 +1318,14 @@ function renderDataTable() {
       ? `${validBatches.length} 批`
       : '<span style="color:var(--red)">已過期</span>';
 
-    // 盤點（最近一次盤點量，與庫存同值，用於顯示盤點記錄）
-    const counted = item.staff_name ? current : '—';
+    // 盤點日（各品項可能不同天）
+    const recDate = item.recorded_date || S.latestDate || '';
+    const todayDate = todayStr();
+    const recLabel = recDate === todayDate
+      ? '<span style="color:var(--leaf);font-size:.68rem;font-weight:600">今天</span>'
+      : recDate
+      ? `<span style="color:var(--ink-4);font-size:.68rem;font-family:var(--font-mono)">${recDate.slice(5)}</span>`
+      : '';
 
     const diffCell = diff === 0
       ? `<span style="color:var(--ink-3)">0</span>`
@@ -1332,7 +1338,7 @@ function renderDataTable() {
       <td><span class="dt-toggle" id="tog-${item.product_id}">▶</span></td>
       <td><strong>${item.product_name}</strong></td>
       <td class="mono">${current} ${item.unit}</td>
-      <td class="mono" style="color:var(--ink-3)">${counted} ${item.unit}</td>
+      <td class="mono" style="color:var(--ink-3)">${current} ${item.unit} ${recLabel}</td>
       <td class="mono">${diffCell}</td>
       <td style="text-align:center">${dot}</td>
       <td>${suggestCell}</td>
