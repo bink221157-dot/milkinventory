@@ -287,16 +287,30 @@ select.fc{cursor:pointer}
 #screen-app .pg-s{color:rgba(255,255,255,.65)!important}
 #screen-app .page > .card-t{color:rgba(255,255,255,.7)!important}
 
-/* 盤點頁頂部 date/staff 標籤 */
-#screen-app .page label{color:rgba(255,255,255,.85)!important;font-weight:600}
-#screen-app .page .fg label{color:rgba(255,255,255,.85)!important}
-#screen-app .page .fc{
+/* 盤點頁頂部 date/staff 區（卡片外，白色）*/
+#screen-app #pg-inventory > div > label,
+#screen-app #pg-inventory > div .fg label{color:rgba(255,255,255,.9)!important;font-weight:600}
+/* 快速新增進貨面板 label（卡片外，白色）*/
+.quick-add-panel .qa-title{color:rgba(255,255,255,.85)!important}
+/* 卡片內 label 一律深色 */
+#screen-app .card label,
+#screen-app .card .fg label{color:var(--ink-2)!important;font-weight:600}
+#screen-app .card .ep-label{color:var(--ink-3)!important}
+/* 卡片外的 fc（盤點日期、人員）半透明白底 */
+#screen-app #pg-inventory > div .fc{
   background:rgba(255,255,255,.12)!important;
   border-color:rgba(255,255,255,.2)!important;
   color:#fff!important;
 }
-#screen-app .page .fc option{background:#0F2D26;color:#fff}
-#screen-app .page select.fc{color:#fff!important}
+#screen-app #pg-inventory > div .fc option{background:#0F2D26;color:#fff}
+#screen-app #pg-inventory > div select.fc{color:#fff!important}
+/* 卡片內的 fc 恢復白底深色字 */
+#screen-app .card .fc{
+  background:var(--card)!important;
+  border-color:var(--line)!important;
+  color:var(--ink)!important;
+}
+#screen-app .card .fc option{background:#fff!color:var(--ink)}
 
 /* hstat 數字下的標籤 */
 .hstat-l{color:rgba(255,255,255,.7)!important}
@@ -746,6 +760,14 @@ select.fc{cursor:pointer}
         <div class="card">
           <div class="card-h" style="margin-bottom:12px">
             <span class="card-t">目前品項</span>
+            <!-- 搜尋框 -->
+            <div style="position:relative;flex-shrink:0">
+              <input type="text" id="product-search"
+                placeholder="搜尋品項…"
+                oninput="filterProducts(this.value)"
+                style="height:36px;padding:0 36px 0 12px;border:1.5px solid var(--line);border-radius:99px;font-size:.82rem;color:var(--ink);background:var(--paper);outline:none;width:200px;transition:border-color .15s,width .2s">
+              <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--ink-4);font-size:.85rem;pointer-events:none">🔍</span>
+            </div>
           </div>
           <!-- 分類篩選 -->
           <div class="cat-filter" id="cat-filter"></div>
@@ -813,16 +835,6 @@ select.fc{cursor:pointer}
               <tbody id="line-groups-tbody"><tr><td colspan="5" class="empty">還沒有群組。把 Bot 加入 LINE 群組就會自動出現。</td></tr></tbody>
             </table>
           </div>
-        </div>
-
-        <div class="card">
-          <div class="card-t" style="margin-bottom:14px">Webhook 設定</div>
-          <div class="codebox">
-            <span class="cm"># LINE Developers Console → Messaging API → Webhook URL</span><br>
-            <span class="cv" id="webhook-url-display">https://your-space.hf.space/webhook/line</span><br>
-            <span class="cm"># 開啟 Use webhook，關閉自動回應訊息</span>
-          </div>
-          <button class="btn btn-ghost btn-sm" style="margin-top:14px" onclick="copyWebhookUrl()">複製 Webhook URL</button>
         </div>
 
         <div class="card">
@@ -1018,10 +1030,40 @@ function renderCatFilter(all){
   el.innerHTML=`<button class="cat-btn ${!activeCatFilter?'active':''}" onclick="setCatFilter('')">全部</button>`
     +used.map(c=>`<button class="cat-btn ${activeCatFilter===c?'active':''}" onclick="setCatFilter('${c}')">${c}</button>`).join('');
 }
+function filterProducts(kw){
+  const stored=JSON.parse(sessionStorage.getItem('sf_all_products')||'[]');
+  const cats=getProductCats();
+  const k=kw.trim().toLowerCase();
+  const list=stored.filter(p=>{
+    const matchCat=!activeCatFilter||(cats[p.name]||'未分類')===activeCatFilter;
+    const matchName=!k||p.name.toLowerCase().includes(k);
+    return matchCat&&matchName;
+  });
+  const tbody=document.getElementById('products-tbody');if(!tbody)return;
+  if(!list.length){tbody.innerHTML=`<tr><td colspan="6" class="empty">找不到符合的品項。</td></tr>`;return;}
+  tbody.innerHTML=list.map(p=>{
+    const cat=cats[p.name]||'未分類';
+    return `<tr data-pname="${p.name}">
+      <td><strong>${p.name}</strong></td>
+      <td><span style="font-size:.7rem;font-weight:600;padding:2px 9px;border-radius:99px;background:rgba(31,107,78,.1);color:var(--leaf)">${cat}</span></td>
+      <td>${p.unit}</td>
+      <td class="mono">NT$ ${Number(p.unit_price).toFixed(2)}</td>
+      <td>${p.active?'<span class="badge b-ok">啟用</span>':'<span class="badge b-mute">停用</span>'}</td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-xs" onclick="editProduct(${p.id})">編輯</button>
+        <button class="btn btn-ghost btn-xs" onclick="toggleProduct(${p.id},${!p.active})">${p.active?'停用':'啟用'}</button>
+        <button class="btn btn-danger btn-xs" onclick="deleteProduct(${p.id})">刪除</button>
+      </td></tr>`;
+  }).join('');
+}
 function setCatFilter(cat){
   activeCatFilter=cat;
-  const stored=JSON.parse(sessionStorage.getItem('sf_all_products')||'[]');
-  renderProductsTable(stored);
+  const kw=document.getElementById('product-search')?.value||'';
+  if(kw.trim()) { filterProducts(kw); }
+  else {
+    const stored=JSON.parse(sessionStorage.getItem('sf_all_products')||'[]');
+    renderProductsTable(stored);
+  }
   document.querySelectorAll('.cat-btn').forEach(b=>b.classList.toggle('active',b.textContent===(cat||'全部')));
 }
 function renderProductsTable(all){
@@ -1805,12 +1847,6 @@ async function deleteGroup(groupId) {
   await loadLineGroups();
   toast('群組已移除');
 }
-function copyWebhookUrl() {
-  const url = `${API_BASE}/webhook/line`;
-  document.getElementById('webhook-url-display').textContent = url;
-  navigator.clipboard.writeText(url).then(() => toast('已複製','ok'));
-}
-
 /* ── Export ── */
 async function exportReport() {
   if (!S.items.length) { toast('還沒有資料可匯出','warn'); return; }
