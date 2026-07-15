@@ -1216,6 +1216,7 @@ async function toggleProduct(id, active) {
   showLoading(true);
   await api('PUT', `/products/${id}`, {active});
   showLoading(false);
+  sessionStorage.removeItem('sf_all_products');
   await loadProducts();
   toast(active ? '品項已啟用' : '品項已停用');
 }
@@ -1226,6 +1227,7 @@ async function deleteProduct(id) {
   const res = await api('DELETE', `/products/${id}`);
   showLoading(false);
   if (!res) return;
+  sessionStorage.removeItem('sf_all_products');
   await loadProducts();
   toast('品項已刪除');
 }
@@ -1435,10 +1437,11 @@ function renderDataTable() {
             }).join('')}
           </div>
 
-          <div style="font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px">今日進貨（可多批次）</div>
+          <div style="font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px">今日進貨（填有效期限與數量）</div>
           <div id="batch-inputs-${item.product_id}">
             <div class="batch-in-row" style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-              <input type="date" class="ep-input ep-batch-date" style="width:150px" value="${today}">
+              <input type="date" class="ep-input ep-batch-date" style="width:150px" value="${today}" title="有效期限">
+              <span style="font-size:.72rem;color:var(--ink-3);white-space:nowrap">有效期限</span>
               <input type="number" class="ep-input ep-batch-qty" style="width:80px" value="0" min="0" placeholder="數量">
               <span style="font-size:.78rem;color:var(--ink-3)">${item.unit}</span>
               <button class="btn btn-ghost btn-xs" onclick="addBatchInputRow(${item.product_id}, '${item.unit}')">＋</button>
@@ -1530,7 +1533,8 @@ function addBatchInputRow(pid, unit) {
   row.className = 'batch-in-row';
   row.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:8px';
   row.innerHTML = `
-    <input type="date" class="ep-input ep-batch-date" style="width:150px" value="${todayStr()}">
+    <input type="date" class="ep-input ep-batch-date" style="width:150px" value="${todayStr()}" title="有效期限">
+    <span style="font-size:.72rem;color:var(--ink-3);white-space:nowrap">有效期限</span>
     <input type="number" class="ep-input ep-batch-qty" style="width:80px" value="0" min="0" placeholder="數量">
     <span style="font-size:.78rem;color:var(--ink-3)">${unit}</span>
     <button class="btn btn-danger btn-xs" onclick="this.parentElement.remove()">✕</button>`;
