@@ -1,3 +1,4 @@
+<!-- StockFlow — 更新時間：2026-07-16 19:42 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -54,8 +55,8 @@ body{font-family:var(--font-ui);background:var(--paper);color:var(--ink);font-si
 .lg-err{display:none;background:var(--red-bg);color:var(--red);border-radius:10px;padding:10px 14px;font-size:.8rem;font-weight:500;margin-bottom:16px}
 
 /* ═══════════════ APP SHELL ═══════════════ */
-.shell{display:flex;min-height:100vh}
-.sb{width:var(--sb-w);flex-shrink:0;background:var(--pine);display:flex;flex-direction:column;position:fixed;inset:0 auto 0 0;z-index:100;transition:transform .28s cubic-bezier(.4,0,.2,1)}
+.shell{display:flex;min-height:100vh;position:relative;overflow-x:hidden}
+.sb{width:var(--sb-w);flex-shrink:0;background:#0F2D26;display:flex;flex-direction:column;position:fixed;inset:0 auto 0 0;z-index:100;transition:transform .28s cubic-bezier(.4,0,.2,1)}
 .sb-top{padding:26px 22px 20px;display:flex;align-items:baseline;gap:6px}
 .sb-name{font-family:var(--font-display);font-weight:700;font-size:1.3rem;color:#fff;letter-spacing:-.01em}
 .sb-name .dot{color:var(--lime)}
@@ -242,16 +243,15 @@ select.fc{cursor:pointer}
 
 /* ═══ 操作頁：咖啡背景 + 深綠 Overlay 60% + 白色文字 ═══ */
 
-/* 層疊結構：背景圖 → 深綠遮罩 60% → 內容 */
-#screen-app .shell{position:relative}
-#screen-app .shell::before{
-  content:'';position:fixed;inset:0;z-index:-2;
-  background:url('https://res.cloudinary.com/e61v9qyh/image/upload/v1783610757/mainpage.jpg') center/cover no-repeat;
+/* 背景直接設在 body，避免 shell 的 margin/padding 造成空隙 */
+#screen-app{
+  background:
+    linear-gradient(rgba(7,20,16,.60), rgba(7,20,16,.60)),
+    url('https://res.cloudinary.com/e61v9qyh/image/upload/v1783610757/mainpage.jpg') center/cover no-repeat fixed;
+  min-height:100vh;
 }
-#screen-app .shell::after{
-  content:'';position:fixed;inset:0;z-index:-1;
-  background:rgba(7,20,16,.60);   /* #071410 60% */
-}
+#screen-app .shell::before,
+#screen-app .shell::after{display:none}  /* 停用舊的偽元素背景 */
 
 /* Sidebar：#0F2D26，固定在遮罩上 */
 #screen-app .sb{
@@ -1587,8 +1587,6 @@ function renderDataTable() {
             }).join('')}
           </div>
 
-          <div style="font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px">今日進貨（填有效期限與數量）</div>
-
           ${(()=>{
             const pending = _allOrders.filter(o => o.product_id === item.product_id && !o.arrived);
             if (!pending.length) return '';
@@ -1612,16 +1610,6 @@ function renderDataTable() {
                 </div>`).join('')}
             </div>`;
           })()}
-
-          <div id="batch-inputs-${item.product_id}">
-            <div class="batch-in-row" style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-              <input type="date" class="ep-input ep-batch-date" style="width:150px" value="${today}" title="有效期限">
-              <span style="font-size:.72rem;color:var(--ink-3);white-space:nowrap">有效期限</span>
-              <input type="number" class="ep-input ep-batch-qty" style="width:80px" value="0" min="0" placeholder="數量">
-              <span style="font-size:.78rem;color:var(--ink-3)">${item.unit}</span>
-              <button class="btn btn-ghost btn-xs" onclick="addBatchInputRow(${item.product_id}, '${item.unit}')">＋</button>
-            </div>
-          </div>
 
           <div class="ep-grid" style="margin-top:14px">
             <div class="ep-field">
