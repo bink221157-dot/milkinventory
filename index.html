@@ -1,4 +1,4 @@
-<!-- StockFlow — 更新時間：2026-07-16 20:15 -->
+<!-- StockFlow — 更新時間：2026-07-16 20:34 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -251,14 +251,13 @@ select.fc{cursor:pointer}
 #screen-app .shell::before,
 #screen-app .shell::after{display:none}
 
-/* Sidebar：#0F2D26，固定在遮罩上 */
+/* Sidebar 維持 fixed，只加顏色邊框 */
 #screen-app .sb{
-  position:relative;z-index:100;
   background:#0F2D26;
   border-right:1px solid rgba(255,255,255,.07);
 }
 
-/* Main 內容區透明，浮在遮罩上 */
+/* Main 背景透明 */
 #screen-app .main{background:transparent}
 
 /* Topbar：#0F2D26 80% + Blur */
@@ -505,8 +504,8 @@ select.fc{cursor:pointer}
 @media(max-width:640px){
   .sb{transform:translateX(-100%);transition:transform .28s cubic-bezier(.4,0,.2,1)}
   .sb.open{transform:none;box-shadow:8px 0 40px rgba(0,0,0,.35)}
-  .main{margin-left:0!important;width:100%!important}
-  .shell{display:block}
+  .main{margin-left:0}
+  .shell{display:flex}
   .kpis,.frow,.frow3{grid-template-columns:1fr}
   .topbar{padding:0 16px}
   .page{padding:16px 14px 60px;box-sizing:border-box}
