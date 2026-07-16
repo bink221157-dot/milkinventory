@@ -702,29 +702,8 @@ select.fc{cursor:pointer}
             <div style="color:var(--ink-4);font-size:.82rem;text-align:center;padding:16px">載入中…</div>
           </div>
         </div>
-
-        <!-- 昨日叫貨（可展開下拉）-->
-        <div class="yesterday-order" id="yo-section" style="display:none">
-          <div class="yo-header" onclick="toggleYoSection()">
-            <span>🟣 昨日叫貨紀錄</span>
-            <span class="yo-arrow" id="yo-arrow">▼</span>
-          </div>
           <div class="yo-body" id="yo-body"></div>
         </div>
-
-        <!-- 各品項最近叫貨 -->
-        <div class="card" id="last-order-card" style="display:none;margin-top:16px">
-          <div class="card-h" style="margin-bottom:14px">
-            <span class="card-t">各品項最近叫貨</span>
-          </div>
-          <div class="tw">
-            <table class="dt">
-              <thead><tr><th>品項</th><th>叫貨數量</th><th>叫貨人員</th><th>叫貨日期</th></tr></thead>
-              <tbody id="last-order-tbody"></tbody>
-            </table>
-          </div>
-        </div>
-
         <!-- 叫貨追蹤 -->
         <div class="card" id="po-card" style="display:none;margin-top:16px">
           <div class="card-h" style="margin-bottom:14px">
@@ -1080,8 +1059,6 @@ async function initApp() {
   const tasks = [loadProducts(), loadStaff(), loadInventory(), loadConsumptionStats(), loadOrders()];
   if (currentRole === 'admin') tasks.push(loadUsers(), loadLineGroups());
   await Promise.all(tasks);
-  renderYesterdayOrders();
-  renderLastOrderCard();
 }
 
 /* ── Products ── */
@@ -1226,8 +1203,13 @@ function renderOrderCard() {
   const list = document.getElementById('po-list');
   if (!card || !list) return;
 
-  if (!_allOrders.length) { card.style.display = 'none'; return; }
+  // 永遠顯示卡片（讓使用者知道可以新增叫貨）
   card.style.display = 'block';
+
+  if (!_allOrders.length) {
+    list.innerHTML = '<div style="text-align:center;color:var(--ink-4);font-size:.82rem;padding:16px">目前沒有叫貨記錄。點右上角「＋ 新增叫貨」建立第一筆。</div>';
+    return;
+  }
 
   const today  = todayStr();
   const staff  = document.getElementById('inv-staff')?.value || '';
@@ -1493,58 +1475,19 @@ function renderHomePage() {
   else
     lines.push(`<div class="hcheck"><span class="tick">✓</span>近期無即將到期品項</div>`);
 
-  // 最近叫貨
-  const withOrder = items.filter(i => i.order_date);
-  if (withOrder.length) {
-    const latestOrder = withOrder.map(i => i.order_date).sort().at(-1);
-    const yesterday   = new Date(); yesterday.setDate(yesterday.getDate()-1);
-    const yStr        = yesterday.toISOString().split('T')[0];
-    const label       = latestOrder === todayStr() ? '今天' : latestOrder === yStr ? '昨天' : latestOrder;
-    const sameDay     = withOrder.filter(i => i.order_date === latestOrder);
-    const staff       = sameDay[0]?.staff_name || '未記錄';
-    lines.push(`<div class="hcheck"><span class="tick">✓</span>${label}叫貨已記錄（${staff}，共 ${sameDay.length} 個品項）</div>`);
+  // 今日叫貨狀況（從 purchase_orders 資料庫讀）
+  const todayOrders   = _allOrders.filter(o => o.ordered_date === todayStr() && !o.arrived);
+  const pendingOrders = _allOrders.filter(o => !o.arrived);
+  if (todayOrders.length) {
+    const names = [...new Set(todayOrders.map(o=>o.ordered_by))].join('、');
+    lines.push(`<div class="hcheck"><span class="tick">✓</span>今天已叫貨 ${todayOrders.length} 個品項（${names}）</div>`);
+  } else if (pendingOrders.length) {
+    lines.push(`<div class="hcheck"><span class="cross">!</span>有 ${pendingOrders.length} 筆叫貨待到貨</div>`);
   }
 
   checklist.innerHTML = lines.join('');
-  renderLastOrderCard();
 }
 
-function renderLastOrderCard() {
-  const card  = document.getElementById('last-order-card');
-  const tbody = document.getElementById('last-order-tbody');
-  if (!card || !tbody) return;
-
-  // 從 localStorage 讀取所有叫貨紀錄，每個品項取最新那筆
-  const log = JSON.parse(localStorage.getItem('sf_ordered_log') || '{}');
-  const byProduct = {};
-  Object.values(log).forEach(r => {
-    const existing = byProduct[r.pid];
-    if (!existing || r.date > existing.date) byProduct[r.pid] = r;
-  });
-
-  const rows = Object.values(byProduct);
-  if (!rows.length) { card.style.display='none'; return; }
-
-  card.style.display = 'block';
-  // 按日期排序（最新在前）
-  rows.sort((a, b) => b.date.localeCompare(a.date));
-
-  const today = todayStr();
-  const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
-  const yStr = yesterday.toISOString().split('T')[0];
-
-  tbody.innerHTML = rows.map(r => {
-    const label = r.date === today ? '<span style="color:var(--leaf);font-weight:700">今天</span>'
-                : r.date === yStr  ? '<span style="color:var(--amber);font-weight:700">昨天</span>'
-                : `<span class="mono" style="color:var(--ink-3)">${r.date}</span>`;
-    return `<tr>
-      <td><strong>${r.name}</strong></td>
-      <td class="mono">${r.qty} ${r.unit}</td>
-      <td style="color:var(--ink-2)">${r.who}</td>
-      <td>${label}</td>
-    </tr>`;
-  }).join('');
-}
 
 /* ── Data Table ── */
 function statusDot(diff) {
@@ -1884,10 +1827,6 @@ function toggleOrdered(pid, checked) {
     } else {
       form.style.display = 'none';
       // 取消勾選，移除今日叫貨紀錄
-      const map  = JSON.parse(localStorage.getItem('sf_ordered_log') || '{}');
-      const key  = `${todayStr()}_${pid}`;
-      delete map[key];
-      localStorage.setItem('sf_ordered_log', JSON.stringify(map));
     }
   }
   // 更新勾選狀態
@@ -1906,11 +1845,6 @@ function saveOrderedRecord(pid) {
   if (!qty) { toast('請填入叫貨數量','warn'); return; }
   if (!who) { toast('請選擇叫貨人員','warn'); return; }
 
-  const map = JSON.parse(localStorage.getItem('sf_ordered_log') || '{}');
-  const key = `${todayStr()}_${pid}`;
-  map[key]  = { pid, name: item?.product_name || '', unit: item?.unit || '', qty, who, date: todayStr() };
-  localStorage.setItem('sf_ordered_log', JSON.stringify(map));
-
   // 標記勾選狀態
   const statusMap = JSON.parse(localStorage.getItem('sf_ordered') || '{}');
   statusMap[key] = true;
@@ -1918,8 +1852,6 @@ function saveOrderedRecord(pid) {
 
   toast(`叫貨紀錄已儲存：${item?.product_name} ${qty} ${item?.unit}`, 'ok');
   renderHomePage();
-  renderYesterdayOrders();
-  renderLastOrderCard();
 }
 
 function cancelOrdered(pid) {
@@ -1928,40 +1860,6 @@ function cancelOrdered(pid) {
   if (cb) { cb.checked = false; toggleOrdered(pid, false); }
 }
 
-function toggleYoSection() {
-  const body  = document.getElementById('yo-body');
-  const arrow = document.getElementById('yo-arrow');
-  if (!body) return;
-  const isOpen = body.classList.contains('open');
-  body.classList.toggle('open', !isOpen);
-  if (arrow) arrow.classList.toggle('open', !isOpen);
-}
-
-function renderYesterdayOrders() {
-  const section = document.getElementById('yo-section');
-  const body    = document.getElementById('yo-body');
-  if (!section || !body) return;
-
-  // 昨天日期
-  const yDate = new Date(); yDate.setDate(yDate.getDate()-1);
-  const yStr  = yDate.toISOString().split('T')[0];
-
-  const map    = JSON.parse(localStorage.getItem('sf_ordered_log') || '{}');
-  const yItems = Object.values(map).filter(r => r.date === yStr);
-
-  if (!yItems.length) { section.style.display='none'; return; }
-
-  section.style.display = 'block';
-  body.innerHTML = yItems.map(r => `
-    <div class="yo-row">
-      <span class="yo-tag">叫貨</span>
-      <span style="font-weight:700;min-width:100px">${r.name}</span>
-      <span class="mono" style="color:var(--ink-2)">${r.qty} ${r.unit}</span>
-      <span style="color:var(--ink-3);font-size:.78rem">叫貨人：${r.who}</span>
-      <span class="mono" style="color:var(--ink-4);font-size:.72rem;margin-left:auto">${r.date}</span>
-    </div>`).join('');
-  renderLastOrderCard();
-}
 
 /* ── Consumption ── */
 async function loadActiveBatches() { /* 已整合進 Data Table，保留空函式避免錯誤 */ }
