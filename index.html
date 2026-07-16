@@ -609,7 +609,47 @@ select.fc{cursor:pointer}
       </div>
     </nav>
 
-    <!-- 修改密碼 Modal -->
+    <!-- 叫貨 Modal -->
+    <div id="order-modal" class="modal">
+      <div class="modal-box" style="max-width:420px">
+        <div class="modal-h">
+          <div class="modal-t">新增叫貨</div>
+          <button class="modal-x" onclick="closeOrderModal()">✕</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="fg"><label>品項</label>
+            <select class="fc" id="om-product">
+              <option value="">選擇品項…</option>
+            </select>
+          </div>
+          <div class="frow">
+            <div class="fg"><label>叫貨數量</label><input type="number" class="fc mono" id="om-qty" value="1" min="1"></div>
+            <div class="fg"><label>叫貨人員</label>
+              <select class="fc" id="om-staff">
+                <option value="">選擇人員…</option>
+              </select>
+            </div>
+          </div>
+          <div class="fg"><label>叫貨日期</label><input type="date" class="fc" id="om-date"></div>
+          <div class="fg"><label>備註（選填）</label><input type="text" class="fc" id="om-note" placeholder="例：補庫存、急需"></div>
+          <div id="om-err" style="display:none;color:var(--red);font-size:.78rem"></div>
+          <button class="btn btn-main" onclick="submitOrder()">確認叫貨</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 多筆叫貨選擇 Modal -->
+    <div id="arrive-modal" class="modal">
+      <div class="modal-box" style="max-width:400px">
+        <div class="modal-h">
+          <div class="modal-t">選擇要標記到貨的叫貨記錄</div>
+          <button class="modal-x" onclick="closeArriveModal()">✕</button>
+        </div>
+        <p style="font-size:.82rem;color:var(--ink-3);margin-bottom:14px">此品項有多筆待到貨記錄，請選擇本次到貨對應的那筆：</p>
+        <div id="arrive-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px"></div>
+        <button class="btn btn-ghost btn-full" onclick="closeArriveModal()">取消</button>
+      </div>
+    </div>
     <div id="pw-modal" class="modal">
       <div class="modal-box">
         <div class="modal-h">
@@ -685,6 +725,15 @@ select.fc{cursor:pointer}
           </div>
         </div>
 
+        <!-- 叫貨追蹤 -->
+        <div class="card" id="po-card" style="display:none;margin-top:16px">
+          <div class="card-h" style="margin-bottom:14px">
+            <span class="card-t">🛒 叫貨追蹤</span>
+            <button class="btn btn-lime btn-sm" onclick="openOrderModal()">＋ 新增叫貨</button>
+          </div>
+          <div id="po-list"></div>
+        </div>
+
         <!-- 消耗趨勢 -->
         <div class="card" id="consumption-card" style="display:none">
           <div class="card-h"><span class="card-t">消耗趨勢 & 建議叫貨</span></div>
@@ -725,6 +774,11 @@ select.fc{cursor:pointer}
         <!-- 快速新增進貨面板 -->
         <div class="quick-add-panel" id="quick-add-panel">
           <div class="qa-title">快速新增進貨</div>
+          <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+            <select id="qa-cat-filter" style="height:32px;padding:0 10px;border:1.5px solid rgba(255,255,255,.25);border-radius:8px;font-size:.78rem;color:var(--ink);background:rgba(255,255,255,.92)" onchange="renderQuickAddSelects()">
+              <option value="">全部分類</option>
+            </select>
+          </div>
           <div id="qa-batch-list">
             <div class="quick-add-batch">
               <select class="fc" id="qa-prod-0"><option value="">選擇品項…</option></select>
@@ -1023,7 +1077,7 @@ async function initApp() {
   const today = todayStr();
   const recEl = document.getElementById('inv-recorded');
   if (recEl) recEl.value = today;
-  const tasks = [loadProducts(), loadStaff(), loadInventory(), loadConsumptionStats()];
+  const tasks = [loadProducts(), loadStaff(), loadInventory(), loadConsumptionStats(), loadOrders()];
   if (currentRole === 'admin') tasks.push(loadUsers(), loadLineGroups());
   await Promise.all(tasks);
   renderYesterdayOrders();
@@ -1158,7 +1212,138 @@ function editProduct(id){
   api('PUT',`/products/${id}`,payload).then(()=>{showLoading(false);loadProducts();toast('品項已更新','ok');});
 }
 
-/* ── 快速新增進貨 ── */
+/* ── 叫貨追蹤 ── */
+let _allOrders = [];
+
+async function loadOrders() {
+  const data = await api('GET', '/orders');
+  _allOrders = data?.orders || [];
+  renderOrderCard();
+}
+
+function renderOrderCard() {
+  const card = document.getElementById('po-card');
+  const list = document.getElementById('po-list');
+  if (!card || !list) return;
+
+  if (!_allOrders.length) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+
+  const today  = todayStr();
+  const staff  = document.getElementById('inv-staff')?.value || '';
+
+  list.innerHTML = _allOrders.map(o => {
+    const isArrived = o.arrived;
+    const rowStyle  = isArrived
+      ? 'opacity:.6;text-decoration:line-through'
+      : '';
+    const statusBadge = isArrived
+      ? `<span style="background:var(--green-bg);color:var(--leaf);font-size:.68rem;font-weight:700;padding:2px 10px;border-radius:99px">✓ ${o.arrived_date} 到貨</span>`
+      : `<span style="background:var(--amber-bg);color:var(--amber);font-size:.68rem;font-weight:700;padding:2px 10px;border-radius:99px">待到貨</span>`;
+
+    const arriveBtn = isArrived ? '' :
+      `<button class="btn btn-ghost btn-xs" onclick="handleArrive(${o.product_id}, ${o.id})">確認到貨</button>`;
+    const delBtn = currentRole === 'admin'
+      ? `<button class="btn btn-danger btn-xs" onclick="deleteOrder(${o.id})">刪除</button>`
+      : '';
+
+    return `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);flex-wrap:wrap;${rowStyle}">
+      <span style="font-weight:700;min-width:100px">${o.product_name}</span>
+      <span class="mono" style="color:var(--ink-2)">${o.quantity} ${o.unit}</span>
+      <span style="font-size:.76rem;color:var(--ink-3)">${o.ordered_date} · ${o.ordered_by}</span>
+      ${statusBadge}
+      <div style="margin-left:auto;display:flex;gap:6px">${arriveBtn}${delBtn}</div>
+    </div>`;
+  }).join('');
+}
+
+async function handleArrive(productId, orderId) {
+  // 找這個品項有幾筆待到貨
+  const pending = _allOrders.filter(o => o.product_id === productId && !o.arrived);
+  const staff   = document.getElementById('inv-staff')?.value || '';
+
+  if (pending.length <= 1) {
+    // 只有一筆，直接標記
+    showLoading(true);
+    await api('PUT', `/orders/${orderId}/arrive`, {staff_name: staff});
+    showLoading(false);
+    await loadOrders();
+    toast('已標記到貨','ok');
+  } else {
+    // 多筆，讓使用者選
+    const list = document.getElementById('arrive-list');
+    list.innerHTML = pending.map(o => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border:1.5px solid var(--line);border-radius:10px">
+        <span>${o.product_name} <strong>${o.quantity} ${o.unit}</strong> · ${o.ordered_date} · ${o.ordered_by}</span>
+        <button class="btn btn-main btn-sm" onclick="confirmArrive(${o.id})">這筆</button>
+      </div>`).join('');
+    document.getElementById('arrive-modal').style.display = 'flex';
+  }
+}
+
+async function confirmArrive(orderId) {
+  const staff = document.getElementById('inv-staff')?.value || '';
+  closeArriveModal();
+  showLoading(true);
+  await api('PUT', `/orders/${orderId}/arrive`, {staff_name: staff});
+  showLoading(false);
+  await loadOrders();
+  toast('已標記到貨','ok');
+}
+
+async function deleteOrder(orderId) {
+  if (!confirm('確定刪除這筆叫貨記錄？')) return;
+  showLoading(true);
+  await api('DELETE', `/orders/${orderId}`);
+  showLoading(false);
+  await loadOrders();
+  toast('已刪除');
+}
+
+function openOrderModal() {
+  // 填入品項選單
+  const sel = document.getElementById('om-product');
+  sel.innerHTML = '<option value="">選擇品項…</option>'
+    + S.products.map(p => `<option value="${p.id}">${p.name}（${p.unit}）</option>`).join('');
+  // 填入人員選單
+  const staffSel = document.getElementById('om-staff');
+  staffSel.innerHTML = '<option value="">選擇人員…</option>'
+    + S.staff.map(n => `<option value="${n}">${n}</option>`).join('');
+  // 預設日期
+  document.getElementById('om-date').value = todayStr();
+  document.getElementById('om-qty').value  = '1';
+  document.getElementById('om-note').value = '';
+  document.getElementById('om-err').style.display = 'none';
+  document.getElementById('order-modal').style.display = 'flex';
+}
+function closeOrderModal()  { document.getElementById('order-modal').style.display  = 'none'; }
+function closeArriveModal() { document.getElementById('arrive-modal').style.display = 'none'; }
+
+async function submitOrder() {
+  const pid   = parseInt(document.getElementById('om-product').value);
+  const qty   = parseInt(document.getElementById('om-qty').value) || 0;
+  const staff = document.getElementById('om-staff').value;
+  const date  = document.getElementById('om-date').value;
+  const note  = document.getElementById('om-note').value.trim();
+  const errEl = document.getElementById('om-err');
+
+  if (!pid)   { errEl.textContent='請選擇品項'; errEl.style.display='block'; return; }
+  if (!qty)   { errEl.textContent='數量不可為 0'; errEl.style.display='block'; return; }
+  if (!staff) { errEl.textContent='請選擇叫貨人員'; errEl.style.display='block'; return; }
+
+  showLoading(true);
+  const res = await api('POST', '/orders', {
+    product_id: pid, quantity: qty,
+    ordered_by: staff, ordered_date: date, note: note || null,
+  });
+  showLoading(false);
+  if (!res) return;
+  closeOrderModal();
+  await loadOrders();
+  toast('叫貨記錄已建立','ok');
+}
+
+/* ── 快速新增進貨（含分類篩選）── */
 let qaRowCount=1;
 function toggleQuickAdd(){
   const p=document.getElementById('quick-add-panel');if(!p)return;
@@ -1166,7 +1351,24 @@ function toggleQuickAdd(){
   if(p.classList.contains('show'))renderQuickAddSelects();
 }
 function renderQuickAddSelects(){
-  const opts='<option value="">選擇品項…</option>'+S.products.map(p=>`<option value="${p.id}">${p.name}（${p.unit}）</option>`).join('');
+  const cats   = getProductCats();
+  const selCat = document.getElementById('qa-cat-filter')?.value || '';
+
+  // 更新分類下拉
+  const catSel = document.getElementById('qa-cat-filter');
+  if (catSel) {
+    const usedCats = [...new Set(S.products.map(p => cats[p.name]||'未分類'))].sort();
+    const prevCat  = catSel.value;
+    catSel.innerHTML = '<option value="">全部分類</option>'
+      + usedCats.map(c => `<option value="${c}" ${prevCat===c?'selected':''}>${c}</option>`).join('');
+  }
+
+  const filtered = selCat
+    ? S.products.filter(p => (cats[p.name]||'未分類') === selCat)
+    : S.products;
+
+  const opts = '<option value="">選擇品項…</option>'
+    + filtered.map(p=>`<option value="${p.id}">${p.name}（${p.unit}）</option>`).join('');
   document.querySelectorAll('.qa-prod-sel').forEach(s=>{const v=s.value;s.innerHTML=opts;if(v)s.value=v;});
   const first=document.getElementById('qa-prod-0');
   if(first){first.innerHTML=opts;first.className='qa-prod-sel fc';first.style.cssText='width:180px;height:36px';}
@@ -1382,13 +1584,15 @@ function renderDataTable() {
       ? `<input type="checkbox" class="cb-ordered" data-pid="${item.product_id}"
            ${isOrdered ? 'checked' : ''} onchange="toggleOrdered(${item.product_id}, this.checked)">`
       : `<span style="color:var(--ink-4)">-</span>`;
-    // 效期批次摘要（顯示批次數量）
     const today_ = today;
-    const validBatches  = item.batches.filter(b => b.expiry_date >= today_);
+    const validBatches   = item.batches.filter(b => b.expiry_date >= today_);
     const expiredBatches = item.batches.filter(b => b.expiry_date < today_);
+    const totalValidQty  = validBatches.reduce((s, b) => s + b.quantity, 0);
     const batchSummary = validBatches.length
       ? `${validBatches.length} 批`
-      : '<span style="color:var(--red)">已過期</span>';
+      : expiredBatches.length
+      ? '<span style="color:var(--red);font-size:.74rem">已過期</span>'
+      : '—';
 
     // 盤點日（各品項可能不同天）
     const recDate = item.recorded_date || S.latestDate || '';
@@ -1438,6 +1642,21 @@ function renderDataTable() {
           </div>
 
           <div style="font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px">今日進貨（填有效期限與數量）</div>
+
+          ${(()=>{
+            const pending = _allOrders.filter(o => o.product_id === item.product_id && !o.arrived);
+            if (!pending.length) return '';
+            return `<div style="margin-bottom:12px;padding:10px 12px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:10px">
+              <div style="font-size:.68rem;font-weight:700;color:var(--amber);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px">📦 待到貨叫貨記錄 — 點選帶入數量</div>
+              ${pending.map(o=>`
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(245,158,11,.15);gap:10px;flex-wrap:wrap">
+                  <span style="font-size:.8rem;color:var(--ink-2)">${o.ordered_date} · <strong>${o.ordered_by}</strong> 叫了 <strong>${o.quantity} ${o.unit}</strong>${o.note?` · ${o.note}`:''}</span>
+                  <button class="btn btn-ghost btn-xs" style="border-color:var(--amber);color:var(--amber)"
+                    onclick="fillFromOrder(${item.product_id}, ${o.quantity}, ${o.id})">帶入數量</button>
+                </div>`).join('')}
+            </div>`;
+          })()}
+
           <div id="batch-inputs-${item.product_id}">
             <div class="batch-in-row" style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
               <input type="date" class="ep-input ep-batch-date" style="width:150px" value="${today}" title="有效期限">
@@ -1524,6 +1743,26 @@ async function deleteBatch(pid, expiryDate) {
 
   await loadInventory();
   toast(`已刪除 ${item.product_name} 效期 ${expiryDate} 的批次`, 'ok');
+}
+
+function fillFromOrder(pid, qty, orderId) {
+  // 把叫貨數量帶入第一個進貨數量欄位
+  const container = document.getElementById(`batch-inputs-${pid}`);
+  if (!container) return;
+  const firstQty = container.querySelector('.ep-batch-qty');
+  if (firstQty) {
+    firstQty.value = qty;
+    // 高亮提示使用者還需要填有效期限
+    const firstDate = container.querySelector('.ep-batch-date');
+    if (firstDate) {
+      firstDate.style.borderColor = 'var(--amber)';
+      firstDate.focus();
+      firstDate.addEventListener('change', () => {
+        firstDate.style.borderColor = '';
+      }, {once: true});
+    }
+    toast(`已帶入 ${qty} 個數量，請填入有效期限`, 'ok');
+  }
 }
 
 function addBatchInputRow(pid, unit) {
@@ -1616,6 +1855,7 @@ async function saveRowData(pid) {
 
   await loadInventory();
   await loadConsumptionStats();
+  await loadOrders();
   toast(`${item.product_name} 已更新`, 'ok');
 }
 
