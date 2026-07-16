@@ -75,7 +75,7 @@ body{font-family:var(--font-ui);background:var(--paper);color:var(--ink);font-si
 .sb-ibtn{font-size:.8rem;color:rgba(255,255,255,.4);background:none;border:none;cursor:pointer;padding:5px 7px;border-radius:7px;transition:background .13s,color .13s}
 .sb-ibtn:hover{background:rgba(255,255,255,.08);color:#fff}
 
-.main{margin-left:var(--sb-w);flex:1;display:flex;flex-direction:column;min-height:100vh}
+.main{margin-left:var(--sb-w);flex:1;display:flex;flex-direction:column;min-height:100vh;min-width:0}
 .topbar{background:rgba(247,246,242,.86);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 30px;position:sticky;top:0;z-index:50;gap:12px}
 .tb-title{font-size:.98rem;font-weight:700}
 .tb-meta{font-size:.7rem;color:var(--ink-3);font-family:var(--font-mono)}
@@ -85,7 +85,7 @@ body{font-family:var(--font-ui);background:var(--paper);color:var(--ink);font-si
 #hamburger{display:none;background:none;border:none;font-size:1.25rem;cursor:pointer;color:var(--ink)}
 
 /* pages */
-.page{display:none;padding:34px 34px 60px;max-width:1180px}
+.page{display:none;padding:34px 34px 60px;max-width:1180px;width:100%}
 .page.active{display:block;animation:pgIn .3s ease}
 @keyframes pgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .eyebrow{font-size:.64rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--leaf);margin-bottom:6px}
@@ -595,6 +595,11 @@ select.fc{cursor:pointer}
           <button class="modal-x" onclick="closeOrderModal()">✕</button>
         </div>
         <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="fg"><label>分類篩選</label>
+            <select class="fc" id="om-cat" onchange="updateOrderProductSelect()">
+              <option value="">全部分類</option>
+            </select>
+          </div>
           <div class="fg"><label>品項</label>
             <select class="fc" id="om-product">
               <option value="">選擇品項…</option>
@@ -1192,12 +1197,16 @@ function renderOrderCard() {
 
   list.innerHTML = _allOrders.map(o => {
     const isArrived = o.arrived;
-    const rowStyle  = isArrived
-      ? 'opacity:.6;text-decoration:line-through'
-      : '';
+    const arrivedQty = o.arrived_quantity;
+    const diff = isArrived && arrivedQty != null ? arrivedQty - o.quantity : null;
+
     const statusBadge = isArrived
-      ? `<span style="background:var(--green-bg);color:var(--leaf);font-size:.68rem;font-weight:700;padding:2px 10px;border-radius:99px">✓ ${o.arrived_date} 到貨</span>`
+      ? `<span style="background:var(--green-bg);color:var(--leaf);font-size:.68rem;font-weight:700;padding:2px 10px;border-radius:99px">✓ ${o.arrived_date} 到貨${arrivedQty != null ? ' · '+arrivedQty+' '+o.unit : ''}</span>`
       : `<span style="background:var(--amber-bg);color:var(--amber);font-size:.68rem;font-weight:700;padding:2px 10px;border-radius:99px">待到貨</span>`;
+
+    const diffBadge = diff !== null && diff !== 0
+      ? `<span style="background:var(--red-bg);color:var(--red);font-size:.68rem;font-weight:700;padding:2px 10px;border-radius:99px">⚠️ 差異 ${diff > 0 ? '+' : ''}${diff} ${o.unit}</span>`
+      : (diff === 0 ? `<span style="background:var(--green-bg);color:var(--leaf);font-size:.68rem;font-weight:600;padding:2px 10px;border-radius:99px">數量吻合</span>` : '');
 
     const arriveBtn = isArrived ? '' :
       `<button class="btn btn-ghost btn-xs" onclick="handleArrive(${o.product_id}, ${o.id})">確認到貨</button>`;
@@ -1205,11 +1214,12 @@ function renderOrderCard() {
       ? `<button class="btn btn-danger btn-xs" onclick="deleteOrder(${o.id})">刪除</button>`
       : '';
 
-    return `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);flex-wrap:wrap;${rowStyle}">
-      <span style="font-weight:700;min-width:100px">${o.product_name}</span>
-      <span class="mono" style="color:var(--ink-2)">${o.quantity} ${o.unit}</span>
+    return `<div style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--line);flex-wrap:wrap;${isArrived?'opacity:.7':''}">
+      <span style="font-weight:700;min-width:90px">${o.product_name}</span>
+      <span class="mono" style="color:var(--ink-2);font-size:.82rem">叫 ${o.quantity} ${o.unit}</span>
       <span style="font-size:.76rem;color:var(--ink-3)">${o.ordered_date} · ${o.ordered_by}</span>
       ${statusBadge}
+      ${diffBadge}
       <div style="margin-left:auto;display:flex;gap:6px">${arriveBtn}${delBtn}</div>
     </div>`;
   }).join('');
@@ -1259,20 +1269,37 @@ async function deleteOrder(orderId) {
 }
 
 function openOrderModal() {
-  // 填入品項選單
-  const sel = document.getElementById('om-product');
-  sel.innerHTML = '<option value="">選擇品項…</option>'
-    + S.products.map(p => `<option value="${p.id}">${p.name}（${p.unit}）</option>`).join('');
-  // 填入人員選單
+  const cats    = getProductCats();
+  const catSel  = document.getElementById('om-cat');
+  const usedCats = [...new Set(S.products.map(p => cats[p.name]||'未分類'))].sort();
+  catSel.innerHTML = '<option value="">全部分類</option>'
+    + usedCats.map(c => `<option value="${c}">${c}</option>`).join('');
+  updateOrderProductSelect();
+
   const staffSel = document.getElementById('om-staff');
   staffSel.innerHTML = '<option value="">選擇人員…</option>'
     + S.staff.map(n => `<option value="${n}">${n}</option>`).join('');
-  // 預設日期
+
   document.getElementById('om-date').value = todayStr();
   document.getElementById('om-qty').value  = '1';
   document.getElementById('om-note').value = '';
   document.getElementById('om-err').style.display = 'none';
   document.getElementById('order-modal').style.display = 'flex';
+}
+
+function updateOrderProductSelect() {
+  const cats   = getProductCats();
+  const selCat = document.getElementById('om-cat')?.value || '';
+  const filtered = selCat
+    ? S.products.filter(p => (cats[p.name]||'未分類') === selCat)
+    : S.products;
+  const sel = document.getElementById('om-product');
+  const prev = sel?.value;
+  if (sel) {
+    sel.innerHTML = '<option value="">選擇品項…</option>'
+      + filtered.map(p => `<option value="${p.id}">${p.name}（${p.unit}）</option>`).join('');
+    if (prev && filtered.find(p => p.id === parseInt(prev))) sel.value = prev;
+  }
 }
 function closeOrderModal()  { document.getElementById('order-modal').style.display  = 'none'; }
 function closeArriveModal() { document.getElementById('arrive-modal').style.display = 'none'; }
@@ -1565,13 +1592,23 @@ function renderDataTable() {
           ${(()=>{
             const pending = _allOrders.filter(o => o.product_id === item.product_id && !o.arrived);
             if (!pending.length) return '';
+            const staffOpts = S.staff.map(n=>`<option value="${n}">${n}</option>`).join('');
             return `<div style="margin-bottom:12px;padding:10px 12px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:10px">
-              <div style="font-size:.68rem;font-weight:700;color:var(--amber);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px">📦 待到貨叫貨記錄 — 點選帶入數量</div>
+              <div style="font-size:.68rem;font-weight:700;color:var(--amber);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px">📦 待到貨叫貨記錄 — 填入效期後直接儲存</div>
               ${pending.map(o=>`
-                <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(245,158,11,.15);gap:10px;flex-wrap:wrap">
-                  <span style="font-size:.8rem;color:var(--ink-2)">${o.ordered_date} · <strong>${o.ordered_by}</strong> 叫了 <strong>${o.quantity} ${o.unit}</strong>${o.note?` · ${o.note}`:''}</span>
-                  <button class="btn btn-ghost btn-xs" style="border-color:var(--amber);color:var(--amber)"
-                    onclick="fillFromOrder(${item.product_id}, ${o.quantity}, ${o.id})">帶入數量</button>
+                <div style="padding:8px 0;border-bottom:1px solid rgba(245,158,11,.15)">
+                  <div style="font-size:.8rem;color:var(--ink-2);margin-bottom:8px">${o.ordered_date} · <strong>${o.ordered_by}</strong> 叫了 <strong>${o.quantity} ${item.unit}</strong>${o.note?' · '+o.note:''}</div>
+                  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                    <input type="date" id="arr-exp-${o.id}" class="ep-input" style="width:148px" title="到貨批次有效期限">
+                    <span style="font-size:.72rem;color:var(--ink-3)">有效期限</span>
+                    <input type="number" id="arr-qty-${o.id}" class="ep-input" style="width:70px" value="${o.quantity}" min="1" title="實際到貨數量">
+                    <span style="font-size:.72rem;color:var(--ink-3)">${item.unit}</span>
+                    <select id="arr-who-${o.id}" class="ep-input" style="width:110px;cursor:pointer">
+                      <option value="">到貨人員…</option>
+                      ${staffOpts}
+                    </select>
+                    <button class="btn btn-main btn-sm" onclick="confirmArriveInline(${o.id}, ${item.product_id})">確認到貨並儲存</button>
+                  </div>
                 </div>`).join('')}
             </div>`;
           })()}
@@ -1664,23 +1701,33 @@ async function deleteBatch(pid, expiryDate) {
   toast(`已刪除 ${item.product_name} 效期 ${expiryDate} 的批次`, 'ok');
 }
 
-function fillFromOrder(pid, qty, orderId) {
-  // 把叫貨數量帶入第一個進貨數量欄位
-  const container = document.getElementById(`batch-inputs-${pid}`);
-  if (!container) return;
-  const firstQty = container.querySelector('.ep-batch-qty');
-  if (firstQty) {
-    firstQty.value = qty;
-    // 高亮提示使用者還需要填有效期限
-    const firstDate = container.querySelector('.ep-batch-date');
-    if (firstDate) {
-      firstDate.style.borderColor = 'var(--amber)';
-      firstDate.focus();
-      firstDate.addEventListener('change', () => {
-        firstDate.style.borderColor = '';
-      }, {once: true});
-    }
-    toast(`已帶入 ${qty} 個數量，請填入有效期限`, 'ok');
+async function confirmArriveInline(orderId, pid) {
+  const expiry = document.getElementById(`arr-exp-${orderId}`)?.value;
+  const qty    = parseInt(document.getElementById(`arr-qty-${orderId}`)?.value) || 0;
+  const who    = document.getElementById(`arr-who-${orderId}`)?.value || '';
+
+  if (!expiry) { toast('請填入有效期限', 'warn'); return; }
+  if (!qty)    { toast('到貨數量不可為 0', 'warn'); return; }
+  if (!who)    { toast('請選擇到貨人員', 'warn'); return; }
+
+  showLoading(true);
+  const res = await api('PUT', `/orders/${orderId}/arrive`, {
+    staff_name:       who,
+    arrived_quantity: qty,
+    expiry_date:      expiry,
+  });
+  showLoading(false);
+  if (!res) return;
+
+  await loadInventory();
+  await loadOrders();
+
+  const order = _allOrders.find(o => o.id === orderId);
+  const diff  = qty - (order?.quantity || qty);
+  if (diff !== 0) {
+    toast(`到貨完成！${diff > 0 ? '多到' : '短少'} ${Math.abs(diff)} ${order?.unit || ''}`, diff < 0 ? 'warn' : 'ok');
+  } else {
+    toast('到貨完成，已更新庫存', 'ok');
   }
 }
 
