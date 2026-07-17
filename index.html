@@ -1,4 +1,4 @@
-<!-- StockFlow — 更新時間：2026-07-17 12:57 -->
+<!-- StockFlow — 更新時間：2026-07-17 16:07 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -718,6 +718,12 @@ select.fc{cursor:pointer}
 
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
           <div class="fg" style="flex:0 0 auto">
+            <label style="font-size:.72rem;font-weight:600;color:rgba(255,255,255,.85)">分類</label>
+            <select class="fc" id="inv-cat-filter" style="width:130px" onchange="renderDataTable()">
+              <option value="">全部品項</option>
+            </select>
+          </div>
+          <div class="fg" style="flex:0 0 auto">
             <label style="font-size:.72rem;font-weight:600;color:rgba(255,255,255,.85)">盤點日期</label>
             <input type="date" class="fc" id="inv-recorded" style="width:160px">
           </div>
@@ -1059,6 +1065,17 @@ async function loadProducts(){
   S.products=(data?.products||[]).filter(p=>p.active);
   renderProductSelect();renderProductsTable(data?.products||[]);
   renderCatFilter(data?.products||[]);renderQuickAddSelects();
+
+  // 同步更新盤點頁分類篩選
+  const invCatSel=document.getElementById('inv-cat-filter');
+  if(invCatSel){
+    const cats=getProductCats();
+    const used=[...new Set(S.products.map(p=>cats[p.name]||'未分類'))].sort();
+    const prev=invCatSel.value;
+    invCatSel.innerHTML='<option value="">全部品項</option>'
+      +used.map(c=>`<option value="${c}">${c}</option>`).join('');
+    if(prev&&used.includes(prev))invCatSel.value=prev;
+  }
 }
 function renderCatFilter(all){
   const el=document.getElementById('cat-filter');if(!el)return;
@@ -1504,8 +1521,17 @@ function renderDataTable() {
   const tbody = document.getElementById('dt-body');
   const label = document.getElementById('dt-date-label');
   if (!tbody) return;
-  if (!S.items.length) {
-    tbody.innerHTML = '<tr><td colspan="10" class="empty" style="padding:40px">還沒有盤點資料。先到品項設定新增品項，再回來填寫。</td></tr>';
+
+  // 分類篩選
+  const cats      = getProductCats();
+  const selCat    = document.getElementById('inv-cat-filter')?.value || '';
+  const allItems  = S.items;
+  const items     = selCat
+    ? allItems.filter(i => (cats[i.product_name]||'未分類') === selCat)
+    : allItems;
+
+  if (!items.length) {
+    tbody.innerHTML = `<tr><td colspan="10" class="empty" style="padding:40px">${selCat ? '此分類下沒有品項。' : '還沒有品項資料。請先到品項設定新增品項。'}</td></tr>`;
     return;
   }
   if (label && S.latestDate) label.textContent = `最新盤點：${S.latestDate}`;
@@ -1513,7 +1539,7 @@ function renderDataTable() {
   const orderedMap = JSON.parse(localStorage.getItem('sf_ordered') || '{}');
   const today      = todayStr();
 
-  tbody.innerHTML = S.items.map(item => {
+  tbody.innerHTML = items.map(item => {
     const current  = item.total_qty;
     const thresh   = item.min_threshold;
     const diff     = current - thresh;
