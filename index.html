@@ -1,4 +1,4 @@
-<!-- StockFlow — 更新時間：2026-07-17 17:33 -->
+<!-- StockFlow — 更新時間：2026-07-17 20:54 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -1725,6 +1725,10 @@ async function confirmArriveInline(orderId, pid) {
   if (!qty)    { toast('到貨數量不可為 0', 'warn'); return; }
   if (!who)    { toast('請選擇到貨人員', 'warn'); return; }
 
+  // 立即 disable 按鈕，防止重複點擊
+  const btn = document.querySelector(`[onclick="confirmArriveInline(${orderId}, ${pid})"]`);
+  if (btn) { btn.disabled = true; btn.textContent = '處理中…'; }
+
   showLoading(true);
   const res = await api('PUT', `/orders/${orderId}/arrive`, {
     staff_name:       who,
@@ -1732,8 +1736,14 @@ async function confirmArriveInline(orderId, pid) {
     expiry_date:      expiry,
   });
   showLoading(false);
-  if (!res) return;
 
+  if (!res) {
+    // 失敗時恢復按鈕
+    if (btn) { btn.disabled = false; btn.textContent = '確認到貨並儲存'; }
+    return;
+  }
+
+  // 成功：立即重新載入，讓已到貨的記錄從待到貨清單消失
   await loadInventory();
   await loadOrders();
 
