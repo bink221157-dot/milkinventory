@@ -1,4 +1,4 @@
-<!-- StockFlow — 更新時間：2026-07-17 16:07 -->
+<!-- StockFlow — 更新時間：2026-07-17 17:33 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -713,7 +713,7 @@ select.fc{cursor:pointer}
       <div class="page" id="pg-inventory">
         <div style="margin-bottom:28px">
           <h1 class="pg-t" style="font-size:2rem;color:#fff;margin-bottom:6px">今日盤點</h1>
-          <p style="color:rgba(255,255,255,.65);font-size:.9rem" id="inv-sub-text">點列展開可填進貨與消耗。勾選「已叫貨」標記叫貨狀態。</p>
+          <p style="color:rgba(255,255,255,.65);font-size:.9rem" id="inv-sub-text">點列展開可填消耗與到貨。已叫貨欄由系統自動顯示。</p>
         </div>
 
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
@@ -806,8 +806,8 @@ select.fc{cursor:pointer}
           <div class="cat-filter" id="cat-filter"></div>
           <div class="tw">
             <table class="dt">
-              <thead><tr><th>品項</th><th>分類</th><th>單位</th><th>單價</th><th>狀態</th><th style="width:180px">操作</th></tr></thead>
-              <tbody id="products-tbody"><tr><td colspan="6" class="empty">載入中…</td></tr></tbody>
+              <thead><tr><th>品項</th><th>分類</th><th>單位</th><th>單價</th><th>最低庫存</th><th>預設效期</th><th>狀態</th><th style="width:180px">操作</th></tr></thead>
+              <tbody id="products-tbody"><tr><td colspan="8" class="empty">載入中…</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -829,6 +829,7 @@ select.fc{cursor:pointer}
             </div>
             <div class="fg"><label>單位</label><input type="text" class="fc" id="new-product-unit" placeholder="例：瓶、盒" value="瓶"></div>
             <div class="fg"><label>單價（元）</label><input type="number" class="fc mono" id="new-product-price" placeholder="0" min="0" step="0.01"></div>
+            <div class="fg"><label>最低安全庫存</label><input type="number" class="fc mono" id="new-product-thresh" placeholder="0" min="0" value="0"></div>
             <div class="fg"><label>預設效期（天）</label><input type="number" class="fc mono" id="new-product-shelf" placeholder="例：14、365" min="1"></div>
           </div>
           <button class="btn btn-main" onclick="createProduct()">新增品項</button>
@@ -1125,14 +1126,17 @@ function renderProductsTable(all){
   const tbody=document.getElementById('products-tbody');if(!tbody)return;
   const cats=getProductCats();
   const list=activeCatFilter?all.filter(p=>(cats[p.name]||'未分類')===activeCatFilter):all;
-  if(!list.length){tbody.innerHTML=`<tr><td colspan="6" class="empty">此分類下沒有品項。</td></tr>`;return;}
+  if(!list.length){tbody.innerHTML=`<tr><td colspan="8" class="empty">此分類下沒有品項。</td></tr>`;return;}
   tbody.innerHTML=list.map(p=>{
     const cat=cats[p.name]||'未分類';
+    const shelfLabel = p.default_shelf_days ? `${p.default_shelf_days}天` : '-';
     return `<tr data-pname="${p.name}">
       <td><strong>${p.name}</strong></td>
       <td><span style="font-size:.7rem;font-weight:600;padding:2px 9px;border-radius:99px;background:rgba(31,107,78,.1);color:var(--leaf)">${cat}</span></td>
       <td>${p.unit}</td>
       <td class="mono">NT$ ${Number(p.unit_price).toFixed(2)}</td>
+      <td class="mono">${p.min_threshold||0}</td>
+      <td class="mono" style="color:var(--ink-3)">${shelfLabel}</td>
       <td>${p.active?'<span class="badge b-ok">啟用</span>':'<span class="badge b-mute">停用</span>'}</td>
       <td style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn btn-ghost btn-xs" onclick="editProduct(${p.id})">編輯</button>
@@ -1155,19 +1159,21 @@ function onProductChange(){
   if(el&&prod)el.value=`NT$ ${prod.unit_price} / ${prod.unit}`;
 }
 async function createProduct(){
-  const name  = document.getElementById('new-product-name').value.trim();
-  const cat   = document.getElementById('new-product-cat')?.value||'';
-  const unit  = document.getElementById('new-product-unit').value.trim()||'瓶';
-  const price = parseFloat(document.getElementById('new-product-price').value)||0;
-  const shelf = parseInt(document.getElementById('new-product-shelf')?.value)||null;
+  const name   = document.getElementById('new-product-name').value.trim();
+  const cat    = document.getElementById('new-product-cat')?.value||'';
+  const unit   = document.getElementById('new-product-unit').value.trim()||'瓶';
+  const price  = parseFloat(document.getElementById('new-product-price').value)||0;
+  const thresh = parseInt(document.getElementById('new-product-thresh')?.value)||0;
+  const shelf  = parseInt(document.getElementById('new-product-shelf')?.value)||null;
   if(!name){toast('先填品項名稱','warn');return;}
   showLoading(true);
-  const res=await api('POST','/products',{name,unit,unit_price:price,default_shelf_days:shelf});
+  const res=await api('POST','/products',{name,unit,unit_price:price,min_threshold:thresh,default_shelf_days:shelf});
   showLoading(false);if(!res)return;
   if(cat)setProductCat(name,cat);
-  document.getElementById('new-product-name').value='';
-  document.getElementById('new-product-price').value='';
-  if(document.getElementById('new-product-shelf'))document.getElementById('new-product-shelf').value='';
+  ['new-product-name','new-product-price','new-product-thresh','new-product-shelf'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.value=id.includes('thresh')?'0':'';
+  });
   await loadProducts();toast(`已新增：${name}`,'ok');
 }
 function editProduct(id){
@@ -1181,9 +1187,14 @@ function editProduct(id){
   const shelfNow=prod.default_shelf_days||'';
   const shelf=prompt(`預設效期天數（目前：${shelfNow||'未設定'}）\n留空代表不設定，例如輸入 14 代表 14 天後到期：`,shelfNow);
   if(shelf===null)return;
+  const threshNow=prod.min_threshold||0;
+  const thresh=prompt(`最低安全庫存（目前：${threshNow}）\n低於此數量會觸發叫貨提醒：`,threshNow);
+  if(thresh===null)return;
   const newName=name.trim()||prod.name;
   if(cat&&cat!=='未分類')setProductCat(newName,cat.trim());
-  const payload={unit:unit.trim()||prod.unit,unit_price:parseFloat(price)||0,default_shelf_days:shelf?parseInt(shelf):null};
+  const payload={unit:unit.trim()||prod.unit,unit_price:parseFloat(price)||0,
+    default_shelf_days:shelf?parseInt(shelf):null,
+    min_threshold:thresh!==''?parseInt(thresh)||0:prod.min_threshold};
   if(newName!==prod.name)payload.name=newName;
   showLoading(true);
   api('PUT',`/products/${id}`,payload).then(()=>{showLoading(false);loadProducts();toast('品項已更新','ok');});
@@ -1536,7 +1547,6 @@ function renderDataTable() {
   }
   if (label && S.latestDate) label.textContent = `最新盤點：${S.latestDate}`;
 
-  const orderedMap = JSON.parse(localStorage.getItem('sf_ordered') || '{}');
   const today      = todayStr();
 
   tbody.innerHTML = items.map(item => {
@@ -1552,10 +1562,11 @@ function renderDataTable() {
       ? `<span style="color:var(--red);font-weight:700">${suggestQty} ${item.unit}</span>`
       : `<span style="color:var(--ink-4)">-</span>`;
 
-    const isOrdered = orderedMap[`${today}_${item.product_id}`] || false;
-    const checkHtml = needOrder
-      ? `<input type="checkbox" class="cb-ordered" data-pid="${item.product_id}"
-           ${isOrdered ? 'checked' : ''} onchange="toggleOrdered(${item.product_id}, this.checked)">`
+    // 已叫貨：從資料庫叫貨追蹤自動顯示，不需人工勾選
+    const pendingOrders = _allOrders.filter(o => o.product_id === item.product_id && !o.arrived);
+    const orderedQty    = pendingOrders.reduce((s, o) => s + o.quantity, 0);
+    const checkHtml = (needOrder && pendingOrders.length)
+      ? `<span style="color:#A855F7;font-weight:700;font-size:.82rem">✓ ${orderedQty} ${item.unit}</span>`
       : `<span style="color:var(--ink-4)">-</span>`;
     const today_ = today;
     const validBatches   = item.batches.filter(b => b.expiry_date >= today_);
@@ -1591,7 +1602,7 @@ function renderDataTable() {
       <td class="mono">${diffCell}</td>
       <td style="text-align:center">${dot}</td>
       <td>${suggestCell}</td>
-      <td style="text-align:center" onclick="event.stopPropagation()">${checkHtml}</td>
+      <td style="text-align:center">${checkHtml}</td>
       <td class="mono" style="font-size:.74rem;color:var(--ink-3)">${batchSummary}</td>
       <td style="text-align:center"><span style="color:var(--ink-4);font-size:.8rem">▼</span></td>
     </tr>
@@ -1657,21 +1668,8 @@ function renderDataTable() {
               <input type="text" class="ep-input" id="ep-note-${item.product_id}" placeholder="選填">
             </div>
           </div>
-          <div class="ep-save" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <div class="ep-save">
             <button class="btn btn-main btn-sm" onclick="saveRowData(${item.product_id})">儲存此品項</button>
-            ${needOrder ? `<div class="ordered-form" id="ordered-form-${item.product_id}" ${isOrdered?'style="display:block"':''}>
-              <div style="font-size:.72rem;font-weight:700;color:#7E22CE;margin-bottom:8px;letter-spacing:.08em;text-transform:uppercase">叫貨紀錄</div>
-              <div class="ordered-form-row">
-                <input type="number" id="of-qty-${item.product_id}" placeholder="數量" min="0" style="width:80px" value="">
-                <span style="font-size:.75rem;color:var(--ink-3)">${item.unit}</span>
-                <select id="of-who-${item.product_id}" style="height:32px;padding:0 8px;border:1.5px solid rgba(168,85,247,.35);border-radius:8px;font-family:var(--font-ui);font-size:.78rem;color:var(--ink);background:#fff;outline:none;cursor:pointer">
-                  <option value="">選擇人員…</option>
-                  ${S.staff.map(n => `<option value="${n}">${n}</option>`).join('')}
-                </select>
-                <button class="btn-purple" onclick="saveOrderedRecord(${item.product_id})">儲存</button>
-                <button class="btn-cancel" onclick="cancelOrdered(${item.product_id})">取消</button>
-              </div>
-            </div>` : ''}
           </div>
         </div>
       </td>
@@ -1851,54 +1849,8 @@ function toggleExpand(pid) {
   if (tog) tog.classList.toggle('open', !isOpen);
 }
 
-function toggleOrdered(pid, checked) {
-  // 勾選 → 展開填入框；取消勾選 → 隱藏並清除紀錄
-  const form = document.getElementById(`ordered-form-${pid}`);
-  if (form) {
-    if (checked) {
-      form.style.display = 'block';
-      // 確保列是展開的
-      const expRow = document.getElementById(`exp-${pid}`);
-      const tog    = document.getElementById(`tog-${pid}`);
-      if (expRow && !expRow.classList.contains('open')) {
-        expRow.classList.add('open');
-        if (tog) tog.classList.add('open');
-      }
-    } else {
-      form.style.display = 'none';
-      // 取消勾選，移除今日叫貨紀錄
-    }
-  }
-  // 更新勾選狀態
-  const statusMap = JSON.parse(localStorage.getItem('sf_ordered') || '{}');
-  const key = `${todayStr()}_${pid}`;
-  if (checked) statusMap[key] = true;
-  else delete statusMap[key];
-  localStorage.setItem('sf_ordered', JSON.stringify(statusMap));
-  renderHomePage();
-}
 
-function saveOrderedRecord(pid) {
-  const qty  = parseInt(document.getElementById(`of-qty-${pid}`)?.value) || 0;
-  const who  = document.getElementById(`of-who-${pid}`)?.value || '';
-  const item = S.items.find(i => i.product_id === pid);
-  if (!qty) { toast('請填入叫貨數量','warn'); return; }
-  if (!who) { toast('請選擇叫貨人員','warn'); return; }
 
-  // 標記勾選狀態
-  const statusMap = JSON.parse(localStorage.getItem('sf_ordered') || '{}');
-  statusMap[key] = true;
-  localStorage.setItem('sf_ordered', JSON.stringify(statusMap));
-
-  toast(`叫貨紀錄已儲存：${item?.product_name} ${qty} ${item?.unit}`, 'ok');
-  renderHomePage();
-}
-
-function cancelOrdered(pid) {
-  // 取消勾選
-  const cb = document.querySelector(`.cb-ordered[data-pid="${pid}"]`);
-  if (cb) { cb.checked = false; toggleOrdered(pid, false); }
-}
 
 
 /* ── Consumption ── */
