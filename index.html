@@ -1,4 +1,4 @@
-<!-- StockFlow — 更新時間：2026-07-16 20:34 -->
+<!-- StockFlow — 更新時間：2026-07-17 12:57 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -823,6 +823,7 @@ select.fc{cursor:pointer}
             </div>
             <div class="fg"><label>單位</label><input type="text" class="fc" id="new-product-unit" placeholder="例：瓶、盒" value="瓶"></div>
             <div class="fg"><label>單價（元）</label><input type="number" class="fc mono" id="new-product-price" placeholder="0" min="0" step="0.01"></div>
+            <div class="fg"><label>預設效期（天）</label><input type="number" class="fc mono" id="new-product-shelf" placeholder="例：14、365" min="1"></div>
           </div>
           <button class="btn btn-main" onclick="createProduct()">新增品項</button>
         </div>
@@ -1137,17 +1138,19 @@ function onProductChange(){
   if(el&&prod)el.value=`NT$ ${prod.unit_price} / ${prod.unit}`;
 }
 async function createProduct(){
-  const name=document.getElementById('new-product-name').value.trim();
-  const cat=document.getElementById('new-product-cat')?.value||'';
-  const unit=document.getElementById('new-product-unit').value.trim()||'瓶';
-  const price=parseFloat(document.getElementById('new-product-price').value)||0;
+  const name  = document.getElementById('new-product-name').value.trim();
+  const cat   = document.getElementById('new-product-cat')?.value||'';
+  const unit  = document.getElementById('new-product-unit').value.trim()||'瓶';
+  const price = parseFloat(document.getElementById('new-product-price').value)||0;
+  const shelf = parseInt(document.getElementById('new-product-shelf')?.value)||null;
   if(!name){toast('先填品項名稱','warn');return;}
   showLoading(true);
-  const res=await api('POST','/products',{name,unit,unit_price:price});
+  const res=await api('POST','/products',{name,unit,unit_price:price,default_shelf_days:shelf});
   showLoading(false);if(!res)return;
   if(cat)setProductCat(name,cat);
   document.getElementById('new-product-name').value='';
   document.getElementById('new-product-price').value='';
+  if(document.getElementById('new-product-shelf'))document.getElementById('new-product-shelf').value='';
   await loadProducts();toast(`已新增：${name}`,'ok');
 }
 function editProduct(id){
@@ -1158,9 +1161,12 @@ function editProduct(id){
   const price=prompt(`單價（目前：${prod.unit_price}）：`,prod.unit_price);if(price===null)return;
   const catNow=cats[prod.name]||'未分類';
   const cat=prompt(`分類（目前：${catNow}）\n可選：未分類 / ${CATEGORIES.join(' / ')}`,catNow);if(cat===null)return;
+  const shelfNow=prod.default_shelf_days||'';
+  const shelf=prompt(`預設效期天數（目前：${shelfNow||'未設定'}）\n留空代表不設定，例如輸入 14 代表 14 天後到期：`,shelfNow);
+  if(shelf===null)return;
   const newName=name.trim()||prod.name;
   if(cat&&cat!=='未分類')setProductCat(newName,cat.trim());
-  const payload={unit:unit.trim()||prod.unit,unit_price:parseFloat(price)||0};
+  const payload={unit:unit.trim()||prod.unit,unit_price:parseFloat(price)||0,default_shelf_days:shelf?parseInt(shelf):null};
   if(newName!==prod.name)payload.name=newName;
   showLoading(true);
   api('PUT',`/products/${id}`,payload).then(()=>{showLoading(false);loadProducts();toast('品項已更新','ok');});
@@ -1204,8 +1210,7 @@ function renderOrderCard() {
       ? `<span style="background:var(--red-bg);color:var(--red);font-size:.68rem;font-weight:700;padding:2px 10px;border-radius:99px">⚠️ 差異 ${diff > 0 ? '+' : ''}${diff} ${o.unit}</span>`
       : (diff === 0 ? `<span style="background:var(--green-bg);color:var(--leaf);font-size:.68rem;font-weight:600;padding:2px 10px;border-radius:99px">數量吻合</span>` : '');
 
-    const arriveBtn = isArrived ? '' :
-      `<button class="btn btn-ghost btn-xs" onclick="handleArrive(${o.product_id}, ${o.id})">確認到貨</button>`;
+    const arriveBtn = '';  // 到貨請在盤點頁展開品項後操作
     const delBtn = currentRole === 'admin'
       ? `<button class="btn btn-danger btn-xs" onclick="deleteOrder(${o.id})">刪除</button>`
       : '';
@@ -1593,7 +1598,9 @@ function renderDataTable() {
                 <div style="padding:8px 0;border-bottom:1px solid rgba(245,158,11,.15)">
                   <div style="font-size:.8rem;color:var(--ink-2);margin-bottom:8px">${o.ordered_date} · <strong>${o.ordered_by}</strong> 叫了 <strong>${o.quantity} ${item.unit}</strong>${o.note?' · '+o.note:''}</div>
                   <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-                    <input type="date" id="arr-exp-${o.id}" class="ep-input" style="width:148px" title="到貨批次有效期限">
+                    <input type="date" id="arr-exp-${o.id}" class="ep-input" style="width:148px"
+                      value="${item.default_shelf_days ? (() => { const d=new Date(); d.setDate(d.getDate()+item.default_shelf_days); return d.toISOString().split('T')[0]; })() : ''}"
+                      title="到貨批次有效期限（預設效期：${item.default_shelf_days ? item.default_shelf_days+'天' : '未設定'}）">
                     <span style="font-size:.72rem;color:var(--ink-3)">有效期限</span>
                     <input type="number" id="arr-qty-${o.id}" class="ep-input" style="width:70px" value="${o.quantity}" min="1" title="實際到貨數量">
                     <span style="font-size:.72rem;color:var(--ink-3)">${item.unit}</span>
