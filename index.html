@@ -1,4 +1,4 @@
-<!-- StockFlow — 更新時間：2026-07-17 21:23 -->
+<!-- StockFlow — 更新時間：2026-07-21 11:35 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -307,7 +307,7 @@ select.fc{cursor:pointer}
   border-color:var(--line)!important;
   color:var(--ink)!important;
 }
-#screen-app .card .fc option{background:#fff!color:var(--ink)}
+#screen-app .card .fc option{background:#fff;color:var(--ink)}
 
 /* hstat 數字下的標籤 */
 .hstat-l{color:rgba(255,255,255,.7)!important}
@@ -1152,19 +1152,8 @@ function renderProductsTable(all){
       </td></tr>`;
   }).join('');
 }
-function renderProductSelect(){
-  const sel=document.getElementById('inv-product');if(!sel)return;
-  const prev=parseInt(sel.value);
-  sel.innerHTML=S.products.map(p=>`<option value="${p.id}">${p.name}（${p.unit}）</option>`).join('');
-  if(S.products.find(p=>p.id===prev))sel.value=prev;
-  onProductChange();
-}
-function onProductChange(){
-  const pid=parseInt(document.getElementById('inv-product')?.value);
-  const prod=S.products.find(p=>p.id===pid);
-  const el=document.getElementById('inv-unit-price');
-  if(el&&prod)el.value=`NT$ ${prod.unit_price} / ${prod.unit}`;
-}
+function renderProductSelect(){ /* inv-product 已整合到 Data Table，此函式保留相容性 */ }
+function onProductChange(){ /* 同上 */ }
 async function createProduct(){
   const name   = document.getElementById('new-product-name').value.trim();
   const cat    = document.getElementById('new-product-cat')?.value||'';
@@ -1573,17 +1562,18 @@ function renderDataTable() {
     // 已叫貨：從資料庫叫貨追蹤自動顯示，不需人工勾選
     const pendingOrders = _allOrders.filter(o => o.product_id === item.product_id && !o.arrived);
     const orderedQty    = pendingOrders.reduce((s, o) => s + o.quantity, 0);
-    const checkHtml = (needOrder && pendingOrders.length)
+    const checkHtml = (pendingOrders.length > 0)
       ? `<span style="color:#A855F7;font-weight:700;font-size:.82rem">✓ ${orderedQty} ${item.unit}</span>`
       : `<span style="color:var(--ink-4)">-</span>`;
     const today_ = today;
     const validBatches   = item.batches.filter(b => b.expiry_date >= today_);
     const expiredBatches = item.batches.filter(b => b.expiry_date < today_);
     const totalValidQty  = validBatches.reduce((s, b) => s + b.quantity, 0);
+    const expiredQty = expiredBatches.reduce((s, b) => s + b.quantity, 0);
     const batchSummary = validBatches.length
-      ? `${validBatches.length} 批`
+      ? `${validBatches.length} 批${expiredQty > 0 ? ` <span style="color:var(--red);font-size:.68rem">+${expiredQty}過期</span>` : ''}`
       : expiredBatches.length
-      ? '<span style="color:var(--red);font-size:.74rem">已過期</span>'
+      ? `<span style="color:var(--red);font-size:.74rem">已過期 ${expiredQty} ${item.unit}</span>`
       : '—';
 
     // 盤點日（各品項可能不同天）
@@ -1659,6 +1649,10 @@ function renderDataTable() {
             </div>`;
           })()}
 
+          <div style="margin-bottom:8px">
+            <div id="batch-inputs-${item.product_id}"></div>
+            <button class="btn btn-ghost btn-xs" style="margin-top:4px" onclick="addBatchInputRow(${item.product_id}, '${item.unit}')">＋ 新增批次</button>
+          </div>
           <div class="ep-grid" style="margin-top:14px">
             <div class="ep-field">
               <div class="ep-label">今日消耗（從最短效期扣）</div>
@@ -1830,7 +1824,7 @@ async function saveRowData(pid) {
 
   if (consQty > 0) {
     await api('POST', '/consumption/save', {
-      product_id: pid, recorded_date: recorded,
+      product_id: pid, recorded_date: todayStr(),  // 消耗記錄永遠用今日
       quantity: consQty, staff_name: staffVal, note: note || null,
     });
   }
