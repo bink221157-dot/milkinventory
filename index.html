@@ -993,40 +993,23 @@ async function initApp() {
 }
 
 // ══════════════════════════════════════════
-// 分類管理（自訂分類，儲存於 localStorage）
+// 分類管理（從資料庫 product.category 讀取，跨裝置同步）
 // ══════════════════════════════════════════
-const BUILTIN_CATS = ['奶製品','咖啡豆及茶葉','麵包','冷凍食材','冷藏食材','乾貨'];
-const DEFAULT_PROD_CATS = {
-  '美生菜':'冷藏食材','紫高麗菜':'冷藏食材','蘿蔓':'冷藏食材',
-  '牛番茄':'冷藏食材','小黃瓜':'冷藏食材','紅蘿蔔':'冷藏食材',
-  '綠火焰':'冷藏食材','陳家新鮮雞蛋':'冷藏食材',
-  '老宅南舒肥雞腿':'冷凍食材','泉洋正原味雞胸肉':'冷凍食材','旺來鄉照燒雞腿排':'冷凍食材',
-  '橙禾安佳無鹽奶油454g':'奶製品','阿秀鮮奶1750ml':'奶製品',
-  '旺來鄉綜合堅果500g':'乾貨',
-};
 
 function getAllCategories() {
-  const extra = JSON.parse(localStorage.getItem('sf_extra_cats') || '[]');
-  return [...BUILTIN_CATS, ...extra];
+  const allProds = JSON.parse(sessionStorage.getItem('sf_all_products') || '[]');
+  const fromDB   = [...new Set(allProds.map(p => p.category).filter(Boolean))].sort();
+  return fromDB.length ? fromDB : ['奶製品','咖啡豆及茶葉','麵包','冷凍食材','冷藏食材','乾貨'];
 }
-function addCustomCategory(name) {
-  const extra = JSON.parse(localStorage.getItem('sf_extra_cats') || '[]');
-  if (![...BUILTIN_CATS, ...extra].includes(name)) {
-    extra.push(name);
-    localStorage.setItem('sf_extra_cats', JSON.stringify(extra));
-  }
-}
+
 function getProductCats() {
-  const s = localStorage.getItem('sf_product_cats');
-  if (s) return JSON.parse(s);
-  localStorage.setItem('sf_product_cats', JSON.stringify(DEFAULT_PROD_CATS));
-  return DEFAULT_PROD_CATS;
+  const allProds = JSON.parse(sessionStorage.getItem('sf_all_products') || '[]');
+  const map = {};
+  allProds.forEach(p => { if (p.category) map[p.name] = p.category; });
+  return map;
 }
-function setProductCat(name, cat) {
-  const m = getProductCats();
-  m[name] = cat;
-  localStorage.setItem('sf_product_cats', JSON.stringify(m));
-}
+
+function setProductCat() { /* 分類現由 API PUT /products/:id 寫入資料庫 */ }
 
 // 分類 Modal
 function openCatModal() {
@@ -1037,25 +1020,30 @@ function openCatModal() {
 }
 function closeCatModal() { document.getElementById('cat-modal').style.display = 'none'; }
 function submitNewCategory() {
-  const name = document.getElementById('new-cat-name').value.trim();
+  const name  = document.getElementById('new-cat-name').value.trim();
   const errEl = document.getElementById('cat-modal-err');
   if (!name) { errEl.textContent='請輸入分類名稱'; errEl.style.display='block'; return; }
   const all = getAllCategories();
   if (all.includes(name)) { errEl.textContent='此分類已存在'; errEl.style.display='block'; return; }
-  addCustomCategory(name);
+  // 新分類先存到 sessionStorage 的暫存清單，讓下拉選單立即可選
+  // 真正寫入 DB 是在品項編輯或新增時帶入 category 欄位
+  const pending = JSON.parse(sessionStorage.getItem('sf_pending_cats') || '[]');
+  if (!pending.includes(name)) {
+    pending.push(name);
+    sessionStorage.setItem('sf_pending_cats', JSON.stringify(pending));
+  }
   closeCatModal();
-  // 重新渲染分類相關 UI
   const stored = JSON.parse(sessionStorage.getItem('sf_all_products') || '[]');
-  renderProductsTable(stored);
-  renderCatFilter(stored);
   renderCatSelects();
-  toast(`已新增分類：${name}`, 'ok');
+  renderCatFilter(stored);
+  toast(`已新增分類「${name}」，請到品項設定套用至對應品項`, 'ok');
 }
 
-// 更新所有分類下拉選單
+// 更新所有分類下拉選單（DB 分類 + 本次新增尚未存入 DB 的暫存分類）
 function renderCatSelects() {
-  const allCats = getAllCategories();
-  const opts = allCats.map(c => `<option value="${c}">${c}</option>`).join('');
+  const pending = JSON.parse(sessionStorage.getItem('sf_pending_cats') || '[]');
+  const allCats = [...new Set([...getAllCategories(), ...pending])].sort();
+  const opts    = allCats.map(c => `<option value="${c}">${c}</option>`).join('');
   const nc = document.getElementById('new-product-cat');
   if (nc) nc.innerHTML = '<option value="">未分類</option>' + opts;
 }
@@ -1169,10 +1157,9 @@ async function createProduct() {
   const shelf  = parseInt(document.getElementById('new-product-shelf')?.value) || null;
   if (!name) { toast('先填品項名稱', 'warn'); return; }
   showLoading(true);
-  const res = await api('POST', '/products', {name, unit, unit_price: price, min_threshold: thresh, default_shelf_days: shelf});
+  const res = await api('POST', '/products', {name, unit, unit_price: price, min_threshold: thresh, default_shelf_days: shelf, category: cat || null});
   showLoading(false);
   if (!res) return;
-  if (cat) setProductCat(name, cat);
   ['new-product-name','new-product-price','new-product-thresh','new-product-shelf'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = id.includes('thresh') ? '0' : '';
@@ -1259,21 +1246,13 @@ async function submitEditProduct(id, oldName) {
 
   if (!newName) { errEl.textContent = '品項名稱不可空白'; errEl.style.display = 'block'; return; }
 
-  const payload = { unit, unit_price: price, min_threshold: thresh, default_shelf_days: shelf };
+  const payload = { unit, unit_price: price, min_threshold: thresh, default_shelf_days: shelf, category: cat && cat !== '未分類' ? cat : null };
   if (newName !== oldName) payload.name = newName;
 
   showLoading(true);
   const res = await api('PUT', `/products/${id}`, payload);
   showLoading(false);
   if (!res) return;
-
-  if (cat && cat !== '未分類') setProductCat(newName || oldName, cat);
-  else if (cat === '未分類') {
-    const m = getProductCats();
-    delete m[oldName];
-    if (newName && newName !== oldName) delete m[newName];
-    localStorage.setItem('sf_product_cats', JSON.stringify(m));
-  }
 
   document.getElementById('edit-product-modal')?.remove();
   sessionStorage.removeItem('sf_all_products');
@@ -1761,9 +1740,9 @@ async function deleteBatch(pid, expiryDate) {
     });
   }
 
+  if (!res) { showLoading(false); return; }
+  await Promise.all([loadInventory(), loadConsumptionStats(), loadOrders()]);
   showLoading(false);
-  if (!res) return;
-  await loadInventory();
   toast(isLast ? `已清空 ${item.product_name} 庫存` : `已刪除 ${item.product_name} 效期 ${expiryDate} 的批次`, 'ok');
 }
 
@@ -1780,7 +1759,7 @@ async function confirmArriveInline(orderId, pid) {
   const res = await api('PUT', `/orders/${orderId}/arrive`, {staff_name: who, arrived_quantity: qty, expiry_date: expiry});
   showLoading(false);
   if (!res) { if (btn) { btn.disabled = false; btn.textContent = '確認到貨並儲存'; } return; }
-  await loadInventory(); await loadOrders();
+  await Promise.all([loadInventory(), loadConsumptionStats(), loadOrders()]);
   const order = _allOrders.find(o => o.id === orderId);
   const diff  = qty - (order?.quantity || qty);
   if (diff !== 0) toast(`到貨完成！${diff > 0 ? '多到' : '短少'} ${Math.abs(diff)} ${order?.unit || ''}`, diff < 0 ? 'warn' : 'ok');
@@ -1842,20 +1821,19 @@ async function saveRowData(pid) {
   if (!batches.length) { toast('消耗後無庫存，請確認數量', 'warn'); return; }
 
   showLoading(true);
-  const res = await api('POST', '/inventory/save', {
+  const saveRequests = [api('POST', '/inventory/save', {
     product_id: pid, recorded_date: recorded, min_threshold: thresh,
     order_date: todayStr(), staff_name: staffVal, batches,
-  });
-
+  })];
   if (consQty > 0) {
-    await api('POST', '/consumption/save', {
+    saveRequests.push(api('POST', '/consumption/save', {
       product_id: pid, recorded_date: todayStr(),
       quantity: consQty, staff_name: staffVal, note: note || null,
-    });
+    }));
   }
+  const [res] = await Promise.all(saveRequests);
 
-  showLoading(false);
-  if (!res) return;
+  if (!res) { showLoading(false); return; }
 
   const consEl = document.getElementById(`ep-cons-${pid}`);
   if (consEl) consEl.value = '0';
@@ -1869,7 +1847,8 @@ async function saveRowData(pid) {
     if (firstQty) firstQty.value = '0';
   }
 
-  await loadInventory(); await loadConsumptionStats(); await loadOrders();
+  await Promise.all([loadInventory(), loadConsumptionStats(), loadOrders()]);
+  showLoading(false);
   toast(`${item.product_name} 已更新`, 'ok');
 }
 
