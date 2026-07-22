@@ -1,4 +1,4 @@
-<!-- StockFlow — 更新時間：2026-07-21 修改版 -->
+<!-- StockFlow — 更新時間：2026-07-22 19:38 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -444,7 +444,7 @@ select.fc{cursor:pointer}
     <nav class="sb" id="sidebar">
       <div class="sb-top">
         <div class="sb-name">StockFlow<span class="dot">.</span></div>
-        <div class="sb-ver">v3.1</div>
+        <div class="sb-ver">v3.0</div>
       </div>
       <div class="sb-nav">
         <div class="sb-label">每天要做的</div>
@@ -853,6 +853,7 @@ const API_BASE = 'https://adrianli33-milkfloat.hf.space';
 let token       = localStorage.getItem('mf_token') || '';
 let currentUser = localStorage.getItem('mf_user')  || '';
 let currentRole = localStorage.getItem('mf_role')  || 'staff';
+let isAdmin     = false;   // ★ 全域變數，enterApp() 內統一設定，其餘各處一律引用這個
 const S = {
   staff: [], users: [], products: [],
   latestDate: null, items: [],
@@ -916,7 +917,7 @@ async function doLogin() {
 document.getElementById('login-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 
 function doLogout() {
-  token = ''; currentUser = ''; currentRole = 'staff';
+  token = ''; currentUser = ''; currentRole = 'staff'; isAdmin = false;
   ['mf_token','mf_user','mf_role'].forEach(k => localStorage.removeItem(k));
   document.getElementById('screen-app').style.display   = 'none';
   document.getElementById('screen-login').style.display = 'flex';
@@ -927,10 +928,12 @@ function enterApp() {
   document.getElementById('screen-app').style.display   = 'block';
   document.getElementById('sb-uname').textContent = currentUser;
   document.getElementById('sb-ava').textContent   = currentUser[0]?.toUpperCase() || 'U';
-  document.getElementById('sb-role').textContent  = currentRole === 'admin' ? '管理員' : '一般人員';
+  const roleLabels = { superadmin: '總管理員', admin: '管理員', staff: '一般人員' };
+  document.getElementById('sb-role').textContent  = roleLabels[currentRole] || '一般人員';
   document.getElementById('tb-date').textContent =
     new Date().toLocaleDateString('zh-TW',{year:'numeric',month:'2-digit',day:'2-digit',weekday:'short'});
-  const isAdmin = currentRole === 'admin' || currentRole === 'superadmin';
+  // ★ 全域 isAdmin：admin 或 superadmin 都算管理權限，其餘所有地方一律引用這個變數
+  isAdmin = (currentRole === 'admin' || currentRole === 'superadmin');
   document.querySelectorAll('.admin-only').forEach(el => {
     const needsFlex = el.tagName==='DIV' && el.querySelector('.fg');
     el.style.display = isAdmin ? (needsFlex ? 'flex' : '') : 'none';
@@ -987,19 +990,38 @@ async function initApp() {
   const today = todayStr();
   const recEl = document.getElementById('inv-recorded');
   if (recEl) recEl.value = today;
+  // loadCategories 先跑，讓品項清單有分類可選
+  await loadCategories();
   const tasks = [loadProducts(), loadStaff(), loadInventory(), loadConsumptionStats(), loadOrders()];
-  if (currentRole === 'admin') tasks.push(loadUsers(), loadLineGroups());
+  if (isAdmin) tasks.push(loadUsers(), loadLineGroups());
   await Promise.all(tasks);
 }
 
 // ══════════════════════════════════════════
-// 分類管理（從資料庫 product.category 讀取，跨裝置同步）
+// 分類管理（product_categories 表，跨裝置同步）
 // ══════════════════════════════════════════
+let S_categories = []; // 從 DB 載入的分類清單
+
+async function loadCategories() {
+  const data = await api('GET', '/categories');
+  S_categories = (data?.categories || []).map(c => c.name).sort();
+  renderCatSelects();
+  const stored = JSON.parse(sessionStorage.getItem('sf_all_products') || '[]');
+  renderCatFilter(stored);
+  // 同步更新盤點頁分類篩選
+  const invCatSel = document.getElementById('inv-cat-filter');
+  if (invCatSel) {
+    const allProds = JSON.parse(sessionStorage.getItem('sf_all_products') || '[]');
+    const used = [...new Set(allProds.map(p => p.category || '未分類'))].sort();
+    const prev = invCatSel.value;
+    invCatSel.innerHTML = '<option value="">全部品項</option>'
+      + used.map(c => `<option value="${c}">${c}</option>`).join('');
+    if (prev && used.includes(prev)) invCatSel.value = prev;
+  }
+}
 
 function getAllCategories() {
-  const allProds = JSON.parse(sessionStorage.getItem('sf_all_products') || '[]');
-  const fromDB   = [...new Set(allProds.map(p => p.category).filter(Boolean))].sort();
-  return fromDB.length ? fromDB : ['奶製品','咖啡豆及茶葉','麵包','冷凍食材','冷藏食材','乾貨'];
+  return S_categories.length ? S_categories : ['奶製品','咖啡豆及茶葉','麵包','冷凍食材','冷藏食材','乾貨'];
 }
 
 function getProductCats() {
@@ -1019,30 +1041,23 @@ function openCatModal() {
   setTimeout(() => document.getElementById('new-cat-name').focus(), 50);
 }
 function closeCatModal() { document.getElementById('cat-modal').style.display = 'none'; }
-function submitNewCategory() {
+async function submitNewCategory() {
   const name  = document.getElementById('new-cat-name').value.trim();
   const errEl = document.getElementById('cat-modal-err');
   if (!name) { errEl.textContent='請輸入分類名稱'; errEl.style.display='block'; return; }
-  const all = getAllCategories();
-  if (all.includes(name)) { errEl.textContent='此分類已存在'; errEl.style.display='block'; return; }
-  // 新分類先存到 sessionStorage 的暫存清單，讓下拉選單立即可選
-  // 真正寫入 DB 是在品項編輯或新增時帶入 category 欄位
-  const pending = JSON.parse(sessionStorage.getItem('sf_pending_cats') || '[]');
-  if (!pending.includes(name)) {
-    pending.push(name);
-    sessionStorage.setItem('sf_pending_cats', JSON.stringify(pending));
-  }
+  if (getAllCategories().includes(name)) { errEl.textContent='此分類已存在'; errEl.style.display='block'; return; }
+  showLoading(true);
+  const res = await api('POST', '/categories', {name});
+  showLoading(false);
+  if (!res) return;
   closeCatModal();
-  const stored = JSON.parse(sessionStorage.getItem('sf_all_products') || '[]');
-  renderCatSelects();
-  renderCatFilter(stored);
-  toast(`已新增分類「${name}」，請到品項設定套用至對應品項`, 'ok');
+  await loadCategories();   // 從 DB 重新載入，所有裝置同步
+  toast(`已新增分類「${name}」`, 'ok');
 }
 
-// 更新所有分類下拉選單（DB 分類 + 本次新增尚未存入 DB 的暫存分類）
+// 更新所有分類下拉選單（從 S_categories，資料來自 DB）
 function renderCatSelects() {
-  const pending = JSON.parse(sessionStorage.getItem('sf_pending_cats') || '[]');
-  const allCats = [...new Set([...getAllCategories(), ...pending])].sort();
+  const allCats = getAllCategories();
   const opts    = allCats.map(c => `<option value="${c}">${c}</option>`).join('');
   const nc = document.getElementById('new-product-cat');
   if (nc) nc.innerHTML = '<option value="">未分類</option>' + opts;
@@ -1062,10 +1077,10 @@ async function loadProducts() {
   renderCatFilter(data?.products || []);
   renderQuickAddSelects();
 
+  // 盤點頁分類篩選：顯示現有品項使用中的分類
   const invCatSel = document.getElementById('inv-cat-filter');
   if (invCatSel) {
-    const cats = getProductCats();
-    const used = [...new Set(S.products.map(p => cats[p.name] || '未分類'))].sort();
+    const used = [...new Set(S.products.map(p => p.category || '未分類'))].sort();
     const prev = invCatSel.value;
     invCatSel.innerHTML = '<option value="">全部品項</option>'
       + used.map(c => `<option value="${c}">${c}</option>`).join('');
@@ -1076,20 +1091,36 @@ async function loadProducts() {
 function renderCatFilter(all) {
   const el = document.getElementById('cat-filter');
   if (!el) return;
-  const cats = getProductCats();
-  const used = [...new Set(all.map(p => cats[p.name] || '未分類'))].sort();
+  // 顯示所有 DB 分類（不限於有品項的），讓使用者知道有哪些分類可選
+  const allCats = getAllCategories();
   el.innerHTML =
     `<button class="cat-btn ${!activeCatFilter ? 'active' : ''}" onclick="setCatFilter('')">全部</button>`
-    + used.map(c => `<button class="cat-btn ${activeCatFilter === c ? 'active' : ''}" onclick="setCatFilter('${c}')">${c}</button>`).join('')
-    + `<button class="cat-add-btn" onclick="openCatModal()" title="新增自訂分類">＋</button>`;
+    + allCats.map(c => {
+        const delBtn = isAdmin
+          ? `<span onclick="event.stopPropagation();deleteCategory('${c}')" title="刪除此分類"
+              style="margin-left:4px;opacity:.5;font-size:.7rem;cursor:pointer" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.5">✕</span>`
+          : '';
+        return `<button class="cat-btn ${activeCatFilter === c ? 'active' : ''}" onclick="setCatFilter('${c}')">${c}${delBtn}</button>`;
+      }).join('')
+    + `<button class="cat-add-btn" onclick="openCatModal()" title="新增分類">＋</button>`;
+}
+
+async function deleteCategory(name) {
+  if (!confirm(`確定刪除分類「${name}」？
+（有品項使用中的分類無法刪除）`)) return;
+  showLoading(true);
+  const res = await api('DELETE', `/categories/${encodeURIComponent(name)}`);
+  showLoading(false);
+  if (!res) return;
+  await loadCategories();
+  toast(`已刪除分類「${name}」`);
 }
 
 function filterProducts(kw) {
   const stored = JSON.parse(sessionStorage.getItem('sf_all_products') || '[]');
-  const cats = getProductCats();
   const k = kw.trim().toLowerCase();
   const list = stored.filter(p => {
-    const matchCat  = !activeCatFilter || (cats[p.name] || '未分類') === activeCatFilter;
+    const matchCat  = !activeCatFilter || (p.category || '未分類') === activeCatFilter;
     const matchName = !k || p.name.toLowerCase().includes(k);
     return matchCat && matchName;
   });
@@ -1105,15 +1136,16 @@ function setCatFilter(cat) {
     const stored = JSON.parse(sessionStorage.getItem('sf_all_products') || '[]');
     renderProductsTable(stored);
   }
-  document.querySelectorAll('.cat-btn').forEach(b =>
-    b.classList.toggle('active', b.textContent === (cat || '全部'))
-  );
+  // 比對按鈕文字（去除刪除符號）
+  document.querySelectorAll('.cat-btn').forEach(b => {
+    const btnText = b.textContent.replace(/✕.*/, '').trim();
+    b.classList.toggle('active', btnText === (cat || '全部'));
+  });
 }
 
 function renderProductsTable(all) {
   sessionStorage.setItem('sf_all_products', JSON.stringify(all));
-  const cats = getProductCats();
-  const list = activeCatFilter ? all.filter(p => (cats[p.name] || '未分類') === activeCatFilter) : all;
+  const list = activeCatFilter ? all.filter(p => (p.category || '未分類') === activeCatFilter) : all;
   renderProductRows(list);
 }
 
@@ -1124,9 +1156,8 @@ function renderProductRows(list) {
     tbody.innerHTML = `<tr><td colspan="8" class="empty">此分類下沒有品項。</td></tr>`;
     return;
   }
-  const cats = getProductCats();
   tbody.innerHTML = list.map(p => {
-    const cat        = cats[p.name] || '未分類';
+    const cat        = p.category || '未分類';
     const shelfLabel = p.default_shelf_days ? `${p.default_shelf_days}天` : '-';
     return `<tr data-pname="${p.name}">
       <td><strong>${p.name}</strong></td>
@@ -1170,14 +1201,13 @@ async function createProduct() {
 
 // ★ 編輯品項：分類改用下拉選單（Modal 方式）
 function editProduct(id) {
-  const prod = [...S.products, ...JSON.parse(sessionStorage.getItem('sf_all_products') || '[]')].find(p => p.id === id);
+  const allProds = JSON.parse(sessionStorage.getItem('sf_all_products') || '[]');
+  const prod = allProds.find(p => p.id === id) || S.products.find(p => p.id === id);
   if (!prod) return;
 
-  const cats    = getProductCats();
+  const catNow  = prod.category || '未分類';
   const allCats = getAllCategories();
-  const catNow  = cats[prod.name] || '未分類';
 
-  // 動態建立編輯 Modal
   const existing = document.getElementById('edit-product-modal');
   if (existing) existing.remove();
 
@@ -1317,7 +1347,7 @@ function renderOrderCard() {
       ? `<span style="background:var(--red-bg);color:var(--red);font-size:.68rem;font-weight:700;padding:2px 10px;border-radius:99px">⚠️ 差異 ${diff > 0 ? '+' : ''}${diff} ${o.unit}</span>`
       : (diff === 0 ? `<span style="background:var(--green-bg);color:var(--leaf);font-size:.68rem;font-weight:600;padding:2px 10px;border-radius:99px">數量吻合</span>` : '');
 
-    const delBtn = currentRole === 'admin'
+    const delBtn = isAdmin
       ? `<button class="btn btn-danger btn-xs" onclick="deleteOrder(${o.id})">刪除</button>`
       : '';
 
@@ -1341,9 +1371,8 @@ async function deleteOrder(orderId) {
 }
 
 function openOrderModal() {
-  const cats    = getProductCats();
   const catSel  = document.getElementById('om-cat');
-  const usedCats = [...new Set(S.products.map(p => cats[p.name] || '未分類'))].sort();
+  const usedCats = [...new Set(S.products.map(p => p.category || '未分類'))].sort();
   catSel.innerHTML = '<option value="">全部分類</option>'
     + usedCats.map(c => `<option value="${c}">${c}</option>`).join('');
   updateOrderProductSelect();
@@ -1358,9 +1387,8 @@ function openOrderModal() {
 }
 
 function updateOrderProductSelect() {
-  const cats   = getProductCats();
   const selCat = document.getElementById('om-cat')?.value || '';
-  const filtered = selCat ? S.products.filter(p => (cats[p.name] || '未分類') === selCat) : S.products;
+  const filtered = selCat ? S.products.filter(p => (p.category || '未分類') === selCat) : S.products;
   const sel  = document.getElementById('om-product');
   const prev = sel?.value;
   if (sel) {
@@ -1402,16 +1430,15 @@ function toggleQuickAdd() {
   if (p.classList.contains('show')) renderQuickAddSelects();
 }
 function renderQuickAddSelects() {
-  const cats   = getProductCats();
   const catSel = document.getElementById('qa-cat-filter');
   if (catSel) {
-    const usedCats = [...new Set(S.products.map(p => cats[p.name] || '未分類'))].sort();
+    const usedCats = [...new Set(S.products.map(p => p.category || '未分類'))].sort();
     const prevCat  = catSel.value;
     catSel.innerHTML = '<option value="">全部分類</option>'
       + usedCats.map(c => `<option value="${c}" ${prevCat === c ? 'selected' : ''}>${c}</option>`).join('');
   }
   const selCat  = catSel?.value || '';
-  const filtered = selCat ? S.products.filter(p => (cats[p.name] || '未分類') === selCat) : S.products;
+  const filtered = selCat ? S.products.filter(p => (p.category || '未分類') === selCat) : S.products;
   const opts = '<option value="">選擇品項…</option>'
     + filtered.map(p => `<option value="${p.id}">${p.name}（${p.unit}）</option>`).join('');
   document.querySelectorAll('.qa-prod-sel').forEach(s => { const v = s.value; s.innerHTML = opts; if (v) s.value = v; });
@@ -1551,10 +1578,10 @@ function renderDataTable() {
   const label = document.getElementById('dt-date-label');
   if (!tbody) return;
 
-  const cats     = getProductCats();
   const selCat   = document.getElementById('inv-cat-filter')?.value || '';
   const allItems = S.items;
-  const items    = selCat ? allItems.filter(i => (cats[i.product_name] || '未分類') === selCat) : allItems;
+  // inventory items 帶有 category 欄位（來自 /inventory/latest）
+  const items    = selCat ? allItems.filter(i => (i.category || '未分類') === selCat) : allItems;
 
   if (!items.length) {
     tbody.innerHTML = `<tr><td colspan="10" class="empty" style="padding:40px">${selCat ? '此分類下沒有品項。' : '還沒有品項資料。請先到品項設定新增品項。'}</td></tr>`;
@@ -1625,8 +1652,7 @@ function renderDataTable() {
               const badge = d < 0 ? `<span class="ep-badge-exp">已過期</span>`
                           : d <= 3 ? `<span class="ep-badge-exp">即期 ${d}天</span>`
                                    : `<span class="ep-badge-ok">正常</span>`;
-              // ★ 允許刪除唯一批次：移除筆數檢查，只提示確認
-              const delBtn = currentRole === 'admin'
+              const delBtn = isAdmin
                 ? `<button class="icon-btn" style="width:24px;height:24px;font-size:.68rem;flex-shrink:0"
                     title="刪除此批次"
                     onclick="deleteBatch(${item.product_id}, '${b.expiry_date}')">✕</button>`
@@ -1694,9 +1720,9 @@ function renderDataTable() {
   }).join('');
 }
 
-// ★ 修正：允許刪除唯一批次（清空庫存）
+// ★ 允許刪除唯一批次（清空庫存）
 async function deleteBatch(pid, expiryDate) {
-  if (currentRole !== 'admin') { toast('只有管理員可以刪除批次', 'warn'); return; }
+  if (!isAdmin) { toast('只有管理員可以刪除批次', 'warn'); return; }
   const item  = S.items.find(i => i.product_id === pid);
   if (!item) return;
   const batch = item.batches.find(b => b.expiry_date === expiryDate);
@@ -1715,9 +1741,6 @@ async function deleteBatch(pid, expiryDate) {
   let res;
 
   if (isLast) {
-    // 唯一批次：改用一個數量為 0 的佔位批次（或直接保留空批次）
-    // 後端要求至少一筆 batch，改傳一個 quantity=0 同日佔位再讓後端處理
-    // 實際做法：送一筆 qty=0 批次，UI 顯示庫存=0
     res = await api('POST', '/inventory/save', {
       product_id:    pid,
       recorded_date: recorded,
@@ -1899,7 +1922,6 @@ function applyConsSort() {
   const btn = document.getElementById('cons-sort-dir');
   if (btn) btn.textContent = consSortAsc ? '↑ 升冪' : '↓ 降冪';
 
-  // 更新表頭排序指示
   ['name','tw','lw','tm','qty','sug'].forEach(k => {
     const el = document.getElementById(`sh-${k}`);
     if (el) el.textContent = '';
@@ -1954,7 +1976,6 @@ async function loadStaff() {
   renderStaffList(); renderStaffSelect();
 }
 function renderStaffList() {
-  const isAdmin = currentRole === 'admin';
   document.getElementById('staff-ul').innerHTML = S.staff.length
     ? S.staff.map(n => `<li class="pli"><span><span class="pava">${n[0]}</span>${n}</span>${isAdmin ? `<button class="btn btn-danger btn-xs" onclick="removeStaff('${n}')">移除</button>` : ''}</li>`).join('')
     : '<li style="color:var(--ink-4);font-size:.82rem;padding:10px 12px">還沒有人員。</li>';
@@ -2061,13 +2082,10 @@ async function deleteGroup(groupId) {
 // ══════════════════════════════════════════
 // ★ 報表匯出（PDF + Excel，在前端產生）
 // ══════════════════════════════════════════
-
-// 取得報表一所需資料（庫存 + 成本）
 async function fetchReport1Data() {
   const invData = await api('GET', '/inventory/latest');
   const items   = invData?.items || [];
 
-  // 計算近三個月成本（透過消耗統計 API 的月度資料）
   const consData = await api('GET', '/consumption/stats');
   const stats    = consData?.stats || [];
 
@@ -2078,18 +2096,15 @@ async function fetchReport1Data() {
     months.push({ label: `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}`, year: d.getFullYear(), month: d.getMonth()+1 });
   }
 
-  // 今年度總成本（用現有月度消耗 * 單價估算）
   const rows = items.map(item => {
     const s = stats.find(x => x.product_id === item.product_id);
     const thisMonth = s?.this_month || 0;
     const lastMonth = s?.last_month || 0;
 
-    // 估算成本：用消耗量 * 單價
     const monthCosts = [
       Math.round(lastMonth * (item.unit_price || 0)),
       Math.round(thisMonth * (item.unit_price || 0)),
     ];
-    // 前第三個月暫時顯示估算（無單月拆分，用 last_month 代替）
     const m3Cost = Math.round((s?.last_month || 0) * (item.unit_price || 0));
     const ytdCost = (s?.this_month || 0) * (item.unit_price || 0) + (s?.last_month || 0) * (item.unit_price || 0);
 
@@ -2109,7 +2124,6 @@ async function fetchReport1Data() {
   return { rows, months };
 }
 
-// 取得報表二所需資料（近4週成本 + 近7日叫貨成本）
 async function fetchReport2Data() {
   const today = new Date();
   const weeks = [];
@@ -2123,7 +2137,6 @@ async function fetchReport2Data() {
     });
   }
 
-  // 叫貨成本：近7日 arrived 的 purchase_orders * unit_price
   const ordersData = await api('GET', '/orders');
   const orders     = ordersData?.orders || [];
   const invData    = await api('GET', '/inventory/latest');
@@ -2150,7 +2163,6 @@ async function fetchReport2Data() {
 
   const totalOrderCost = orderRows.reduce((s, r) => s + r.cost, 0);
 
-  // 週成本（用消耗統計估算）
   const consData = await api('GET', '/consumption/stats');
   const stats    = consData?.stats || [];
 
@@ -2167,7 +2179,6 @@ async function fetchReport2Data() {
   return { weeks, orderRows, totalOrderCost, weekRows };
 }
 
-// ── Excel 匯出（純前端，使用 SheetJS CDN）──
 function loadSheetJS(cb) {
   if (window.XLSX) { cb(); return; }
   const s = document.createElement('script');
@@ -2209,14 +2220,12 @@ async function exportReport2(format) {
     loadSheetJS(() => {
       const wb = XLSX.utils.book_new();
 
-      // Sheet 1: 週成本
       const h1 = ['品項', '單位', '單價', '本週消耗', '本週成本', '上週消耗', '上週成本'];
       const d1 = data.weekRows.map(r => [r.name, r.unit, r.unit_price, r.this_week, r.this_week_cost, r.last_week, r.last_week_cost]);
       const ws1 = XLSX.utils.aoa_to_sheet([h1, ...d1]);
       ws1['!cols'] = h1.map(() => ({wch: 14}));
       XLSX.utils.book_append_sheet(wb, ws1, '近週消耗');
 
-      // Sheet 2: 近7日叫貨
       const h2 = ['品項', '日期', '叫貨數量', '單位', '單價', '估算成本', '是否到貨'];
       const d2 = data.orderRows.map(r => [r.name, r.date, r.qty, r.unit, r.unit_price, r.cost, r.arrived ? '✓' : '待到貨']);
       const totalRow2 = ['合計', '', data.orderRows.reduce((s,r)=>s+r.qty,0), '', '', data.totalOrderCost, ''];
@@ -2232,7 +2241,6 @@ async function exportReport2(format) {
   }
 }
 
-// ── PDF 匯出（純前端 HTML → Print）──
 function openPrintWindow(htmlContent, title) {
   const win = window.open('', '_blank');
   if (!win) { toast('請允許彈出視窗以列印 PDF', 'warn'); return; }
@@ -2392,10 +2400,9 @@ function renderUsersTable() {
   const tbody = document.getElementById('users-tbody');
   if (!tbody) return;
   if (!S.users.length) { tbody.innerHTML = '<tr><td colspan="4" class="empty">還沒有帳號。</td></tr>'; return; }
+  const roleLabels = { superadmin: '<span class="badge b-ok">總管理員</span>', admin: '<span class="badge b-ok">管理員</span>', staff: '<span class="badge b-mute">一般人員</span>' };
   tbody.innerHTML = S.users.map(u => {
-    const roleLabel = u.role === 'admin'
-      ? '<span class="badge b-ok">管理員</span>'
-      : '<span class="badge b-mute">一般人員</span>';
+    const roleLabel = roleLabels[u.role] || '<span class="badge b-mute">一般人員</span>';
     const isSelf = u.username === currentUser;
     const delBtn = isSelf
       ? '<span style="font-size:.7rem;color:var(--ink-4)">目前登入</span>'
