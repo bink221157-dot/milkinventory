@@ -1,4 +1,4 @@
-<!-- StockFlow — 更新時間：2026-07-22 19:38 -->
+<!-- StockFlow — 更新時間：2026-07-24 23:37（Phase 4：店家切換 / 店家管理 / 帳號選店 / LINE 店代碼） -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -386,6 +386,22 @@ select.fc{cursor:pointer}
 .sb-overlay{display:none;position:fixed;inset:0;z-index:99;background:rgba(7,20,16,.55);backdrop-filter:blur(2px)}
 .sb-overlay.show{display:block}
 
+/* ═══ 店家切換器（Phase 4）═══ */
+.store-switch-wrap{padding:10px 22px 14px}
+.store-switch-label{font-size:.6rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.32);margin-bottom:6px}
+.store-switch-select{width:100%;height:38px;padding:0 10px;border-radius:9px;border:1.5px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:#fff;font-size:.8rem;font-family:var(--font-ui);cursor:pointer;outline:none}
+.store-switch-select option{background:#0F2D26;color:#fff}
+.store-static-label{width:100%;padding:9px 10px;border-radius:9px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.75);font-size:.8rem}
+
+/* ═══ 店家管理頁（Phase 4）═══ */
+.store-code-pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:.78rem;font-weight:700;padding:4px 12px;border-radius:99px;background:var(--lime-soft);color:var(--leaf-dk)}
+.store-banner{
+  background:linear-gradient(135deg,rgba(31,107,78,.08) 0%,rgba(200,240,75,.06) 100%);
+  border:1px solid rgba(31,107,78,.2);border-radius:var(--r);padding:16px 20px;margin-bottom:18px;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
+}
+.store-banner-t{font-size:.76rem;color:var(--ink-2);line-height:1.6}
+
 @media(max-width:900px){.kpis{grid-template-columns:1fr 1fr}.frow3{grid-template-columns:1fr 1fr}.report-grid{grid-template-columns:1fr}}
 @media(max-width:640px){
   .sb{transform:translateX(-100%);transition:transform .28s cubic-bezier(.4,0,.2,1)}
@@ -444,8 +460,16 @@ select.fc{cursor:pointer}
     <nav class="sb" id="sidebar">
       <div class="sb-top">
         <div class="sb-name">StockFlow<span class="dot">.</span></div>
-        <div class="sb-ver">v3.0</div>
+        <div class="sb-ver">v4.0</div>
       </div>
+
+      <!-- 店家切換器（superadmin 可切換；一般帳號顯示固定店名） -->
+      <div class="store-switch-wrap">
+        <div class="store-switch-label">目前店家</div>
+        <select class="store-switch-select superadmin-only" id="store-switcher" style="display:none" onchange="onStoreSwitch(this.value)"></select>
+        <div class="store-static-label staff-store-label" id="store-static-label">—</div>
+      </div>
+
       <div class="sb-nav">
         <div class="sb-label">每天要做的</div>
         <div class="sb-item active" data-page="pg-dashboard">首頁</div>
@@ -455,6 +479,8 @@ select.fc{cursor:pointer}
         <div class="sb-item admin-only" data-page="pg-staff" style="display:none">人員名單</div>
         <div class="sb-item admin-only" data-page="pg-line" style="display:none">LINE 通知</div>
         <div class="sb-item admin-only" data-page="pg-users" style="display:none">帳號管理</div>
+        <div class="sb-label superadmin-only" style="display:none">總部</div>
+        <div class="sb-item superadmin-only" data-page="pg-stores" style="display:none">店家管理</div>
       </div>
       <div class="sb-bottom">
         <div class="sb-user">
@@ -543,6 +569,22 @@ select.fc{cursor:pointer}
           </div>
           <div id="cat-modal-err" style="display:none;color:var(--red);font-size:.78rem"></div>
           <button class="btn btn-main" onclick="submitNewCategory()">新增分類</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 新增/編輯店家 Modal（Phase 4） -->
+    <div id="store-modal" class="modal">
+      <div class="modal-box" style="max-width:380px">
+        <div class="modal-h">
+          <div class="modal-t" id="store-modal-title">新增店家</div>
+          <button class="modal-x" onclick="closeStoreModal()">✕</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="fg"><label>店名</label><input type="text" class="fc" id="store-name" placeholder="例：台北忠孝店"></div>
+          <div class="fg"><label>店代碼</label><input type="text" class="fc mono" id="store-code" placeholder="例：TPE01（英數字，群組綁定用）"></div>
+          <div id="store-modal-err" style="display:none;color:var(--red);font-size:.78rem"></div>
+          <button class="btn btn-main" id="store-modal-submit" onclick="submitCreateStore()">建立店家</button>
         </div>
       </div>
     </div>
@@ -785,15 +827,23 @@ select.fc{cursor:pointer}
 
       <!-- ══ LINE 通知 ══ -->
       <div class="page" id="pg-line">
-        <div style="margin-bottom:24px"><h1 class="pg-t" style="color:#fff;margin-bottom:6px">LINE 通知</h1><p style="color:rgba(255,255,255,.65);font-size:.88rem">把 Bot 拉進群組，群組就會出現在下面，各自設定幾點收日報。</p></div>
+        <div style="margin-bottom:24px"><h1 class="pg-t" style="color:#fff;margin-bottom:6px">LINE 通知</h1><p style="color:rgba(255,255,255,.65);font-size:.88rem">把 Bot 拉進群組，在群組內輸入「綁定 店代碼」完成綁定，就會出現在下面。</p></div>
+
+        <div class="store-banner">
+          <div class="store-banner-t">
+            本店店代碼：<span class="store-code-pill" id="line-store-code">—</span><br>
+            把這組代碼提供給要收通知的 LINE 群組管理員，在群組內輸入「<b>綁定 店代碼</b>」即可完成綁定。
+          </div>
+        </div>
+
         <div class="card">
-          <div class="card-t" style="margin-bottom:16px">已綁定的群組</div>
+          <div class="card-t" style="margin-bottom:16px">已綁定本店的群組</div>
           <div class="tw">
             <table class="dt">
               <thead><tr>
                 <th>群組 ID</th><th>每日日報</th><th>每週二週報</th><th>狀態</th><th style="width:180px">操作</th>
               </tr></thead>
-              <tbody id="line-groups-tbody"><tr><td colspan="5" class="empty">還沒有群組。把 Bot 加入 LINE 群組就會自動出現。</td></tr></tbody>
+              <tbody id="line-groups-tbody"><tr><td colspan="5" class="empty">還沒有群組綁定本店。把 Bot 加入 LINE 群組，輸入「綁定 店代碼」即可。</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -803,6 +853,8 @@ select.fc{cursor:pointer}
             <table class="dt">
               <thead><tr><th style="width:200px">在群組輸入</th><th>效果</th></tr></thead>
               <tbody>
+                <tr><td class="mono">綁定 店代碼</td><td>綁定這個群組要接收哪家店的通知</td></tr>
+                <tr><td class="mono">解除綁定</td><td>取消目前的店家綁定</td></tr>
                 <tr><td class="mono">設定時間 09:00</td><td>每日日報改為 09:00 發送</td></tr>
                 <tr><td class="mono">週報時間 09:00</td><td>每週二週報改為 09:00 發送</td></tr>
                 <tr><td class="mono">狀態</td><td>查看日報與週報的目前設定</td></tr>
@@ -822,8 +874,8 @@ select.fc{cursor:pointer}
           <div class="card-t" style="margin-bottom:16px">帳號清單</div>
           <div class="tw">
             <table class="dt">
-              <thead><tr><th>帳號</th><th>角色</th><th>建立時間</th><th style="width:90px"></th></tr></thead>
-              <tbody id="users-tbody"><tr><td colspan="4" class="empty">載入中…</td></tr></tbody>
+              <thead><tr><th>帳號</th><th>角色</th><th class="superadmin-only" style="display:none">所屬店家</th><th>建立時間</th><th style="width:90px"></th></tr></thead>
+              <tbody id="users-tbody"><tr><td colspan="5" class="empty">載入中…</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -831,11 +883,32 @@ select.fc{cursor:pointer}
           <div class="card-t" style="margin-bottom:16px">新增帳號</div>
           <div class="frow" style="margin-bottom:18px">
             <div class="fg"><label>帳號名稱</label><input type="text" class="fc" id="new-username" placeholder="英數字，不可重複"></div>
-            <div class="fg"><label>角色</label><select class="fc" id="new-role"><option value="staff">一般人員（只能盤點）</option><option value="admin">管理員（完整權限）</option></select></div>
+            <div class="fg"><label>角色</label><select class="fc" id="new-role" onchange="onNewUserRoleChange()"></select></div>
+            <div class="fg superadmin-only" id="new-user-store-wrap" style="display:none">
+              <label>所屬店家</label>
+              <select class="fc" id="new-user-store"></select>
+            </div>
             <div class="fg"><label>密碼</label><div class="pw-wrap"><input type="password" class="fc" id="new-pw" placeholder="至少 6 個字元"><button class="pw-toggle" onclick="togglePw('new-pw',this)" type="button">👁</button></div></div>
             <div class="fg"><label>確認密碼</label><div class="pw-wrap"><input type="password" class="fc" id="new-pw2" placeholder="再輸入一次"><button class="pw-toggle" onclick="togglePw('new-pw2',this)" type="button">👁</button></div></div>
           </div>
           <button class="btn btn-main" onclick="createUser()">建立帳號</button>
+        </div>
+      </div>
+
+      <!-- ══ 店家管理（superadmin 專用，Phase 4）══ -->
+      <div class="page" id="pg-stores">
+        <div style="margin-bottom:24px"><h1 class="pg-t" style="color:#fff;margin-bottom:6px">店家管理</h1><p style="color:rgba(255,255,255,.65);font-size:.88rem">建立新店家後，記得去帳號管理幫該店開一個管理員帳號。</p></div>
+        <div class="card">
+          <div class="card-h" style="margin-bottom:12px">
+            <span class="card-t">所有店家</span>
+            <button class="btn btn-lime btn-sm" onclick="openStoreModal()">＋ 新增店家</button>
+          </div>
+          <div class="tw">
+            <table class="dt">
+              <thead><tr><th>店名</th><th>店代碼</th><th>狀態</th><th>建立時間</th><th style="width:200px">操作</th></tr></thead>
+              <tbody id="stores-tbody"><tr><td colspan="5" class="empty">載入中…</td></tr></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -853,9 +926,11 @@ const API_BASE = 'https://adrianli33-milkfloat.hf.space';
 let token       = localStorage.getItem('mf_token') || '';
 let currentUser = localStorage.getItem('mf_user')  || '';
 let currentRole = localStorage.getItem('mf_role')  || 'staff';
-let isAdmin     = false;   // ★ 全域變數，enterApp() 內統一設定，其餘各處一律引用這個
+let currentStoreId = parseInt(localStorage.getItem('mf_store_id')) || null;
+let isAdmin      = false;   // admin 或 superadmin
+let isSuperadmin = false;
 const S = {
-  staff: [], users: [], products: [],
+  staff: [], users: [], products: [], stores: [],
   latestDate: null, items: [],
   consumptionStats: [],
 };
@@ -868,9 +943,10 @@ let consSortAsc   = true;
 // API
 // ══════════════════════════════════════════
 async function api(method, path, body) {
+  const headers = { 'Content-Type': 'application/json', ...(token ? {'Authorization':`Bearer ${token}`} : {}) };
+  if (currentStoreId) headers['X-Store-Id'] = String(currentStoreId);
   const opts = {
-    method,
-    headers: { 'Content-Type': 'application/json', ...(token ? {'Authorization':`Bearer ${token}`} : {}) },
+    method, headers,
     ...(body ? {body: JSON.stringify(body)} : {}),
   };
   try {
@@ -905,9 +981,12 @@ async function doLogin() {
   showLoading(false);
   if (data?.token) {
     token = data.token; currentUser = user; currentRole = data.role || 'staff';
+    currentStoreId = data.store_id || null;
     localStorage.setItem('mf_token', token);
     localStorage.setItem('mf_user',  currentUser);
     localStorage.setItem('mf_role',  currentRole);
+    if (currentStoreId) localStorage.setItem('mf_store_id', currentStoreId);
+    else localStorage.removeItem('mf_store_id');
     enterApp();
   } else {
     errEl.textContent = '帳號或密碼不對，再試一次。';
@@ -917,8 +996,8 @@ async function doLogin() {
 document.getElementById('login-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 
 function doLogout() {
-  token = ''; currentUser = ''; currentRole = 'staff'; isAdmin = false;
-  ['mf_token','mf_user','mf_role'].forEach(k => localStorage.removeItem(k));
+  token = ''; currentUser = ''; currentRole = 'staff'; isAdmin = false; isSuperadmin = false; currentStoreId = null;
+  ['mf_token','mf_user','mf_role','mf_store_id'].forEach(k => localStorage.removeItem(k));
   document.getElementById('screen-app').style.display   = 'none';
   document.getElementById('screen-login').style.display = 'flex';
 }
@@ -932,13 +1011,25 @@ function enterApp() {
   document.getElementById('sb-role').textContent  = roleLabels[currentRole] || '一般人員';
   document.getElementById('tb-date').textContent =
     new Date().toLocaleDateString('zh-TW',{year:'numeric',month:'2-digit',day:'2-digit',weekday:'short'});
-  // ★ 全域 isAdmin：admin 或 superadmin 都算管理權限，其餘所有地方一律引用這個變數
-  isAdmin = (currentRole === 'admin' || currentRole === 'superadmin');
+
+  isAdmin      = (currentRole === 'admin' || currentRole === 'superadmin');
+  isSuperadmin = (currentRole === 'superadmin');
+
   document.querySelectorAll('.admin-only').forEach(el => {
     const needsFlex = el.tagName==='DIV' && el.querySelector('.fg');
     el.style.display = isAdmin ? (needsFlex ? 'flex' : '') : 'none';
   });
   document.querySelectorAll('.staff-only').forEach(el => { el.style.display = isAdmin ? 'none' : ''; });
+  document.querySelectorAll('.superadmin-only').forEach(el => {
+    const tag = el.tagName;
+    if (tag === 'TH' || tag === 'OPTION') { el.style.display = isSuperadmin ? '' : 'none'; }
+    else { el.style.display = isSuperadmin ? (el.classList.contains('fg') ? 'flex' : '') : 'none'; }
+  });
+
+  // 一般帳號（admin/staff）：店名固定顯示；superadmin：顯示切換器
+  document.getElementById('store-switcher').style.display    = isSuperadmin ? '' : 'none';
+  document.getElementById('store-static-label').style.display = isSuperadmin ? 'none' : '';
+
   initApp();
 }
 
@@ -947,7 +1038,15 @@ function enterApp() {
   showLoading(true);
   const me = await api('GET', '/users/me');
   showLoading(false);
-  if (me?.username) { currentRole = me.role || 'staff'; localStorage.setItem('mf_role', currentRole); enterApp(); }
+  if (me?.username) {
+    currentRole = me.role || 'staff';
+    localStorage.setItem('mf_role', currentRole);
+    if (me.role !== 'superadmin' && me.store_id) {
+      currentStoreId = me.store_id;
+      localStorage.setItem('mf_store_id', currentStoreId);
+    }
+    enterApp();
+  }
   else doLogout();
 })();
 
@@ -969,6 +1068,7 @@ const PAGE_TITLES = {
   'pg-dashboard':'首頁','pg-inventory':'今日盤點',
   'pg-products':'品項設定','pg-staff':'人員名單',
   'pg-line':'LINE 通知','pg-users':'帳號管理',
+  'pg-stores':'店家管理',
 };
 document.querySelectorAll('.sb-item').forEach(el => {
   el.addEventListener('click', () => {
@@ -984,13 +1084,168 @@ document.querySelectorAll('.sb-item').forEach(el => {
 });
 
 // ══════════════════════════════════════════
+// 店家切換（Phase 4）
+// ══════════════════════════════════════════
+async function loadStores() {
+  const data = await api('GET', '/stores');
+  S.stores = data?.stores || [];
+  renderStoreSwitcher();
+  renderStoreStaticLabel();
+  renderStoreManagementPage();
+  renderNewUserStoreSelect();
+  renderLineStoreCode();
+}
+
+function renderStoreSwitcher() {
+  const sel = document.getElementById('store-switcher');
+  if (!sel || !isSuperadmin) return;
+  sel.innerHTML = S.stores.map(s => `<option value="${s.id}" ${s.id===currentStoreId?'selected':''}>${s.name}（${s.code}）</option>`).join('');
+}
+
+function renderStoreStaticLabel() {
+  const el = document.getElementById('store-static-label');
+  if (!el || isSuperadmin) return;
+  const s = S.stores.find(x => x.id === currentStoreId);
+  el.textContent = s ? `${s.name}（${s.code}）` : '—';
+}
+
+async function onStoreSwitch(newId) {
+  currentStoreId = parseInt(newId);
+  localStorage.setItem('mf_store_id', currentStoreId);
+  showLoading(true);
+  await initApp();
+  showLoading(false);
+  const s = S.stores.find(x => x.id === currentStoreId);
+  toast('已切換店家：' + (s?.name || ''), 'ok');
+}
+
+function renderNewUserStoreSelect() {
+  const sel = document.getElementById('new-user-store');
+  if (!sel) return;
+  sel.innerHTML = S.stores.map(s => `<option value="${s.id}">${s.name}（${s.code}）</option>`).join('');
+}
+
+function renderLineStoreCode() {
+  const el = document.getElementById('line-store-code');
+  if (!el) return;
+  const s = S.stores.find(x => x.id === currentStoreId);
+  el.textContent = s ? s.code : '—';
+}
+
+// ── 新增帳號的角色下拉：superadmin 多一個「總管理員」選項 ──
+function onNewUserRoleChange() {
+  const role = document.getElementById('new-role')?.value;
+  const wrap = document.getElementById('new-user-store-wrap');
+  if (wrap) wrap.style.display = (isSuperadmin && role !== 'superadmin') ? 'flex' : 'none';
+}
+function renderNewRoleOptions() {
+  const sel = document.getElementById('new-role');
+  if (!sel) return;
+  let opts = [
+    { v:'staff', t:'一般人員（只能盤點）' },
+    { v:'admin', t:'管理員（該店完整權限）' },
+  ];
+  if (isSuperadmin) opts.push({ v:'superadmin', t:'總管理員（跨店）' });
+  sel.innerHTML = opts.map(o => `<option value="${o.v}">${o.t}</option>`).join('');
+  onNewUserRoleChange();
+}
+
+// ── 店家管理頁 ──
+function renderStoreManagementPage() {
+  const tbody = document.getElementById('stores-tbody');
+  if (!tbody) return;
+  if (!S.stores.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty">還沒有店家。</td></tr>'; return; }
+  tbody.innerHTML = S.stores.map(s => `
+    <tr>
+      <td><strong>${s.name}</strong></td>
+      <td><span class="store-code-pill">${s.code}</span></td>
+      <td>${s.active ? '<span class="badge b-ok">啟用</span>' : '<span class="badge b-mute">停用</span>'}</td>
+      <td class="mono" style="color:var(--ink-3)">${(s.created_at||'').slice(0,10)}</td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-xs" onclick="openStoreModal(${s.id})">編輯</button>
+        <button class="btn btn-ghost btn-xs" onclick="toggleStoreActive(${s.id},${!s.active})">${s.active ? '停用' : '啟用'}</button>
+        <button class="btn btn-danger btn-xs" onclick="deleteStoreRow(${s.id})">刪除</button>
+      </td>
+    </tr>`).join('');
+}
+
+let _editingStoreId = null;
+function openStoreModal(id) {
+  _editingStoreId = id || null;
+  const titleEl = document.getElementById('store-modal-title');
+  const btnEl   = document.getElementById('store-modal-submit');
+  document.getElementById('store-modal-err').style.display = 'none';
+  if (id) {
+    const s = S.stores.find(x => x.id === id);
+    titleEl.textContent = '編輯店家';
+    btnEl.textContent   = '儲存變更';
+    document.getElementById('store-name').value = s?.name || '';
+    document.getElementById('store-code').value = s?.code || '';
+  } else {
+    titleEl.textContent = '新增店家';
+    btnEl.textContent   = '建立店家';
+    document.getElementById('store-name').value = '';
+    document.getElementById('store-code').value = '';
+  }
+  document.getElementById('store-modal').style.display = 'flex';
+}
+function closeStoreModal() { document.getElementById('store-modal').style.display = 'none'; _editingStoreId = null; }
+
+async function submitCreateStore() {
+  const name  = document.getElementById('store-name').value.trim();
+  const code  = document.getElementById('store-code').value.trim();
+  const errEl = document.getElementById('store-modal-err');
+  if (!name || !code) { errEl.textContent = '店名與店代碼皆不可為空'; errEl.style.display = 'block'; return; }
+  showLoading(true);
+  let res;
+  if (_editingStoreId) {
+    res = await api('PUT', `/stores/${_editingStoreId}`, {name, code});
+  } else {
+    res = await api('POST', '/stores', {name, code});
+  }
+  showLoading(false);
+  if (!res) return;
+  closeStoreModal();
+  await loadStores();
+  toast(_editingStoreId ? '店家已更新' : `已新增店家：${name}`, 'ok');
+}
+
+async function toggleStoreActive(id, active) {
+  showLoading(true);
+  await api('PUT', `/stores/${id}`, {active});
+  showLoading(false);
+  await loadStores();
+  toast(active ? '店家已啟用' : '店家已停用');
+}
+
+async function deleteStoreRow(id) {
+  const s = S.stores.find(x => x.id === id);
+  if (!confirm(`確定刪除「${s?.name || '此店家'}」？店內若還有帳號或品項會無法刪除。`)) return;
+  showLoading(true);
+  const res = await api('DELETE', `/stores/${id}`);
+  showLoading(false);
+  if (!res) return;
+  await loadStores();
+  toast('店家已刪除');
+}
+
+// ══════════════════════════════════════════
 // Init
 // ══════════════════════════════════════════
 async function initApp() {
   const today = todayStr();
   const recEl = document.getElementById('inv-recorded');
   if (recEl) recEl.value = today;
-  // loadCategories 先跑，讓品項清單有分類可選
+
+  await loadStores();
+  if (isSuperadmin && !currentStoreId && S.stores.length) {
+    currentStoreId = S.stores[0].id;
+    localStorage.setItem('mf_store_id', currentStoreId);
+    renderStoreSwitcher();
+    renderLineStoreCode();
+  }
+  renderNewRoleOptions();
+
   await loadCategories();
   const tasks = [loadProducts(), loadStaff(), loadInventory(), loadConsumptionStats(), loadOrders()];
   if (isAdmin) tasks.push(loadUsers(), loadLineGroups());
@@ -1008,7 +1263,6 @@ async function loadCategories() {
   renderCatSelects();
   const stored = JSON.parse(sessionStorage.getItem('sf_all_products') || '[]');
   renderCatFilter(stored);
-  // 同步更新盤點頁分類篩選
   const invCatSel = document.getElementById('inv-cat-filter');
   if (invCatSel) {
     const allProds = JSON.parse(sessionStorage.getItem('sf_all_products') || '[]');
@@ -1024,16 +1278,8 @@ function getAllCategories() {
   return S_categories.length ? S_categories : ['奶製品','咖啡豆及茶葉','麵包','冷凍食材','冷藏食材','乾貨'];
 }
 
-function getProductCats() {
-  const allProds = JSON.parse(sessionStorage.getItem('sf_all_products') || '[]');
-  const map = {};
-  allProds.forEach(p => { if (p.category) map[p.name] = p.category; });
-  return map;
-}
-
 function setProductCat() { /* 分類現由 API PUT /products/:id 寫入資料庫 */ }
 
-// 分類 Modal
 function openCatModal() {
   document.getElementById('new-cat-name').value = '';
   document.getElementById('cat-modal-err').style.display = 'none';
@@ -1051,11 +1297,10 @@ async function submitNewCategory() {
   showLoading(false);
   if (!res) return;
   closeCatModal();
-  await loadCategories();   // 從 DB 重新載入，所有裝置同步
+  await loadCategories();
   toast(`已新增分類「${name}」`, 'ok');
 }
 
-// 更新所有分類下拉選單（從 S_categories，資料來自 DB）
 function renderCatSelects() {
   const allCats = getAllCategories();
   const opts    = allCats.map(c => `<option value="${c}">${c}</option>`).join('');
@@ -1072,12 +1317,10 @@ async function loadProducts() {
   const data = await api('GET', '/products');
   S.products = (data?.products || []).filter(p => p.active);
   renderCatSelects();
-  renderProductSelect();
   renderProductsTable(data?.products || []);
   renderCatFilter(data?.products || []);
   renderQuickAddSelects();
 
-  // 盤點頁分類篩選：顯示現有品項使用中的分類
   const invCatSel = document.getElementById('inv-cat-filter');
   if (invCatSel) {
     const used = [...new Set(S.products.map(p => p.category || '未分類'))].sort();
@@ -1091,7 +1334,6 @@ async function loadProducts() {
 function renderCatFilter(all) {
   const el = document.getElementById('cat-filter');
   if (!el) return;
-  // 顯示所有 DB 分類（不限於有品項的），讓使用者知道有哪些分類可選
   const allCats = getAllCategories();
   el.innerHTML =
     `<button class="cat-btn ${!activeCatFilter ? 'active' : ''}" onclick="setCatFilter('')">全部</button>`
@@ -1136,7 +1378,6 @@ function setCatFilter(cat) {
     const stored = JSON.parse(sessionStorage.getItem('sf_all_products') || '[]');
     renderProductsTable(stored);
   }
-  // 比對按鈕文字（去除刪除符號）
   document.querySelectorAll('.cat-btn').forEach(b => {
     const btnText = b.textContent.replace(/✕.*/, '').trim();
     b.classList.toggle('active', btnText === (cat || '全部'));
@@ -1176,9 +1417,6 @@ function renderProductRows(list) {
   }).join('');
 }
 
-function renderProductSelect() { /* 相容性保留 */ }
-function onProductChange()     { /* 相容性保留 */ }
-
 async function createProduct() {
   const name   = document.getElementById('new-product-name').value.trim();
   const cat    = document.getElementById('new-product-cat')?.value || '';
@@ -1199,7 +1437,6 @@ async function createProduct() {
   toast(`已新增：${name}`, 'ok');
 }
 
-// ★ 編輯品項：分類改用下拉選單（Modal 方式）
 function editProduct(id) {
   const allProds = JSON.parse(sessionStorage.getItem('sf_all_products') || '[]');
   const prod = allProds.find(p => p.id === id) || S.products.find(p => p.id === id);
@@ -1333,7 +1570,6 @@ function renderOrderCard() {
     return;
   }
 
-  const today = todayStr();
   list.innerHTML = _allOrders.map(o => {
     const isArrived  = o.arrived;
     const arrivedQty = o.arrived_quantity;
@@ -1422,7 +1658,6 @@ async function submitOrder() {
 // ══════════════════════════════════════════
 // 快速新增進貨
 // ══════════════════════════════════════════
-let qaRowCount = 1;
 function toggleQuickAdd() {
   const p = document.getElementById('quick-add-panel');
   if (!p) return;
@@ -1580,7 +1815,6 @@ function renderDataTable() {
 
   const selCat   = document.getElementById('inv-cat-filter')?.value || '';
   const allItems = S.items;
-  // inventory items 帶有 category 欄位（來自 /inventory/latest）
   const items    = selCat ? allItems.filter(i => (i.category || '未分類') === selCat) : allItems;
 
   if (!items.length) {
@@ -1720,7 +1954,6 @@ function renderDataTable() {
   }).join('');
 }
 
-// ★ 允許刪除唯一批次（清空庫存）
 async function deleteBatch(pid, expiryDate) {
   if (!isAdmin) { toast('只有管理員可以刪除批次', 'warn'); return; }
   const item  = S.items.find(i => i.product_id === pid);
@@ -2016,7 +2249,7 @@ async function loadLineGroups() {
   if (!el) return;
   const data = await api('GET', '/line/groups');
   if (!data?.groups?.length) {
-    el.innerHTML = '<tr><td colspan="5" class="empty">還沒有群組。把 Bot 加入 LINE 群組就會自動出現。</td></tr>';
+    el.innerHTML = '<tr><td colspan="5" class="empty">還沒有群組綁定本店。把 Bot 加入 LINE 群組，輸入「綁定 店代碼」即可。</td></tr>';
     return;
   }
   el.innerHTML = data.groups.map(g => {
@@ -2399,7 +2632,7 @@ async function loadUsers() {
 function renderUsersTable() {
   const tbody = document.getElementById('users-tbody');
   if (!tbody) return;
-  if (!S.users.length) { tbody.innerHTML = '<tr><td colspan="4" class="empty">還沒有帳號。</td></tr>'; return; }
+  if (!S.users.length) { tbody.innerHTML = `<tr><td colspan="${isSuperadmin?5:4}" class="empty">還沒有帳號。</td></tr>`; return; }
   const roleLabels = { superadmin: '<span class="badge b-ok">總管理員</span>', admin: '<span class="badge b-ok">管理員</span>', staff: '<span class="badge b-mute">一般人員</span>' };
   tbody.innerHTML = S.users.map(u => {
     const roleLabel = roleLabels[u.role] || '<span class="badge b-mute">一般人員</span>';
@@ -2407,19 +2640,29 @@ function renderUsersTable() {
     const delBtn = isSelf
       ? '<span style="font-size:.7rem;color:var(--ink-4)">目前登入</span>'
       : `<button class="btn btn-danger btn-xs" onclick="deleteUser('${u.username}')">刪除</button>`;
-    return `<tr><td><strong>${u.username}</strong></td><td>${roleLabel}</td><td class="mono" style="color:var(--ink-3)">${(u.created_at || '').slice(0,10)}</td><td>${delBtn}</td></tr>`;
+    const storeCell = isSuperadmin ? `<td>${u.store_name || '<span style="color:var(--ink-4)">—</span>'}</td>` : '';
+    return `<tr><td><strong>${u.username}</strong></td><td>${roleLabel}</td>${storeCell}<td class="mono" style="color:var(--ink-3)">${(u.created_at || '').slice(0,10)}</td><td>${delBtn}</td></tr>`;
   }).join('');
 }
 async function createUser() {
   const username = document.getElementById('new-username').value.trim();
   const role     = document.getElementById('new-role').value;
+  const storeSel = document.getElementById('new-user-store');
   const pw       = document.getElementById('new-pw').value;
   const pw2      = document.getElementById('new-pw2').value;
   if (!username)     { toast('先填帳號名稱', 'warn'); return; }
   if (pw.length < 6) { toast('密碼至少 6 個字元', 'warn'); return; }
   if (pw !== pw2)    { toast('兩次密碼不一樣', 'warn'); return; }
+
+  const payload = {username, password: pw, role};
+  if (isSuperadmin && role !== 'superadmin') {
+    const sid = parseInt(storeSel?.value);
+    if (!sid) { toast('請選擇所屬店家', 'warn'); return; }
+    payload.store_id = sid;
+  }
+
   showLoading(true);
-  const res = await api('POST', '/users', {username, password: pw, role});
+  const res = await api('POST', '/users', payload);
   showLoading(false);
   if (!res) return;
   ['new-username','new-pw','new-pw2'].forEach(id => document.getElementById(id).value = '');
