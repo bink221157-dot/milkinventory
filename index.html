@@ -1,4 +1,4 @@
-<!-- StockFlow — 更新時間：2026-07-24 23:37（Phase 4：店家切換 / 店家管理 / 帳號選店 / LINE 店代碼） -->
+<!-- StockFlow — 更新時間：2026-08-17 13:12（安全稽核：全站 XSS 修正，加入 escapeHtml/encodeURIComponent/decodeURIComponent 防護） -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -460,7 +460,7 @@ select.fc{cursor:pointer}
     <nav class="sb" id="sidebar">
       <div class="sb-top">
         <div class="sb-name">StockFlow<span class="dot">.</span></div>
-        <div class="sb-ver">v4.0</div>
+        <div class="sb-ver">v4.5</div>
       </div>
 
       <!-- 店家切換器（superadmin 可切換；一般帳號顯示固定店名） -->
@@ -478,6 +478,7 @@ select.fc{cursor:pointer}
         <div class="sb-item admin-only" data-page="pg-products" style="display:none">品項設定</div>
         <div class="sb-item admin-only" data-page="pg-staff" style="display:none">人員名單</div>
         <div class="sb-item admin-only" data-page="pg-line" style="display:none">LINE 通知</div>
+        <div class="sb-item admin-only" data-page="pg-pos-import" style="display:none">POS 匯入</div>
         <div class="sb-item admin-only" data-page="pg-users" style="display:none">帳號管理</div>
         <div class="sb-label superadmin-only" style="display:none">總部</div>
         <div class="sb-item superadmin-only" data-page="pg-stores" style="display:none">店家管理</div>
@@ -585,6 +586,45 @@ select.fc{cursor:pointer}
           <div class="fg"><label>店代碼</label><input type="text" class="fc mono" id="store-code" placeholder="例：TPE01（英數字，群組綁定用）"></div>
           <div id="store-modal-err" style="display:none;color:var(--red);font-size:.78rem"></div>
           <button class="btn btn-main" id="store-modal-submit" onclick="submitCreateStore()">建立店家</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 新增 POS API 串接 Modal -->
+    <div id="posint-modal" class="modal">
+      <div class="modal-box" style="max-width:400px">
+        <div class="modal-h">
+          <div class="modal-t">新增 API 串接</div>
+          <button class="modal-x" onclick="closePosIntegrationModal()">✕</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="fg"><label>廠商代號</label><input type="text" class="fc mono" id="posint-vendor" placeholder="例：ichef（英文小寫，跟 adapter 註冊的名稱一致）"></div>
+          <div class="fg"><label>API Key</label><input type="password" class="fc" id="posint-key" placeholder="貼上客戶提供的 API Key"></div>
+          <div class="fg"><label>API Secret（選填）</label><input type="password" class="fc" id="posint-secret" placeholder="有的話一併貼上"></div>
+          <div id="posint-modal-err" style="display:none;color:var(--red);font-size:.78rem"></div>
+          <button class="btn btn-main" onclick="submitPosIntegration()">儲存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 新增信箱自動擷取 Modal -->
+    <div id="posemail-modal" class="modal">
+      <div class="modal-box" style="max-width:420px">
+        <div class="modal-h">
+          <div class="modal-t">新增信箱自動擷取</div>
+          <button class="modal-x" onclick="closePosEmailModal()">✕</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="frow">
+            <div class="fg"><label>IMAP 主機</label><input type="text" class="fc mono" id="posemail-host" placeholder="例：imap.gmail.com"></div>
+            <div class="fg"><label>Port</label><input type="number" class="fc mono" id="posemail-port" value="993"></div>
+          </div>
+          <div class="fg"><label>信箱帳號</label><input type="text" class="fc" id="posemail-address" placeholder="pos-import@yourdomain.com"></div>
+          <div class="fg"><label>信箱密碼／應用程式密碼</label><input type="password" class="fc" id="posemail-password" placeholder="留空表示不更改（編輯既有設定時）"></div>
+          <div class="fg"><label>寄件者篩選（選填）</label><input type="text" class="fc" id="posemail-sender" placeholder="只處理這個寄件者的信，例如 report@eats365.com"></div>
+          <div class="fg"><label>主旨關鍵字篩選（選填）</label><input type="text" class="fc" id="posemail-subject" placeholder="例：營運報表"></div>
+          <div id="posemail-modal-err" style="display:none;color:var(--red);font-size:.78rem"></div>
+          <button class="btn btn-main" onclick="submitPosEmailSource()">儲存</button>
         </div>
       </div>
     </div>
@@ -912,6 +952,85 @@ select.fc{cursor:pointer}
         </div>
       </div>
 
+      <!-- ══ POS 匯入 ══ -->
+      <div class="page" id="pg-pos-import">
+        <div style="margin-bottom:24px"><h1 class="pg-t" style="color:#fff;margin-bottom:6px">POS 匯入</h1><p style="color:rgba(255,255,255,.65);font-size:.88rem">上傳 POS 匯出的銷售資料，自動對應成消耗記錄。</p></div>
+
+        <div class="card">
+          <div class="card-t" style="margin-bottom:12px">上傳銷售資料</div>
+          <p style="font-size:.8rem;color:var(--ink-3);margin-bottom:14px;line-height:1.7">
+            支援兩種格式：<br>
+            <b>CSV</b>：需包含三個欄位（順序不限）——<b>日期</b>（YYYY-MM-DD 或 YYYY/MM/DD）、<b>品項名稱</b>、<b>數量</b>。<br>
+            <b>JSON</b>：支援訂單／收據結構的匯出格式（每筆訂單內含 line_items 品項明細），系統會自動判斷副檔名解析。<br>
+            不確定格式的話，先下載範例參考。
+          </p>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
+            <input type="file" id="pos-csv-file" accept=".csv,.json" class="fc" style="max-width:320px">
+            <button class="btn btn-main btn-sm" onclick="posUploadAndParse()">上傳並解析</button>
+            <button class="btn btn-ghost btn-sm" onclick="downloadPosTemplate()">下載範例 CSV</button>
+          </div>
+        </div>
+
+        <div class="card" id="pos-mapping-card" style="display:none">
+          <div class="card-h" style="margin-bottom:12px">
+            <span class="card-t">確認品項對應</span>
+            <button class="btn btn-lime btn-sm" onclick="posCommitImport()">確認匯入</button>
+          </div>
+          <p style="font-size:.78rem;color:var(--ink-3);margin-bottom:14px">
+            找不到對應品項的話選「忽略此品項」，該筆資料就不會被匯入。已經對應過的品名會自動帶入上次的選擇。
+          </p>
+          <div class="tw">
+            <table class="dt">
+              <thead><tr><th>POS 品名</th><th>日期範圍</th><th>總數量</th><th style="width:220px">對應到 StockFlow 品項</th></tr></thead>
+              <tbody id="pos-mapping-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-t" style="margin-bottom:14px">已儲存的對應設定</div>
+          <div class="tw">
+            <table class="dt">
+              <thead><tr><th>POS 品名</th><th>對應品項</th><th style="width:90px"></th></tr></thead>
+              <tbody id="pos-mappings-tbody"><tr><td colspan="3" class="empty">載入中…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h" style="margin-bottom:12px">
+            <span class="card-t">API 自動串接設定</span>
+            <button class="btn btn-lime btn-sm" onclick="openPosIntegrationModal()">＋ 新增串接</button>
+          </div>
+          <p style="font-size:.78rem;color:var(--ink-3);margin-bottom:14px;line-height:1.7">
+            如果 POS 廠商能提供 API Key，可以先存起來——系統會先加密保存，等該廠商完成串接程式後就會自動每天同步，不用等到那時候才輸入。
+          </p>
+          <div class="tw">
+            <table class="dt">
+              <thead><tr><th>廠商代號</th><th>金鑰</th><th>狀態</th><th>上次同步</th><th style="width:170px">操作</th></tr></thead>
+              <tbody id="pos-integrations-tbody"><tr><td colspan="5" class="empty">載入中…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h" style="margin-bottom:12px">
+            <span class="card-t">信箱自動擷取設定</span>
+            <button class="btn btn-lime btn-sm" onclick="openPosEmailModal()">＋ 新增信箱</button>
+          </div>
+          <p style="font-size:.78rem;color:var(--ink-3);margin-bottom:14px;line-height:1.7">
+            如果廠商是每日結算後把 JSON 寄到信箱，設定好之後系統會定期自動去收信、找 JSON 附件解析匯入，不用手動下載上傳。
+            信箱密碼如果有兩步驟驗證，請用「應用程式密碼」，不是登入密碼。
+          </p>
+          <div class="tw">
+            <table class="dt">
+              <thead><tr><th>信箱</th><th>寄件者篩選</th><th>狀態</th><th>上次收信</th><th style="width:170px">操作</th></tr></thead>
+              <tbody id="pos-email-tbody"><tr><td colspan="5" class="empty">載入中…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
     </div><!-- /main -->
   </div><!-- /shell -->
 </div><!-- /screen-app -->
@@ -1068,7 +1187,7 @@ const PAGE_TITLES = {
   'pg-dashboard':'首頁','pg-inventory':'今日盤點',
   'pg-products':'品項設定','pg-staff':'人員名單',
   'pg-line':'LINE 通知','pg-users':'帳號管理',
-  'pg-stores':'店家管理',
+  'pg-stores':'店家管理','pg-pos-import':'POS 匯入',
 };
 document.querySelectorAll('.sb-item').forEach(el => {
   el.addEventListener('click', () => {
@@ -1157,8 +1276,8 @@ function renderStoreManagementPage() {
   if (!S.stores.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty">還沒有店家。</td></tr>'; return; }
   tbody.innerHTML = S.stores.map(s => `
     <tr>
-      <td><strong>${s.name}</strong></td>
-      <td><span class="store-code-pill">${s.code}</span></td>
+      <td><strong>${escapeHtml(s.name)}</strong></td>
+      <td><span class="store-code-pill">${escapeHtml(s.code)}</span></td>
       <td>${s.active ? '<span class="badge b-ok">啟用</span>' : '<span class="badge b-mute">停用</span>'}</td>
       <td class="mono" style="color:var(--ink-3)">${(s.created_at||'').slice(0,10)}</td>
       <td style="display:flex;gap:6px;flex-wrap:wrap">
@@ -1248,7 +1367,7 @@ async function initApp() {
 
   await loadCategories();
   const tasks = [loadProducts(), loadStaff(), loadInventory(), loadConsumptionStats(), loadOrders()];
-  if (isAdmin) tasks.push(loadUsers(), loadLineGroups());
+  if (isAdmin) tasks.push(loadUsers(), loadLineGroups(), loadPosMappings(), loadPosIntegrations(), loadPosEmailSources());
   await Promise.all(tasks);
 }
 
@@ -1338,16 +1457,18 @@ function renderCatFilter(all) {
   el.innerHTML =
     `<button class="cat-btn ${!activeCatFilter ? 'active' : ''}" onclick="setCatFilter('')">全部</button>`
     + allCats.map(c => {
+        const safeArg = encodeURIComponent(c);
         const delBtn = isAdmin
-          ? `<span onclick="event.stopPropagation();deleteCategory('${c}')" title="刪除此分類"
+          ? `<span onclick="event.stopPropagation();deleteCategory('${safeArg}')" title="刪除此分類"
               style="margin-left:4px;opacity:.5;font-size:.7rem;cursor:pointer" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.5">✕</span>`
           : '';
-        return `<button class="cat-btn ${activeCatFilter === c ? 'active' : ''}" onclick="setCatFilter('${c}')">${c}${delBtn}</button>`;
+        return `<button class="cat-btn ${activeCatFilter === c ? 'active' : ''}" onclick="setCatFilter('${safeArg}')">${escapeHtml(c)}${delBtn}</button>`;
       }).join('')
     + `<button class="cat-add-btn" onclick="openCatModal()" title="新增分類">＋</button>`;
 }
 
 async function deleteCategory(name) {
+  name = decodeURIComponent(name);
   if (!confirm(`確定刪除分類「${name}」？
 （有品項使用中的分類無法刪除）`)) return;
   showLoading(true);
@@ -1370,6 +1491,7 @@ function filterProducts(kw) {
 }
 
 function setCatFilter(cat) {
+  cat = cat ? decodeURIComponent(cat) : cat;
   activeCatFilter = cat;
   const kw = document.getElementById('product-search')?.value || '';
   if (kw.trim()) {
@@ -1398,12 +1520,14 @@ function renderProductRows(list) {
     return;
   }
   tbody.innerHTML = list.map(p => {
-    const cat        = p.category || '未分類';
+    const cat        = escapeHtml(p.category || '未分類');
+    const name        = escapeHtml(p.name);
+    const unit         = escapeHtml(p.unit);
     const shelfLabel = p.default_shelf_days ? `${p.default_shelf_days}天` : '-';
-    return `<tr data-pname="${p.name}">
-      <td><strong>${p.name}</strong></td>
+    return `<tr data-pname="${name}">
+      <td><strong>${name}</strong></td>
       <td><span style="font-size:.7rem;font-weight:600;padding:2px 9px;border-radius:99px;background:rgba(31,107,78,.1);color:var(--leaf)">${cat}</span></td>
-      <td>${p.unit}</td>
+      <td>${unit}</td>
       <td class="mono">NT$ ${Number(p.unit_price).toFixed(2)}</td>
       <td class="mono">${p.min_threshold || 0}</td>
       <td class="mono" style="color:var(--ink-3)">${shelfLabel}</td>
@@ -1449,7 +1573,7 @@ function editProduct(id) {
   if (existing) existing.remove();
 
   const catOpts = ['未分類', ...allCats].map(c =>
-    `<option value="${c}" ${c === catNow ? 'selected' : ''}>${c}</option>`
+    `<option value="${escapeHtml(c)}" ${c === catNow ? 'selected' : ''}>${escapeHtml(c)}</option>`
   ).join('');
 
   const modal = document.createElement('div');
@@ -1466,7 +1590,7 @@ function editProduct(id) {
         <div class="frow">
           <div class="fg">
             <label>品項名稱</label>
-            <input type="text" class="fc" id="ep-name" value="${prod.name}">
+            <input type="text" class="fc" id="ep-name" value="${escapeHtml(prod.name)}">
           </div>
           <div class="fg">
             <label>分類</label>
@@ -1476,7 +1600,7 @@ function editProduct(id) {
         <div class="frow">
           <div class="fg">
             <label>單位</label>
-            <input type="text" class="fc" id="ep-unit" value="${prod.unit}">
+            <input type="text" class="fc" id="ep-unit" value="${escapeHtml(prod.unit)}">
           </div>
           <div class="fg">
             <label>單價（元）</label>
@@ -1588,9 +1712,9 @@ function renderOrderCard() {
       : '';
 
     return `<div style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--line);flex-wrap:wrap;${isArrived ? 'opacity:.7' : ''}">
-      <span style="font-weight:700;min-width:90px">${o.product_name}</span>
-      <span class="mono" style="color:var(--ink-2);font-size:.82rem">叫 ${o.quantity} ${o.unit}</span>
-      <span style="font-size:.76rem;color:var(--ink-3)">${o.ordered_date} · ${o.ordered_by}</span>
+      <span style="font-weight:700;min-width:90px">${escapeHtml(o.product_name)}</span>
+      <span class="mono" style="color:var(--ink-2);font-size:.82rem">叫 ${o.quantity} ${escapeHtml(o.unit)}</span>
+      <span style="font-size:.76rem;color:var(--ink-3)">${o.ordered_date} · ${escapeHtml(o.ordered_by)}</span>
       ${statusBadge}${diffBadge}
       <div style="margin-left:auto;display:flex;gap:6px">${delBtn}</div>
     </div>`;
@@ -1825,6 +1949,8 @@ function renderDataTable() {
 
   const today    = todayStr();
   tbody.innerHTML = items.map(item => {
+    const pname = escapeHtml(item.product_name);
+    const unit  = escapeHtml(item.unit);
     const current  = item.total_qty;
     const thresh   = item.min_threshold;
     const diff     = current - thresh;
@@ -1866,9 +1992,9 @@ function renderDataTable() {
     return `
     <tr class="dt-row" onclick="toggleExpand(${item.product_id})">
       <td><span class="dt-toggle" id="tog-${item.product_id}">▶</span></td>
-      <td><strong>${item.product_name}</strong></td>
-      <td class="mono">${current} ${item.unit}</td>
-      <td class="mono" style="color:var(--ink-3)">${current} ${item.unit} ${recLabel}</td>
+      <td><strong>${pname}</strong></td>
+      <td class="mono">${current} ${unit}</td>
+      <td class="mono" style="color:var(--ink-3)">${current} ${unit} ${recLabel}</td>
       <td class="mono">${diffCell}</td>
       <td style="text-align:center">${dot}</td>
       <td>${suggestCell}</td>
@@ -1889,10 +2015,10 @@ function renderDataTable() {
               const delBtn = isAdmin
                 ? `<button class="icon-btn" style="width:24px;height:24px;font-size:.68rem;flex-shrink:0"
                     title="刪除此批次"
-                    onclick="deleteBatch(${item.product_id}, '${b.expiry_date}')">✕</button>`
+                    onclick="deleteBatch(${item.product_id}, '${encodeURIComponent(b.expiry_date)}')">✕</button>`
                 : '';
               return `<div class="ep-batch-row" style="justify-content:space-between">
-                <span>${badge} ${b.expiry_date} <span style="color:var(--ink-3)">×</span> <strong>${b.quantity}</strong> ${item.unit}</span>
+                <span>${badge} ${escapeHtml(b.expiry_date)} <span style="color:var(--ink-3)">×</span> <strong>${b.quantity}</strong> ${unit}</span>
                 ${delBtn}
               </div>`;
             }).join('')}
@@ -1901,19 +2027,19 @@ function renderDataTable() {
           ${(()=>{
             const pending = _allOrders.filter(o => o.product_id === item.product_id && !o.arrived);
             if (!pending.length) return '';
-            const staffOpts = S.staff.map(n => `<option value="${n}">${n}</option>`).join('');
+            const staffOpts = S.staff.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
             return `<div style="margin-bottom:12px;padding:10px 12px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:10px">
               <div style="font-size:.68rem;font-weight:700;color:var(--amber);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px">📦 待到貨叫貨記錄 — 填入效期後直接儲存</div>
               ${pending.map(o => `
                 <div style="padding:8px 0;border-bottom:1px solid rgba(245,158,11,.15)">
-                  <div style="font-size:.8rem;color:var(--ink-2);margin-bottom:8px">${o.ordered_date} · <strong>${o.ordered_by}</strong> 叫了 <strong>${o.quantity} ${item.unit}</strong>${o.note ? ' · ' + o.note : ''}</div>
+                  <div style="font-size:.8rem;color:var(--ink-2);margin-bottom:8px">${o.ordered_date} · <strong>${escapeHtml(o.ordered_by)}</strong> 叫了 <strong>${o.quantity} ${unit}</strong>${o.note ? ' · ' + escapeHtml(o.note) : ''}</div>
                   <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
                     <input type="date" id="arr-exp-${o.id}" class="ep-input" style="width:148px"
                       value="${item.default_shelf_days ? (() => { const d=new Date(); d.setDate(d.getDate()+item.default_shelf_days); return d.toISOString().split('T')[0]; })() : ''}"
                       title="到貨批次有效期限">
                     <span style="font-size:.72rem;color:var(--ink-3)">有效期限</span>
                     <input type="number" id="arr-qty-${o.id}" class="ep-input" style="width:70px" value="${o.quantity}" min="1" title="實際到貨數量">
-                    <span style="font-size:.72rem;color:var(--ink-3)">${item.unit}</span>
+                    <span style="font-size:.72rem;color:var(--ink-3)">${unit}</span>
                     <select id="arr-who-${o.id}" class="ep-input" style="width:110px;cursor:pointer">
                       <option value="">到貨人員…</option>
                       ${staffOpts}
@@ -1926,14 +2052,14 @@ function renderDataTable() {
 
           <div style="margin-bottom:8px">
             <div id="batch-inputs-${item.product_id}"></div>
-            <button class="btn btn-ghost btn-xs" style="margin-top:4px" onclick="addBatchInputRow(${item.product_id}, '${item.unit}')">＋ 新增批次</button>
+            <button class="btn btn-ghost btn-xs" style="margin-top:4px" onclick="addBatchInputRow(${item.product_id}, '${encodeURIComponent(item.unit)}')">＋ 新增批次</button>
           </div>
           <div class="ep-grid" style="margin-top:14px">
             <div class="ep-field">
               <div class="ep-label">今日消耗（從最短效期扣）</div>
               <div style="display:flex;align-items:center;gap:8px">
                 <input type="number" class="ep-input" id="ep-cons-${item.product_id}" value="0" min="0" style="width:90px">
-                <span style="font-size:.78rem;color:var(--ink-3)">${item.unit}</span>
+                <span style="font-size:.78rem;color:var(--ink-3)">${unit}</span>
               </div>
             </div>
             <div class="ep-field">
@@ -1955,6 +2081,7 @@ function renderDataTable() {
 }
 
 async function deleteBatch(pid, expiryDate) {
+  expiryDate = decodeURIComponent(expiryDate);
   if (!isAdmin) { toast('只有管理員可以刪除批次', 'warn'); return; }
   const item  = S.items.find(i => i.product_id === pid);
   if (!item) return;
@@ -2023,6 +2150,7 @@ async function confirmArriveInline(orderId, pid) {
 }
 
 function addBatchInputRow(pid, unit) {
+  unit = escapeHtml(decodeURIComponent(unit));
   const container = document.getElementById(`batch-inputs-${pid}`);
   if (!container) return;
   const row = document.createElement('div');
@@ -2181,8 +2309,10 @@ function renderConsumptionTable(stats) {
   if (!stats.length) { if (card) card.style.display = 'none'; return; }
   if (card) card.style.display = 'block';
   tbody.innerHTML = stats.map(s => {
+    const pname = escapeHtml(s.product_name);
+    const unit  = escapeHtml(s.unit);
     const suggestCell = s.suggest_order > 0
-      ? `<span style="color:var(--red);font-weight:700">${s.suggest_order} ${s.unit}</span>`
+      ? `<span style="color:var(--red);font-weight:700">${s.suggest_order} ${unit}</span>`
       : `<span style="color:var(--leaf)">足夠</span>`;
     const trend = s.this_week > s.last_week
       ? `<span style="color:var(--red);font-size:.75rem">↑</span>`
@@ -2190,11 +2320,11 @@ function renderConsumptionTable(stats) {
       ? `<span style="color:var(--leaf);font-size:.75rem">↓</span>`
       : `<span style="color:var(--ink-4);font-size:.75rem">—</span>`;
     return `<tr>
-      <td><strong>${s.product_name}</strong></td>
+      <td><strong>${pname}</strong></td>
       <td class="mono">${s.this_week} ${trend}</td>
       <td class="mono" style="color:var(--ink-3)">${s.last_week}</td>
       <td class="mono" style="color:var(--ink-3)">${s.this_month}</td>
-      <td class="mono">${s.current_qty} ${s.unit}</td>
+      <td class="mono">${s.current_qty} ${unit}</td>
       <td>${suggestCell}</td>
     </tr>`;
   }).join('');
@@ -2210,7 +2340,7 @@ async function loadStaff() {
 }
 function renderStaffList() {
   document.getElementById('staff-ul').innerHTML = S.staff.length
-    ? S.staff.map(n => `<li class="pli"><span><span class="pava">${n[0]}</span>${n}</span>${isAdmin ? `<button class="btn btn-danger btn-xs" onclick="removeStaff('${n}')">移除</button>` : ''}</li>`).join('')
+    ? S.staff.map(n => `<li class="pli"><span><span class="pava">${escapeHtml(n[0])}</span>${escapeHtml(n)}</span>${isAdmin ? `<button class="btn btn-danger btn-xs" onclick="removeStaff('${encodeURIComponent(n)}')">移除</button>` : ''}</li>`).join('')
     : '<li style="color:var(--ink-4);font-size:.82rem;padding:10px 12px">還沒有人員。</li>';
 }
 function renderStaffSelect() {
@@ -2232,6 +2362,7 @@ async function addStaff() {
   toast('已新增：' + name, 'ok');
 }
 async function removeStaff(name) {
+  name = decodeURIComponent(name);
   showLoading(true);
   const res = await api('DELETE', `/staff/${encodeURIComponent(name)}`);
   showLoading(false);
@@ -2253,24 +2384,25 @@ async function loadLineGroups() {
     return;
   }
   el.innerHTML = data.groups.map(g => {
-    const shortId    = g.group_id.slice(0, 12) + '…';
-    const dailyTime  = (g.schedule_time || '21:00').slice(0, 5);
-    const weeklyTime = (g.weekly_time   || '09:00').slice(0, 5);
+    const gidSafe    = encodeURIComponent(g.group_id);
+    const shortId    = escapeHtml(g.group_id.slice(0, 12)) + '…';
+    const dailyTime  = escapeHtml((g.schedule_time || '21:00').slice(0, 5));
+    const weeklyTime = escapeHtml((g.weekly_time   || '09:00').slice(0, 5));
     const activeLabel  = g.active        ? '<span class="badge b-ok">日報開啟</span>'  : '<span class="badge b-mute">日報停用</span>';
     const weeklyLabel  = g.weekly_active ? '<span class="badge b-ok">週報開啟</span>'  : '<span class="badge b-mute">週報停用</span>';
     return `<tr>
-      <td class="mono" style="font-size:.72rem" title="${g.group_id}">${shortId}</td>
+      <td class="mono" style="font-size:.72rem" title="${escapeHtml(g.group_id)}">${shortId}</td>
       <td>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <input type="time" class="fc mono" style="height:30px;font-size:.74rem;width:100px;padding:0 7px"
-            value="${dailyTime}" onchange="updateGroupTime('${g.group_id}', this.value)">
+            value="${dailyTime}" onchange="updateGroupTime('${gidSafe}', this.value)">
           <span style="font-size:.7rem;color:var(--ink-3)">${g.last_sent_date || '尚未發送'}</span>
         </div>
       </td>
       <td>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <input type="time" class="fc mono" style="height:30px;font-size:.74rem;width:100px;padding:0 7px"
-            value="${weeklyTime}" onchange="updateGroupWeeklyTime('${g.group_id}', this.value)">
+            value="${weeklyTime}" onchange="updateGroupWeeklyTime('${gidSafe}', this.value)">
           <span style="font-size:.7rem;color:var(--ink-3)">${g.last_weekly_date || '尚未發送'}</span>
         </div>
       </td>
@@ -2278,38 +2410,328 @@ async function loadLineGroups() {
       <td>
         <div style="display:flex;flex-direction:column;gap:5px">
           <div style="display:flex;gap:5px">
-            <button class="btn btn-ghost btn-xs" onclick="toggleGroup('${g.group_id}',${!g.active})">${g.active ? '停用日報' : '開啟日報'}</button>
-            <button class="btn btn-ghost btn-xs" onclick="toggleGroupWeekly('${g.group_id}',${!g.weekly_active})">${g.weekly_active ? '停用週報' : '開啟週報'}</button>
+            <button class="btn btn-ghost btn-xs" onclick="toggleGroup('${gidSafe}',${!g.active})">${g.active ? '停用日報' : '開啟日報'}</button>
+            <button class="btn btn-ghost btn-xs" onclick="toggleGroupWeekly('${gidSafe}',${!g.weekly_active})">${g.weekly_active ? '停用週報' : '開啟週報'}</button>
           </div>
-          <button class="btn btn-danger btn-xs" onclick="deleteGroup('${g.group_id}')">移除群組</button>
+          <button class="btn btn-danger btn-xs" onclick="deleteGroup('${gidSafe}')">移除群組</button>
         </div>
       </td>
     </tr>`;
   }).join('');
 }
 async function updateGroupTime(groupId, time) {
+  groupId = decodeURIComponent(groupId);
   await api('PUT', `/line/groups/${encodeURIComponent(groupId)}`, {schedule_time: time.slice(0,5)});
   toast('每日日報時間已更新', 'ok');
 }
 async function updateGroupWeeklyTime(groupId, time) {
+  groupId = decodeURIComponent(groupId);
   await api('PUT', `/line/groups/${encodeURIComponent(groupId)}`, {weekly_time: time.slice(0,5)});
   toast('週報時間已更新', 'ok');
 }
 async function toggleGroup(groupId, active) {
+  groupId = decodeURIComponent(groupId);
   await api('PUT', `/line/groups/${encodeURIComponent(groupId)}`, {active});
   await loadLineGroups();
   toast(active ? '每日日報已開啟' : '每日日報已停用');
 }
 async function toggleGroupWeekly(groupId, weekly_active) {
+  groupId = decodeURIComponent(groupId);
   await api('PUT', `/line/groups/${encodeURIComponent(groupId)}`, {weekly_active});
   await loadLineGroups();
   toast(weekly_active ? '每週週報已開啟' : '每週週報已停用');
 }
 async function deleteGroup(groupId) {
+  groupId = decodeURIComponent(groupId);
   if (!confirm('確定移除這個群組？Bot 不會自動離開群組，只是不再發通知。')) return;
   await api('DELETE', `/line/groups/${encodeURIComponent(groupId)}`);
   await loadLineGroups();
   toast('群組已移除');
+}
+
+// ══════════════════════════════════════════
+// POS CSV 匯入
+// ══════════════════════════════════════════
+let _posParsedRows  = [];
+let _posParsedItems = [];
+
+async function posUploadAndParse() {
+  const fileInput = document.getElementById('pos-csv-file');
+  const file = fileInput?.files?.[0];
+  if (!file) { toast('請先選擇 CSV 檔案', 'warn'); return; }
+
+  const formData = new FormData();
+  formData.append('file', file);
+  const headers = { ...(token ? {'Authorization':`Bearer ${token}`} : {}) };
+  if (currentStoreId) headers['X-Store-Id'] = String(currentStoreId);
+
+  showLoading(true);
+  let data;
+  try {
+    const res = await fetch(API_BASE + '/pos/import/parse', { method: 'POST', headers, body: formData });
+    data = await res.json().catch(() => ({}));
+    if (!res.ok) { toast(data.detail || '解析失敗', 'warn'); showLoading(false); return; }
+  } catch (e) {
+    showLoading(false); toast('上傳失敗，請檢查網路連線', 'err'); return;
+  }
+  showLoading(false);
+
+  _posParsedRows  = data.rows  || [];
+  _posParsedItems = data.items || [];
+  renderPosMappingTable();
+  if (_posParsedItems.length) toast(`解析完成，共 ${_posParsedItems.length} 個品名，請確認對應`, 'ok');
+}
+
+function renderPosMappingTable() {
+  const card  = document.getElementById('pos-mapping-card');
+  const tbody = document.getElementById('pos-mapping-tbody');
+  if (!card || !tbody) return;
+  if (!_posParsedItems.length) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+
+  const prodOpts = S.products.map(p => `<option value="${p.id}">${escapeHtml(p.name)}（${escapeHtml(p.unit)}）</option>`).join('');
+  tbody.innerHTML = _posParsedItems.map((item, idx) => `
+    <tr>
+      <td><strong>${escapeHtml(item.item_name)}</strong></td>
+      <td class="mono" style="font-size:.76rem">${escapeHtml(item.date_range)}</td>
+      <td class="mono">${item.total_qty}</td>
+      <td>
+        <select class="fc pos-map-select" data-idx="${idx}" style="height:36px">
+          <option value="">忽略此品項</option>
+          ${prodOpts}
+        </select>
+      </td>
+    </tr>`).join('');
+
+  // 套用既有對應（或這次解析出的既有對應）
+  document.querySelectorAll('.pos-map-select').forEach(sel => {
+    const item = _posParsedItems[parseInt(sel.dataset.idx)];
+    if (item?.mapped_product_id) sel.value = item.mapped_product_id;
+  });
+}
+
+async function posCommitImport() {
+  const selects  = document.querySelectorAll('.pos-map-select');
+  const mappings = {};
+  selects.forEach(sel => {
+    const item = _posParsedItems[parseInt(sel.dataset.idx)];
+    if (!item) return;
+    mappings[item.item_name] = sel.value ? parseInt(sel.value) : null;
+  });
+
+  showLoading(true);
+  const res = await api('POST', '/pos/import/commit', { rows: _posParsedRows, mappings });
+  showLoading(false);
+  if (!res) return;
+
+  toast(
+    `匯入完成，更新了 ${res.updated_days} 筆消耗記錄` +
+    (res.skipped_unmapped_rows ? `，略過 ${res.skipped_unmapped_rows} 筆未對應資料` : ''),
+    'ok'
+  );
+
+  document.getElementById('pos-mapping-card').style.display = 'none';
+  const fileInput = document.getElementById('pos-csv-file');
+  if (fileInput) fileInput.value = '';
+  _posParsedRows = []; _posParsedItems = [];
+
+  await Promise.all([loadPosMappings(), loadConsumptionStats(), loadInventory()]);
+}
+
+async function loadPosMappings() {
+  const data  = await api('GET', '/pos/mappings');
+  const tbody = document.getElementById('pos-mappings-tbody');
+  if (!tbody) return;
+  const list = data?.mappings || [];
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="3" class="empty">還沒有儲存任何對應設定，上傳一次 CSV 後就會出現在這裡。</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(m => `
+    <tr>
+      <td>${escapeHtml(m.pos_item_name)}</td>
+      <td>${m.product_name ? escapeHtml(m.product_name) : '<span style="color:var(--ink-4)">品項已刪除</span>'}</td>
+      <td><button class="btn btn-danger btn-xs" onclick="deletePosMapping(${m.id})">刪除</button></td>
+    </tr>`).join('');
+}
+
+async function deletePosMapping(id) {
+  if (!confirm('確定刪除這筆對應設定？下次匯入同樣品名時會需要重新選擇對應品項。')) return;
+  showLoading(true);
+  const res = await api('DELETE', `/pos/mappings/${id}`);
+  showLoading(false);
+  if (!res) return;
+  await loadPosMappings();
+  toast('已刪除對應設定');
+}
+
+function downloadPosTemplate() {
+  const csv  = '日期,品項名稱,數量\n2026-07-01,鮮奶,12\n2026-07-01,拿鐵咖啡豆,5\n2026-07-02,鮮奶,9\n';
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'StockFlow_POS匯入範例.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ══════════════════════════════════════════
+// POS API 自動串接設定
+// ══════════════════════════════════════════
+async function loadPosIntegrations() {
+  const data  = await api('GET', '/pos/integrations');
+  const tbody = document.getElementById('pos-integrations-tbody');
+  if (!tbody) return;
+  const list = data?.integrations || [];
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">還沒有設定任何 API 串接，有客戶提供金鑰的話可以先存起來。</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(i => {
+    const statusBadge = !i.vendor_supported
+      ? '<span class="badge b-mute">等待接上該廠商</span>'
+      : i.last_sync_status === 'ok'   ? '<span class="badge b-ok">同步中</span>'
+      : i.last_sync_status === 'error'? '<span class="badge b-bad">同步失敗</span>'
+      : '<span class="badge b-mute">尚未同步</span>';
+    const lastSync = i.last_synced_at ? i.last_synced_at.slice(0,16).replace('T',' ') : '尚未同步';
+    return `<tr>
+      <td><strong>${escapeHtml(i.vendor)}</strong></td>
+      <td class="mono">${escapeHtml(i.api_key_masked || '—')}</td>
+      <td>${statusBadge}</td>
+      <td class="mono" style="font-size:.74rem;color:var(--ink-3)" title="${escapeHtml(i.last_sync_message || '')}">${lastSync}</td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-xs" onclick="testPosIntegration(${i.id})">測試連線</button>
+        <button class="btn btn-danger btn-xs" onclick="deletePosIntegration(${i.id})">刪除</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openPosIntegrationModal() {
+  document.getElementById('posint-vendor').value = '';
+  document.getElementById('posint-key').value = '';
+  document.getElementById('posint-secret').value = '';
+  document.getElementById('posint-modal-err').style.display = 'none';
+  document.getElementById('posint-modal').style.display = 'flex';
+}
+function closePosIntegrationModal() { document.getElementById('posint-modal').style.display = 'none'; }
+
+async function submitPosIntegration() {
+  const vendor = document.getElementById('posint-vendor').value.trim();
+  const key    = document.getElementById('posint-key').value.trim();
+  const secret = document.getElementById('posint-secret').value.trim();
+  const errEl  = document.getElementById('posint-modal-err');
+  if (!vendor) { errEl.textContent = '請填寫廠商代號（例如 ichef）'; errEl.style.display = 'block'; return; }
+  showLoading(true);
+  const res = await api('POST', '/pos/integrations', {
+    vendor, api_key: key || null, api_secret: secret || null, sync_enabled: true,
+  });
+  showLoading(false);
+  if (!res) return;
+  closePosIntegrationModal();
+  await loadPosIntegrations();
+  toast('已儲存串接設定', 'ok');
+}
+
+async function testPosIntegration(id) {
+  showLoading(true);
+  const res = await api('POST', `/pos/integrations/${id}/test`);
+  showLoading(false);
+  if (!res) return;
+  toast(`測試成功，抓到 ${res.sample_count} 筆資料`, 'ok');
+}
+
+async function deletePosIntegration(id) {
+  if (!confirm('確定刪除這組 API 串接設定？金鑰會一併刪除。')) return;
+  showLoading(true);
+  const res = await api('DELETE', `/pos/integrations/${id}`);
+  showLoading(false);
+  if (!res) return;
+  await loadPosIntegrations();
+  toast('已刪除');
+}
+
+// ══════════════════════════════════════════
+// POS 信箱自動擷取設定
+// ══════════════════════════════════════════
+async function loadPosEmailSources() {
+  const data  = await api('GET', '/pos/email-sources');
+  const tbody = document.getElementById('pos-email-tbody');
+  if (!tbody) return;
+  const list = data?.email_sources || [];
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">還沒有設定任何信箱，有廠商說會寄 JSON 過來的話可以先設定起來。</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(s => {
+    const statusBadge = s.last_sync_status === 'ok'    ? '<span class="badge b-ok">正常</span>'
+                       : s.last_sync_status === 'error' ? '<span class="badge b-bad">收信失敗</span>'
+                       : '<span class="badge b-mute">尚未收信</span>';
+    const lastSync = s.last_synced_at ? s.last_synced_at.slice(0,16).replace('T',' ') : '尚未收信';
+    return `<tr>
+      <td class="mono" style="font-size:.78rem">${escapeHtml(s.email_address)}</td>
+      <td class="mono" style="font-size:.76rem;color:var(--ink-3)">${escapeHtml(s.sender_filter || '（不限）')}</td>
+      <td>${statusBadge}</td>
+      <td class="mono" style="font-size:.74rem;color:var(--ink-3)" title="${escapeHtml(s.last_sync_message || '')}">${lastSync}</td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-xs" onclick="testPosEmailSource(${s.id})">測試連線</button>
+        <button class="btn btn-danger btn-xs" onclick="deletePosEmailSource(${s.id})">刪除</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openPosEmailModal() {
+  document.getElementById('posemail-host').value = '';
+  document.getElementById('posemail-port').value = '993';
+  document.getElementById('posemail-address').value = '';
+  document.getElementById('posemail-password').value = '';
+  document.getElementById('posemail-sender').value = '';
+  document.getElementById('posemail-subject').value = '';
+  document.getElementById('posemail-modal-err').style.display = 'none';
+  document.getElementById('posemail-modal').style.display = 'flex';
+}
+function closePosEmailModal() { document.getElementById('posemail-modal').style.display = 'none'; }
+
+async function submitPosEmailSource() {
+  const host    = document.getElementById('posemail-host').value.trim();
+  const port    = parseInt(document.getElementById('posemail-port').value) || 993;
+  const address = document.getElementById('posemail-address').value.trim();
+  const pw      = document.getElementById('posemail-password').value;
+  const sender  = document.getElementById('posemail-sender').value.trim();
+  const subject = document.getElementById('posemail-subject').value.trim();
+  const errEl   = document.getElementById('posemail-modal-err');
+  if (!host || !address) { errEl.textContent = '請填寫 IMAP 主機與信箱帳號'; errEl.style.display = 'block'; return; }
+
+  showLoading(true);
+  const res = await api('POST', '/pos/email-sources', {
+    imap_host: host, imap_port: port, email_address: address,
+    email_password: pw || null, sender_filter: sender || null, subject_filter: subject || null,
+    sync_enabled: true,
+  });
+  showLoading(false);
+  if (!res) return;
+  closePosEmailModal();
+  await loadPosEmailSources();
+  toast('已儲存信箱設定', 'ok');
+}
+
+async function testPosEmailSource(id) {
+  showLoading(true);
+  const res = await api('POST', `/pos/email-sources/${id}/test`);
+  showLoading(false);
+  if (!res) return;
+  toast(`連線成功，目前有 ${res.unread_matching_count} 封符合條件的未讀信`, 'ok');
+}
+
+async function deletePosEmailSource(id) {
+  if (!confirm('確定刪除這組信箱設定？密碼會一併刪除。')) return;
+  showLoading(true);
+  const res = await api('DELETE', `/pos/email-sources/${id}`);
+  showLoading(false);
+  if (!res) return;
+  await loadPosEmailSources();
+  toast('已刪除');
 }
 
 // ══════════════════════════════════════════
@@ -2637,11 +3059,12 @@ function renderUsersTable() {
   tbody.innerHTML = S.users.map(u => {
     const roleLabel = roleLabels[u.role] || '<span class="badge b-mute">一般人員</span>';
     const isSelf = u.username === currentUser;
+    const uname = escapeHtml(u.username);
     const delBtn = isSelf
       ? '<span style="font-size:.7rem;color:var(--ink-4)">目前登入</span>'
-      : `<button class="btn btn-danger btn-xs" onclick="deleteUser('${u.username}')">刪除</button>`;
-    const storeCell = isSuperadmin ? `<td>${u.store_name || '<span style="color:var(--ink-4)">—</span>'}</td>` : '';
-    return `<tr><td><strong>${u.username}</strong></td><td>${roleLabel}</td>${storeCell}<td class="mono" style="color:var(--ink-3)">${(u.created_at || '').slice(0,10)}</td><td>${delBtn}</td></tr>`;
+      : `<button class="btn btn-danger btn-xs" onclick="deleteUser('${encodeURIComponent(u.username)}')">刪除</button>`;
+    const storeCell = isSuperadmin ? `<td>${u.store_name ? escapeHtml(u.store_name) : '<span style="color:var(--ink-4)">—</span>'}</td>` : '';
+    return `<tr><td><strong>${uname}</strong></td><td>${roleLabel}</td>${storeCell}<td class="mono" style="color:var(--ink-3)">${(u.created_at || '').slice(0,10)}</td><td>${delBtn}</td></tr>`;
   }).join('');
 }
 async function createUser() {
@@ -2670,6 +3093,7 @@ async function createUser() {
   toast(`已建立帳號：${username}`, 'ok');
 }
 async function deleteUser(username) {
+  username = decodeURIComponent(username);
   showLoading(true);
   const res = await api('DELETE', `/users/${encodeURIComponent(username)}`);
   showLoading(false);
@@ -2716,6 +3140,15 @@ function togglePw(inputId, btn) {
 // ══════════════════════════════════════════
 // Utils
 // ══════════════════════════════════════════
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 function todayStr()  { return new Date().toISOString().split('T')[0]; }
 function daysDiff(dateStr) { return Math.ceil((new Date(dateStr) - new Date(todayStr())) / 864e5); }
 function showLoading(on) { document.getElementById('loading').classList[on ? 'add' : 'remove']('show'); }
