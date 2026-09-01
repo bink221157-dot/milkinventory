@@ -1,4 +1,4 @@
-<!-- StockFlow — 更新時間：2026-08-17 13:12（安全稽核：全站 XSS 修正，加入 escapeHtml/encodeURIComponent/decodeURIComponent 防護） -->
+<!-- StockFlow — 更新時間：2026-09-02 01:15（每日盤點加入搜尋品項功能，與品項設定同款樣式） -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -727,6 +727,14 @@ select.fc{cursor:pointer}
           <div class="fg" style="flex:0 0 auto">
             <label style="font-size:.72rem;font-weight:600;color:rgba(255,255,255,.85)">盤點人員</label>
             <select class="fc" id="inv-staff" style="width:130px"></select>
+          </div>
+          <div class="fg" style="flex:1 1 200px;min-width:180px">
+            <label style="font-size:.72rem;font-weight:600;color:rgba(255,255,255,.85)">搜尋品項</label>
+            <div style="position:relative">
+              <input type="text" id="inv-search" placeholder="輸入品項名稱…" oninput="renderDataTable()"
+                class="fc" style="padding-right:36px;width:100%">
+              <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--ink-4);font-size:.85rem;pointer-events:none">🔍</span>
+            </div>
           </div>
         </div>
 
@@ -1938,11 +1946,21 @@ function renderDataTable() {
   if (!tbody) return;
 
   const selCat   = document.getElementById('inv-cat-filter')?.value || '';
+  const kw       = (document.getElementById('inv-search')?.value || '').trim().toLowerCase();
   const allItems = S.items;
-  const items    = selCat ? allItems.filter(i => (i.category || '未分類') === selCat) : allItems;
+  const items    = allItems.filter(i => {
+    const matchCat  = !selCat || (i.category || '未分類') === selCat;
+    const matchName = !kw || (i.product_name || '').toLowerCase().includes(kw);
+    return matchCat && matchName;
+  });
 
   if (!items.length) {
-    tbody.innerHTML = `<tr><td colspan="10" class="empty" style="padding:40px">${selCat ? '此分類下沒有品項。' : '還沒有品項資料。請先到品項設定新增品項。'}</td></tr>`;
+    const emptyMsg = kw
+      ? `找不到符合「${escapeHtml(kw)}」的品項。`
+      : selCat
+      ? '此分類下沒有品項。'
+      : '還沒有品項資料。請先到品項設定新增品項。';
+    tbody.innerHTML = `<tr><td colspan="10" class="empty" style="padding:40px">${emptyMsg}</td></tr>`;
     return;
   }
   if (label && S.latestDate) label.textContent = `最新盤點：${S.latestDate}`;
